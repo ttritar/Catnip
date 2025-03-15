@@ -23,6 +23,7 @@
 
 
 
+
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
@@ -33,7 +34,8 @@ const std::vector<const char*> validationLayers =
     "VK_LAYER_KHRONOS_validation"
 };
 
-const std::vector<const char*> deviceExtensions = {
+const std::vector<const char*> deviceExtensions = 
+{
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
@@ -110,27 +112,30 @@ struct QueueFamilyIndices
 };
 
 
-struct SwapChainSupportDetails {
+struct SwapChainSupportDetails 
+{
     VkSurfaceCapabilitiesKHR capabilities;
     std::vector<VkSurfaceFormatKHR> formats;
     std::vector<VkPresentModeKHR> presentModes;
 };
 
-class HelloTriangleApplication {
+class HelloTriangleApplication 
+{
 public:
-    void run() {
+    void run() 
+    {
         initWindow();
         initVulkan();
         mainLoop();
         cleanup();
-        createGraphicsPipeline();
     }
 
 private:
     // Functions
     //-----------
 
-    void initWindow() {
+    void initWindow() 
+    {
         // 1. Initialize the GLFW library.
         //-----
         glfwInit();
@@ -154,17 +159,24 @@ private:
         createImageViews();
         createRenderPass();
         createGraphicsPipeline();
+        createFramebuffers();
     }
 
     void mainLoop() 
     {
-        while (!glfwWindowShouldClose(window)) {
+        while (!glfwWindowShouldClose(window)) 
+        {
             glfwPollEvents();
         }
     }
 
     void cleanup() 
     {
+        for (auto framebuffer : swapChainFramebuffers)
+        {
+            vkDestroyFramebuffer(device, framebuffer, nullptr);
+        }
+
         vkDestroyPipeline(device, graphicsPipeline, nullptr);
         vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
         vkDestroyRenderPass(device, renderPass, nullptr);
@@ -178,7 +190,8 @@ private:
 
         vkDestroyDevice(device, nullptr);
 
-        if (enableValidationLayers) {
+        if (enableValidationLayers) 
+        {
             DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
         }
 
@@ -736,6 +749,22 @@ private:
 
     }
 
+    VkShaderModule createShaderModule(const std::vector<char>& code)
+    {
+        VkShaderModuleCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        createInfo.codeSize = code.size();
+        createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+        VkShaderModule shaderModule;
+        if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to create shader module!");
+        }
+
+        return shaderModule;
+    }
+
     void createGraphicsPipeline()
     {
         auto vertShaderCode = readFile("shaders/vert.spv");
@@ -793,7 +822,7 @@ private:
         vertexInputInfo.pVertexAttributeDescriptions = nullptr; //optional     -> point to array of struct that describe the aforementioned details for loading vertex data
         
         // INPUT ASSEMBLY
-        VkPipelineInputAssemblyStateCreateInfo inputAssembly;
+        VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         inputAssembly.primitiveRestartEnable = VK_FALSE;
@@ -898,7 +927,6 @@ private:
 
 
 
-
         // Creating the Graphics Pipeline (Conclusion)
         //-------------------
         VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -936,22 +964,6 @@ private:
         //-------------------
         vkDestroyShaderModule(device, fragShaderModule, nullptr);
         vkDestroyShaderModule(device, vertShaderModule, nullptr);
-    }
-
-    VkShaderModule createShaderModule(const std::vector<char>& code)
-    {
-        VkShaderModuleCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        createInfo.codeSize = code.size();
-        createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
-
-        VkShaderModule shaderModule;
-        if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to create shader module!");
-        }
-
-        return shaderModule;
     }
     
     void createRenderPass()
@@ -1000,6 +1012,33 @@ private:
 
     }
 
+    void createFramebuffers()
+    {
+		swapChainFramebuffers.resize(swapChainImageViews.size());
+
+        for (size_t i = 0; i<swapChainImageViews.size(); i++)
+        {
+            VkImageView attachments[] = {
+                swapChainImageViews[i]
+            };
+
+            VkFramebufferCreateInfo framebufferInfo{};
+            framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            framebufferInfo.renderPass = renderPass;
+            framebufferInfo.attachmentCount = 1;
+            framebufferInfo.pAttachments = attachments;
+            framebufferInfo.width = swapChainExtent.width;
+            framebufferInfo.height = swapChainExtent.height;
+            framebufferInfo.layers = 1;
+
+            if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS)
+            {
+                throw std::runtime_error("failed to create framebuffer!");
+            }
+        }
+
+    }
+
     // Datamembers
     //-----
     GLFWwindow* window;
@@ -1018,6 +1057,7 @@ private:
     VkRenderPass renderPass;
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
+	std::vector<VkFramebuffer> swapChainFramebuffers;
 };
 
 int main() {
