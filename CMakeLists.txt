@@ -61,6 +61,18 @@ add_custom_command(TARGET GP2_VulkanTutorial POST_BUILD
 # COMPILING SHADERS
 #-------------------
 
+# Define the path to the compile script
+set(COMPILE_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/shaders/compile.bat")
+
+# Run compile.bat before building the main executable
+add_custom_command(
+    TARGET GP2_VulkanTutorial PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E echo "Compiling shaders..."
+    COMMAND ${COMPILE_SCRIPT}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+
 # Define directories
 set(SHADER_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Shaders")
 set(SHADER_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/Shaders")
