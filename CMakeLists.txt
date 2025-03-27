@@ -1,19 +1,14 @@
-    cmake_minimum_required(VERSION 3.27)
+cmake_minimum_required(VERSION 3.27)
 
-# Project Name
 project(GP2_VulkanTutorial)
 
-# Use C++20
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Find Vulkan
 find_package(Vulkan REQUIRED)
 
-# Enable FetchContent module
 include(FetchContent)
 
-# Fetch GLFW
 FetchContent_Declare(
     GLFW
     GIT_REPOSITORY https://github.com/glfw/glfw.git
@@ -21,7 +16,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(GLFW) 
 
-# Fetch GLM
 FetchContent_Declare(
     glm
     GIT_REPOSITORY https://github.com/g-truc/glm.git
@@ -57,64 +51,54 @@ add_custom_command(TARGET GP2_VulkanTutorial POST_BUILD
 )
 
 
-
 # COMPILING SHADERS
 #-------------------
 
-# Define the path to the compile script
-set(COMPILE_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/shaders/compile.bat")
+find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin $ENV{VULKAN_SDK}/Bin/ $ENV{VULKAN_SDK}/Bin32/)
 
-# Run compile.bat before building the main executable
-add_custom_command(
-    TARGET GP2_VulkanTutorial PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E echo "Compiling shaders..."
-    COMMAND ${COMPILE_SCRIPT}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+# Define shader source and destination directories
+set(SHADER_SRC_DIR "${PROJECT_SOURCE_DIR}/shaders")
+set(COMPILED_SHADER_DIR "${PROJECT_SOURCE_DIR}/shaders/compiled_shaders")
+set(OUTPUT_SHADER_DIR "${CMAKE_BINARY_DIR}/shaders")
+
+# Ensure the compiled shader directory exists
+file(MAKE_DIRECTORY ${COMPILED_SHADER_DIR})
+
+file(GLOB_RECURSE GLSL_SOURCE_FILES
+        "${SHADER_SRC_DIR}/*.frag"
+        "${SHADER_SRC_DIR}/*.vert"
+        "${SHADER_SRC_DIR}/*.comp"
 )
 
+set(SPIRV_BINARY_FILES "")
 
-# Define directories
-set(SHADER_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Shaders")
-set(SHADER_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/Shaders")
-
-# Get GLSL shader files
-file(GLOB_RECURSE GLSL_SOURCE_FILES
-    "${SHADER_SOURCE_DIR}/*.frag"
-    "${SHADER_SOURCE_DIR}/*.vert")
-
-# Find the glslc compiler
-find_program(GLSLC_EXECUTABLE NAMES glslc HINTS ${Vulkan_GLSLC_EXECUTABLE})
-
-# Compile GLSL to SPIR-V
 foreach(GLSL ${GLSL_SOURCE_FILES})
     get_filename_component(FILE_NAME ${GLSL} NAME)
-    set(SPIRV "${SHADER_BINARY_DIR}/${FILE_NAME}.spv")
+    set(SPIRV "${COMPILED_SHADER_DIR}/${FILE_NAME}.spv")
+
+    message(STATUS "Compiling shader: ${GLSL} -> ${SPIRV}")
+
     add_custom_command(
-        OUTPUT ${SPIRV}
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${SHADER_BINARY_DIR}"
-        COMMAND ${GLSLC_EXECUTABLE} ${GLSL} -o ${SPIRV}
-        DEPENDS ${GLSL}
+            OUTPUT ${SPIRV}
+            COMMAND ${GLSL_VALIDATOR} -V ${GLSL} -o ${SPIRV}
+            DEPENDS ${GLSL}
     )
+
     list(APPEND SPIRV_BINARY_FILES ${SPIRV})
-endforeach(GLSL)
+endforeach()
 
-# Create a custom target for shaders
-add_custom_target(
-    Shaders
-    DEPENDS ${SPIRV_BINARY_FILES}
-)
+add_custom_target(CompileShaders DEPENDS ${SPIRV_BINARY_FILES})
 
-# Add Shader executable dependency
-add_dependencies(GP2_VulkanTutorial Shaders)
+file(MAKE_DIRECTORY ${OUTPUT_SHADER_DIR})
 
-# Add shader files to your target; they will not be compiled
-target_sources(GP2_VulkanTutorial PRIVATE ${GLSL_SOURCE_FILES})
+foreach(SPV ${SPIRV_BINARY_FILES})
+    get_filename_component(FILE_NAME ${SPV} NAME)
+    add_custom_command(
+            TARGET CompileShaders POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SPV} ${OUTPUT_SHADER_DIR}/${FILE_NAME}
+            COMMENT "Copying ${FILE_NAME} to output shaders directory"
+    )
+endforeach()
 
-# For each shader file, mark it as HEADER_FILE_ONLY
-set_source_files_properties(${GLSL_SOURCE_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
-
-# Organize shader files in the IDE
-source_group("Shaders" FILES ${GLSL_SOURCE_FILES})
-
-file(COPY ${CMAKE_SOURCE_DIR}/shaders DESTINATION ${CMAKE_BINARY_DIR})
-
+source_group("shaders" FILES ${GLSL_SOURCE_FILES})
+add_dependencies(${PROJECT_NAME} CompileShaders)
