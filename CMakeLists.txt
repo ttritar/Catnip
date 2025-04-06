@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.27)
+cmake_minimum_required(VERSION 3.3)
 
 project(GP2_VulkanTutorial)
 
@@ -7,8 +7,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Vulkan REQUIRED)
 
+
+# Define the executable
+add_executable(GP2_VulkanTutorial src/main.cpp)
+
+
+
+#===================
+# FETCH CONTENT
+#===================
+
 include(FetchContent)
 
+# stb GLFW
+#-----------
 FetchContent_Declare(
     GLFW
     GIT_REPOSITORY https://github.com/glfw/glfw.git
@@ -16,6 +28,9 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(GLFW) 
 
+
+# stb glm
+#-----------
 FetchContent_Declare(
     glm
     GIT_REPOSITORY https://github.com/g-truc/glm.git
@@ -23,27 +38,40 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
-# Define the executable
-add_executable(GP2_VulkanTutorial main.cpp)
+
+# stb fetch
+#-----------
+FetchContent_Declare(
+    stb
+    GIT_REPOSITORY https://github.com/nothings/stb.git
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(stb)
+set(EXTERNAL_INCLUDE_DIR ${CMAKE_BINARY_DIR}/external/include)
+file(MAKE_DIRECTORY ${EXTERNAL_INCLUDE_DIR})
+
+file(COPY ${stb_SOURCE_DIR}/stb_image.h DESTINATION ${EXTERNAL_INCLUDE_DIR})
+
+
+
 
 # Link necessary libraries
 target_link_libraries(GP2_VulkanTutorial PRIVATE glfw glm Vulkan::Vulkan)
 
 # Include directories
 target_include_directories(GP2_VulkanTutorial PRIVATE 
-    ${Vulkan_INCLUDE_DIRS}    # Vulkan headers
-    ${GLFW_INCLUDE_DIRS}      # GLFW headers (more robust way)
-    ${glm_SOURCE_DIR}         # GLM headers
-    ${CMAKE_SOURCE_DIR}/include  # If you have an include directory in your project
+    ${Vulkan_INCLUDE_DIRS}  
+    ${GLFW_INCLUDE_DIRS}     
+    ${glm_SOURCE_DIR}     
+    ${stb_SOURCE_DIR}   
+    ${CMAKE_SOURCE_DIR}/include  
 )
 
-# Ensure the linker knows where to find GLFW
 target_link_directories(GP2_VulkanTutorial PRIVATE 
     ${GLFW_SOURCE_DIR}/src
     _deps/glfw-build/src
 )
 
-# Ensure GLFW is copied to the output directory
 add_custom_command(TARGET GP2_VulkanTutorial POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         $<TARGET_FILE:glfw>
@@ -51,8 +79,15 @@ add_custom_command(TARGET GP2_VulkanTutorial POST_BUILD
 )
 
 
-# COMPILING SHADERS
-#-------------------
+
+
+#===================
+# COMPILATION
+#===================
+
+
+# SHADERS
+#---------
 
 find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin $ENV{VULKAN_SDK}/Bin/ $ENV{VULKAN_SDK}/Bin32/)
 
@@ -102,3 +137,19 @@ endforeach()
 
 source_group("shaders" FILES ${GLSL_SOURCE_FILES})
 add_dependencies(${PROJECT_NAME} CompileShaders)
+
+
+
+# RESOURCES
+#---------
+
+# Copy resources into build directory
+set(RESOURCE_SRC_DIR "${PROJECT_SOURCE_DIR}/resources")
+set(RESOURCE_DST_DIR "${CMAKE_BINARY_DIR}/resources")
+
+add_custom_target(CopyResources ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${RESOURCE_SRC_DIR} ${RESOURCE_DST_DIR}
+        COMMENT "Copying resources folder to build directory"
+)
+
+add_dependencies(${PROJECT_NAME} CopyResources)
