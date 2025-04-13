@@ -9,7 +9,10 @@ find_package(Vulkan REQUIRED)
 
 
 # Define the executable
-add_executable(GP2_VulkanTutorial src/main.cpp)
+add_executable(GP2_VulkanTutorial 
+    src/main.cpp 
+    src/core/Application.cpp src/core/Window.cpp
+)
 
 
 
