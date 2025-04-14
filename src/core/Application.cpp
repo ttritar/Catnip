@@ -9,8 +9,7 @@
 
 void Application::Run()
 {
-    m_pWindow = new Window();
-    m_pWindow->Initialize(WIDTH, HEIGHT, "Vulkan");
+    m_Window.Initialize(WIDTH, HEIGHT, "Vulkan");
     initVulkan();
     mainLoop();
     cleanup();
