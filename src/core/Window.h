@@ -8,17 +8,27 @@
 
 #include <string>
 
-
+namespace cat{
+	
 class Window final
 {
 public:
-	Window() = default;
+	// CTOR & DTOR
+	//--------------------
+	Window(int width, int height, const char* title);
+	~Window();
 
-	void Initialize(int width, int height, const char* title);
-	void Destroy();
+	Window(const Window&) = delete;
+	Window& operator=(const Window&) = delete;
+	Window(Window&&) = delete;
+	Window& operator=(Window&&) = delete;
+
+	// Methods
+	//--------------------
+	void InitializeWindow(int width, int height, const char* title);
+
 
 	// Getters & Setters
-	//--------------------
 	GLFWwindow* GetWindow() const { return m_pWindow; }
 
 	int GetWidth() const { return m_Width; }	
@@ -29,7 +39,9 @@ private:
 	GLFWwindow* m_pWindow;
 
 	// Window properties
-	int m_Width;
-	int m_Height;
+	const int m_Width;
+	const int m_Height;
 
 };
+
+}

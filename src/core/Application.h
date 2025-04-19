@@ -23,8 +23,6 @@
 #include "Window.h"
 
 
-const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 600;
 const int MAX_FRAMES_IN_FLIGHT = 2; //two: cpu should not go toooooo faar ahead of the gpu
 
 
@@ -176,7 +174,24 @@ public:
     void SetFrameBufferResized(bool value) { framebufferResized = value; }
     bool GetFrameBufferResized() const { return framebufferResized; }
 
+
+    static constexpr uint32_t WIDTH = 800;
+    static constexpr uint32_t HEIGHT = 600;
 private:
+	cat::Window m_Window{WIDTH,HEIGHT,"Meow"};
+
+
+
+
+
+
+
+
+
+
+
+
+
     void initVulkan()
     {
         createInstance();
@@ -206,7 +221,7 @@ private:
 
     void mainLoop()
     {
-        while (!glfwWindowShouldClose(m_pWindow->GetWindow()))
+        while (!glfwWindowShouldClose(m_Window.GetWindow()))
         {
             glfwPollEvents();
             drawFrame();
@@ -268,8 +283,7 @@ private:
 
         vkDestroyInstance(instance, nullptr);
 
-        m_pWindow->Destroy();
-		delete m_pWindow;
+
 
         glfwTerminate();
     }
@@ -617,10 +631,10 @@ private:
     {
         VkWin32SurfaceCreateInfoKHR createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-        createInfo.hwnd = glfwGetWin32Window(m_pWindow->GetWindow());
+        createInfo.hwnd = glfwGetWin32Window(m_Window.GetWindow());
         createInfo.hinstance = GetModuleHandle(nullptr);
 
-        if (glfwCreateWindowSurface(instance, m_pWindow->GetWindow(), nullptr, &surface) != VK_SUCCESS)
+        if (glfwCreateWindowSurface(instance, m_Window.GetWindow(), nullptr, &surface) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create window surface!");
         }
@@ -695,7 +709,7 @@ private:
         else
         {
             int width, height;
-            glfwGetFramebufferSize(m_pWindow->GetWindow(), &width, &height);
+            glfwGetFramebufferSize(m_Window.GetWindow(), &width, &height);
 
             VkExtent2D actualExtent =
             {
@@ -1341,7 +1355,7 @@ private:
         int width = 0, height = 0;
         while (width == 0 || height == 0)
         {
-            glfwGetFramebufferSize(m_pWindow->GetWindow(), &width, &height);
+            glfwGetFramebufferSize(m_Window.GetWindow(), &width, &height);
             glfwWaitEvents();
         }
 
@@ -1971,9 +1985,6 @@ private:
 
     // Datamembers
     //-----
-    Window* m_pWindow = nullptr;
-
-
 
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;

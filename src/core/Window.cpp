@@ -3,13 +3,27 @@
 #include "Window.h"
 
 
+namespace cat{
+
 static void FramebufferResizeCallback(GLFWwindow* window, int width, int height)
 {
     //auto app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
 	//app->SetFrameBufferResized(true);
 }
 
-void Window::Initialize(int width, int height, const char* title)
+Window::Window(int width, int height, const char* title)
+	:m_Width{ width }, m_Height(height)
+{
+    InitializeWindow(width, height, title);
+}
+
+Window::~Window()
+{
+    glfwDestroyWindow(m_pWindow);
+	glfwTerminate();
+}
+
+void Window::InitializeWindow(int width, int height, const char* title)
 {
     // 1. Initialize the GLFW library.
     //-----
@@ -24,7 +38,4 @@ void Window::Initialize(int width, int height, const char* title)
     glfwSetFramebufferSizeCallback(m_pWindow, FramebufferResizeCallback);
 }
 
-void Window::Destroy()
-{
-	glfwDestroyWindow(m_pWindow);
 }
