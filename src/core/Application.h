@@ -21,7 +21,6 @@
 #include <array>
 
 #include "Window.h"
-#include "../vulkan/Instance.h"
 
 
 const uint32_t WIDTH = 800;
@@ -70,7 +69,35 @@ static std::vector<char> readFile(const std::string& filename)
 }
 
 
+//look up its address ourselves using vkGetInstanceProcAddr     (proxy func)
+static VkResult CreateDebugUtilsMessengerEXT(
+    VkInstance instance,
+    const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+    const VkAllocationCallbacks* pAllocator,
+    VkDebugUtilsMessengerEXT* pDebugMessenger)
+{
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    if (func != nullptr)
+    {
+        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+    }
+    else
+    {
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+}
 
+static void DestroyDebugUtilsMessengerEXT( //proxy func
+    VkInstance instance,
+    VkDebugUtilsMessengerEXT debugMessenger,
+    const VkAllocationCallbacks* pAllocator)
+{
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr)
+    {
+        func(instance, debugMessenger, pAllocator);
+    }
+}
 
 
 struct QueueFamilyIndices
@@ -152,10 +179,8 @@ public:
 private:
     void initVulkan()
     {
-        m_Instance
-			.EnableValidationLayers(enableValidationLayers)
-            .Create();
-
+        createInstance();
+        setupDebugMessenger();
         createSurface();
         pickPhysicalDevice();
         createLogicalDevice();
@@ -181,7 +206,7 @@ private:
 
     void mainLoop()
     {
-        while (!glfwWindowShouldClose(m_Window.GetWindow()))
+        while (!glfwWindowShouldClose(m_pWindow->GetWindow()))
         {
             glfwPollEvents();
             drawFrame();
@@ -234,15 +259,182 @@ private:
 
         vkDestroyDevice(device, nullptr);
 
-        m_Instance.DestroyMessenger();
+        if (enableValidationLayers)
+        {
+            DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+        }
 
-        vkDestroySurfaceKHR(m_Instance.GetInstance(), surface, nullptr);
+        vkDestroySurfaceKHR(instance, surface, nullptr);
 
-        m_Instance.Destroy();
+        vkDestroyInstance(instance, nullptr);
 
-        m_Window.Destroy();
+        m_pWindow->Destroy();
+		delete m_pWindow;
 
         glfwTerminate();
+    }
+
+    void createInstance()
+    {
+
+        // Validation layer
+        if (enableValidationLayers && !checkValidationLayerSupport())
+        {
+            throw std::runtime_error("validation layers requested, but not available!");
+        }
+
+
+
+        // 1. Create appInfo struct (optional)
+        //------------------------------------
+        VkApplicationInfo appInfo{};
+        appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        appInfo.pApplicationName = "Hello Triangle";
+        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+        appInfo.pEngineName = "No Engine";
+        appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+        appInfo.apiVersion = VK_API_VERSION_1_0;
+
+
+        // 2. Create createInfo struct
+        //-----------------------------
+        VkInstanceCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+        createInfo.pApplicationInfo = &appInfo;
+
+        // Extension support
+        uint32_t glfwExtensionCount = 0;
+        const char** glfwExtensions;
+
+        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+        createInfo.enabledExtensionCount = glfwExtensionCount;
+        createInfo.ppEnabledExtensionNames = glfwExtensions;
+
+        // Validation layers
+        if (enableValidationLayers) // include the validation layer names if they are enabled :
+        {
+            createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+            createInfo.ppEnabledLayerNames = validationLayers.data();
+        }
+        else
+        {
+            createInfo.enabledLayerCount = 0;
+        }
+
+        // Message Callback
+        auto extensions = getRequiredExtensions();
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+        createInfo.ppEnabledExtensionNames = extensions.data();
+
+        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+        if (enableValidationLayers)
+        {
+            createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+            createInfo.ppEnabledLayerNames = validationLayers.data();
+
+            populateDebugMessengerCreateInfo(debugCreateInfo);
+            createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+        }
+        else
+        {
+            createInfo.enabledLayerCount = 0;
+
+            createInfo.pNext = nullptr;
+        }
+
+
+        // 3. Create instance
+        //--------------------
+
+        if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create instance!");
+        }
+    }
+
+    bool checkValidationLayerSupport()
+    {
+        uint32_t layerCount;
+        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);   // list all of the available layers
+
+        std::vector<VkLayerProperties> availableLayers(layerCount);
+        vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+        for (const char* layerName : validationLayers)
+        {
+            bool layerFound = false;
+
+            for (const auto& layerProperties : availableLayers)
+            {
+                if (strcmp(layerName, layerProperties.layerName) == 0)
+                {
+                    layerFound = true;
+                    break;
+                }
+            }
+
+            if (!layerFound)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    std::vector<const char*> getRequiredExtensions() // Extension for Message Callback
+    {
+        uint32_t glfwExtensionCount = 0;
+        const char** glfwExtensions;
+        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+        std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+
+        if (enableValidationLayers)
+        {
+            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);    //debug messenger with a callback using the VK_EXT_debug_utils extension
+        }
+
+        return extensions;
+    }
+
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(                // Message Callback
+        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+        VkDebugUtilsMessageTypeFlagsEXT messageType,
+        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+        void* pUserData)
+    {
+
+        std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+
+        return VK_FALSE;    //should always return this
+    }
+
+    void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+    {
+        createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        createInfo.pfnUserCallback = debugCallback;
+    }
+
+    void setupDebugMessenger()
+    {
+        if (!enableValidationLayers) return;
+
+        // 1. Fill in struct with details about the messenger and its callback
+        //------------------------------------------------------------------
+        VkDebugUtilsMessengerCreateInfoEXT createInfo;
+        populateDebugMessengerCreateInfo(createInfo);
+
+        // 2. Create the extension object if it's available
+        //-----------------------------------------------
+        if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to set up debug messenger!");
+        }
     }
 
     //Selecting a physical device
@@ -251,7 +443,7 @@ private:
         // 1. List devices
         //---------------
         uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(m_Instance.GetInstance(), &deviceCount, nullptr);
+        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
         if (deviceCount == 0)
         {
@@ -259,7 +451,7 @@ private:
         }
 
         std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(m_Instance.GetInstance(), &deviceCount, devices.data());
+        vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
 
         // 2. check if any of the physical devices meet the requirements
@@ -425,10 +617,10 @@ private:
     {
         VkWin32SurfaceCreateInfoKHR createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-        createInfo.hwnd = glfwGetWin32Window(m_Window.GetWindow());
+        createInfo.hwnd = glfwGetWin32Window(m_pWindow->GetWindow());
         createInfo.hinstance = GetModuleHandle(nullptr);
 
-        if (glfwCreateWindowSurface(m_Instance.GetInstance(), m_Window.GetWindow(), nullptr, &surface) != VK_SUCCESS)
+        if (glfwCreateWindowSurface(instance, m_pWindow->GetWindow(), nullptr, &surface) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create window surface!");
         }
@@ -503,7 +695,7 @@ private:
         else
         {
             int width, height;
-            glfwGetFramebufferSize(m_Window.GetWindow(), &width, &height);
+            glfwGetFramebufferSize(m_pWindow->GetWindow(), &width, &height);
 
             VkExtent2D actualExtent =
             {
@@ -1149,7 +1341,7 @@ private:
         int width = 0, height = 0;
         while (width == 0 || height == 0)
         {
-            glfwGetFramebufferSize(m_Window.GetWindow(), &width, &height);
+            glfwGetFramebufferSize(m_pWindow->GetWindow(), &width, &height);
             glfwWaitEvents();
         }
 
@@ -1779,11 +1971,12 @@ private:
 
     // Datamembers
     //-----
-    Window m_Window;
-    Instance m_Instance;
-    //PLEASE STILL REFACTOR "DEBUGMESSENGER IN INSTACE
+    Window* m_pWindow = nullptr;
 
 
+
+    VkInstance instance;
+    VkDebugUtilsMessengerEXT debugMessenger;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE; //implicitly destroyed when the VkInstance is destroyed
     VkDevice device;
     VkQueue graphicsQueue;  // implicitly cleaned up when the device is destroyed

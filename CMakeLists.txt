@@ -12,7 +12,7 @@ find_package(Vulkan REQUIRED)
 add_executable(GP2_VulkanTutorial 
     src/main.cpp 
     src/core/Application.cpp src/core/Window.cpp
- "src/vulkan/Instance.h" "src/vulkan/Instance.cpp")
+)
 
 
 
