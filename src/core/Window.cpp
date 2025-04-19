@@ -3,7 +3,8 @@
 #include "Window.h"
 
 
-namespace cat{
+namespace cat
+{
 
 static void FramebufferResizeCallback(GLFWwindow* window, int width, int height)
 {

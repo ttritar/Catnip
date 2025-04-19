@@ -8,7 +8,8 @@
 
 #include <string>
 
-namespace cat{
+namespace cat
+{
 	
 class Window final
 {
