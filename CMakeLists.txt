@@ -14,7 +14,7 @@ add_executable(GP2_VulkanTutorial
     src/core/Application.cpp 
     src/core/Window.cpp
     src/vulkan/Pipeline.cpp
-)
+ "src/vulkan/Device.cpp")
 
 
 
