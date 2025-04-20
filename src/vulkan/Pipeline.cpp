@@ -1,5 +1,5 @@
 #include "Pipeline.h"
-#include "../Structs.h"
+#include "Structs.h"
 
 namespace cat
 {

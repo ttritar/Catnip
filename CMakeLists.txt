@@ -13,8 +13,8 @@ add_executable(GP2_VulkanTutorial
     src/main.cpp 
     src/core/Application.cpp 
     src/core/Window.cpp
-    src/vulkan/Pipeline.cpp
- "src/vulkan/Device.cpp")
+    src/vulkan/Pipeline.cpp src/vulkan/Device.cpp src/vulkan/SwapChain.cpp
+    src/vulkan/Buffer.cpp)
 
 
 

@@ -53,4 +53,5 @@ namespace cat
             return attributeDescriptions;
         }
     };
+
 }
