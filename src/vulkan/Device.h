@@ -8,7 +8,7 @@
 
 #include <vector>
 #include <optional>
-
+#include <stdexcept>
 
 
 namespace cat
@@ -93,15 +93,23 @@ struct SwapChainSupportDetails
 		// CTOR & DTOR
 		//--------------------
 		Device(GLFWwindow* window);
+		~Device();
+
 		Device(const Device&) = delete;
 		Device& operator=(const Device&) = delete;
 		Device(Device&&) = delete;
 		Device& operator=(Device&&) = delete;
-		~Device();
 
 
 		// Methods
 		//--------------------
+		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
+			VkBuffer& buffer,
+			VkDeviceMemory& bufferMemory) const;
+		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
+
+		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)const;
+	
 
 		// Getters & Setters
 		VkDevice GetDevice() const { return m_Device; }
@@ -135,6 +143,8 @@ struct SwapChainSupportDetails
 		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device) const;
 		static bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
 		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device) const;
+		VkCommandBuffer BeginSingleTimeCommands() const;
+		void EndSingleTimeCommands(VkCommandBuffer commandBuffer) const;
 
 		// Private Members
 		//--------------------

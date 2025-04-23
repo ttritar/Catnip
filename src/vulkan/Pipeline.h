@@ -19,11 +19,14 @@ namespace cat
 		// CTOR & DTOR
 		//--------------------
 		Pipeline(const VkDevice& device, const std::string& vertPath, const std::string& fragPath, const VkRenderPass& renderPass, const VkExtent2D& swapChainExtent, const VkDescriptorSetLayout& descriptorSetLayout);
+		~Pipeline();
+
 		Pipeline(const Pipeline&) = delete;
 		Pipeline& operator=(const Pipeline&) = delete;
 		Pipeline(Pipeline&&) = delete;
 		Pipeline& operator=(Pipeline&&) = delete;
-		~Pipeline();
+
+
 		// Methods
 		//--------------------
 

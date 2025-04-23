@@ -4,7 +4,7 @@
 #include <array>
 #include <stdexcept>
 
-#include "Structs.h"
+#include "Utils.h"
 
 namespace cat
 {
@@ -18,6 +18,7 @@ namespace cat
 		CreateRenderPass();
 		CreateDepthResources();
         CreateFramebuffers();
+        CreateSyncObjects();
 	}
 
 	SwapChain::~SwapChain()
@@ -25,6 +26,14 @@ namespace cat
         CleanupSwapChain();
 
         vkDestroyRenderPass(m_Device.GetDevice(), m_RenderPass, nullptr);
+
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            vkDestroySemaphore(m_Device.GetDevice(), m_RenderFinishedSemaphores[i], nullptr);
+            vkDestroySemaphore(m_Device.GetDevice(), m_ImageAvailableSemaphores[i], nullptr);
+            vkDestroyFence(m_Device.GetDevice(), m_InFlightFences[i], nullptr);
+        }
+
 	}
 
 	// Creators
@@ -328,6 +337,29 @@ namespace cat
 
     }
 
+    void SwapChain::CreateSyncObjects()
+    {
+        m_ImageAvailableSemaphores.resize(cat::MAX_FRAMES_IN_FLIGHT);
+        m_RenderFinishedSemaphores.resize(cat::MAX_FRAMES_IN_FLIGHT);
+        m_InFlightFences.resize(cat::MAX_FRAMES_IN_FLIGHT);
+
+        VkSemaphoreCreateInfo semaphoreInfo{};
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO; //only required field
+
+        VkFenceCreateInfo fenceInfo{};
+        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT; //start signaled
+
+        for (size_t i = 0; i < cat::MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            if (vkCreateSemaphore(m_Device.GetDevice(), &semaphoreInfo, nullptr, &m_ImageAvailableSemaphores[i]) != VK_SUCCESS ||
+                vkCreateSemaphore(m_Device.GetDevice(), &semaphoreInfo, nullptr, &m_RenderFinishedSemaphores[i]) != VK_SUCCESS ||
+                vkCreateFence(m_Device.GetDevice(), &fenceInfo, nullptr, &m_InFlightFences[i]) != VK_SUCCESS)
+            {
+                throw std::runtime_error("failed to create synchronization objects for a frame!");
+            }
+        }
+    }
 
     // Helpers
 	//--------------------
@@ -413,20 +445,5 @@ namespace cat
         throw std::runtime_error("failed to find supported format!");
     }
 
-	uint32_t SwapChain::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)const
-    {
-        VkPhysicalDeviceMemoryProperties memProperties;
-        vkGetPhysicalDeviceMemoryProperties(m_Device.GetPhysicalDevice(), &memProperties);
-
-        for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
-        {
-            if (typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
-            {
-                return i;
-            }
-        }
-
-        throw std::runtime_error("failed to find suitable memory type!");
-    }
 
 }

@@ -20,11 +20,12 @@ namespace cat
 		// CTOR & DTOR
 		//--------------------
 		SwapChain(Device& device, GLFWwindow* window);
+		~SwapChain();
+
 		SwapChain(const SwapChain&) = delete;
 		SwapChain& operator=(const SwapChain&) = delete;
 		SwapChain(SwapChain&&) = delete;
 		SwapChain& operator=(SwapChain&&) = delete;
-		~SwapChain();
 
 
 
@@ -56,6 +57,7 @@ namespace cat
 		void CreateRenderPass();
 		void CreateDepthResources();
 		void CreateFramebuffers();
+		void CreateSyncObjects();
 
 		// Helpers
 		static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -76,6 +78,9 @@ namespace cat
 		std::vector<VkImageView> m_SwapChainImageViews;
 		VkRenderPass m_RenderPass;
 		std::vector<VkFramebuffer> m_SwapChainFramebuffers;
+		std::vector < VkSemaphore> m_ImageAvailableSemaphores;
+		std::vector < VkSemaphore> m_RenderFinishedSemaphores;
+		std::vector < VkFence> m_InFlightFences;
 
 		VkImage m_DepthImage;
 		VkDeviceMemory m_DepthImageMemory;
