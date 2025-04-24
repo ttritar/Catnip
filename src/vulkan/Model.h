@@ -15,7 +15,7 @@ namespace cat
 	public:
 		// CTOR & DTOR
 		//--------------------
-		Model(Device& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);	
+		Model(Device& device, const std::vector<Vertex>& vertices, const std::vector<uint16_t>& indices);
 		~Model();
 
 		Model(const Model&) = delete;
@@ -47,7 +47,7 @@ namespace cat
 		VkBuffer m_VertexBuffer;
 		VkDeviceMemory m_VertexBufferMemory;
 
-		const std::vector<uint32_t>& m_Indices;
+		const std::vector<uint16_t>& m_Indices;
 		VkBuffer m_IndexBuffer;
 		VkDeviceMemory m_IndexBufferMemory;
 

@@ -32,6 +32,7 @@ namespace cat
 		// Methods
 		//--------------------
 		void RecreateSwapChain();
+
 		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) const;
 		void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
 			VkImageUsageFlags usage,

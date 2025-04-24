@@ -11,10 +11,11 @@ find_package(Vulkan REQUIRED)
 # Define the executable
 add_executable(GP2_VulkanTutorial 
     src/main.cpp 
-    src/core/Application.cpp 
+    src/core/Application.cpp
     src/core/Window.cpp
-    src/vulkan/Pipeline.cpp src/vulkan/Device.cpp src/vulkan/SwapChain.cpp
-    src/vulkan/Buffer.cpp src/vulkan/Model.cpp "src/core/Renderer.h" "src/core/Renderer.cpp" "src/core/Singleton.h")
+    src/vulkan/Pipeline.cpp src/vulkan/Device.cpp src/vulkan/SwapChain.cpp src/vulkan/Buffer.cpp src/vulkan/Model.cpp
+    src/core/Renderer.cpp
+    src/vulkan/Descriptors.cpp src/vulkan/CommandBuffer.cpp src/vulkan/Mesh.cpp)
 
 
 
@@ -52,12 +53,16 @@ FetchContent_Declare(
     GIT_TAG master
 )
 FetchContent_MakeAvailable(stb)
-set(EXTERNAL_INCLUDE_DIR ${CMAKE_BINARY_DIR}/external/include)
-file(MAKE_DIRECTORY ${EXTERNAL_INCLUDE_DIR})
-
-file(COPY ${stb_SOURCE_DIR}/stb_image.h DESTINATION ${EXTERNAL_INCLUDE_DIR})
 
 
+# tiny obj
+#-----------
+FetchContent_Declare(
+    tiny
+    GIT_REPOSITORY https://github.com/tinyobjloader/tinyobjloader.git
+    GIT_TAG v2.0.0rc13
+)
+FetchContent_MakeAvailable(tiny)
 
 
 # Link necessary libraries
@@ -70,6 +75,7 @@ target_include_directories(GP2_VulkanTutorial PRIVATE
     ${glm_SOURCE_DIR}     
     ${stb_SOURCE_DIR}   
     ${CMAKE_SOURCE_DIR}/include  
+    ${tiny_SOURCE_DIR}   
 )
 
 target_link_directories(GP2_VulkanTutorial PRIVATE 

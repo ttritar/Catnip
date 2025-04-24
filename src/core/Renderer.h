@@ -1,5 +1,4 @@
 #pragma once
-#include "Singleton.h"
 #include "../vulkan/SwapChain.h"
 
 namespace cat
@@ -8,13 +7,21 @@ namespace cat
 	class Model;
 	class Window;
 
-	class Renderer : public Singleton<Renderer>
+	class Renderer final
 	{
 	public:
+		// CTOR & DTOR
+		//--------------------
+		Renderer(Window& window, Device& device);
+		~Renderer();
+
+		Renderer(const Renderer&) = delete;
+		Renderer& operator=(const Renderer&) = delete;
+		Renderer(Renderer&&) = delete;
+		Renderer& operator=(Renderer&&) = delete;
+
 		// Methods
 		//--------------------
-		void Initialize(Window* window);
-		void Destroy();
 		void Render()const;
 
 		// Getters & Setters
@@ -33,14 +40,8 @@ namespace cat
 
 		// Private Members
 		//--------------------
-		Window* m_Window;
-		Pipeline* m_GraphicsPipeline;
-		Device* m_Device;
-		SwapChain* m_SwapChain;
-		Model* m_Model;
-
-
-
-
+		Window& m_Window;
+		Device& m_Device;
+		SwapChain* m_pSwapChain;
 	};
 }

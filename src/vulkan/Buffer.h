@@ -15,6 +15,9 @@ namespace cat
 
 		// Methods
 		//--------------------
+		VkResult Map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+		void Unmap();
+		void WriteToBuffer(void* data, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0) const;
 
 		// Getters & Setters
 		VkBuffer GetBuffer() const { return m_Buffer; }
@@ -26,6 +29,7 @@ namespace cat
 
 		// Creators
 
+
 		// Helpers
 
 
@@ -33,9 +37,11 @@ namespace cat
 		//--------------------
 		VkBuffer m_Buffer;
 		VkDeviceMemory m_BufferMemory;
-
+		VkDeviceSize m_BufferSize;
+		void* m_Mapped = nullptr;
 
 		Device& m_Device;
+
 	};
 }
  

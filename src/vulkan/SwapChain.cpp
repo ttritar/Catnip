@@ -36,6 +36,72 @@ namespace cat
 
 	}
 
+
+
+    void SwapChain::RecreateSwapChain()
+    {
+        // HANDLE MINIMIZATION
+        int width = 0, height = 0;
+        while (width == 0 || height == 0)
+        {
+            glfwGetFramebufferSize(m_Window, &width, &height);
+            glfwWaitEvents();
+        }
+
+        vkDeviceWaitIdle(m_Device.GetDevice());
+
+        CleanupSwapChain();
+
+        CreateSwapChain();
+        CreateImageViews();
+        CreateDepthResources();
+        CreateFramebuffers();
+    }
+
+    void SwapChain::CreateImage(uint32_t width, uint32_t height, VkFormat format,
+        VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
+        VkImage& image, VkDeviceMemory& imageMemory) const
+    {
+        //STAGING BUFFER
+        VkImageCreateInfo imageInfo{};
+        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        imageInfo.imageType = VK_IMAGE_TYPE_2D;  // with what kind of coordinate system the texels in the image are going to be addressed
+        imageInfo.extent.width = width;
+        imageInfo.extent.height = height;
+        imageInfo.extent.depth = 1; // how many texels there are on each axis
+        imageInfo.mipLevels = 1;
+        imageInfo.arrayLayers = 1;
+        imageInfo.format = format;
+        imageInfo.tiling = tiling;
+        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageInfo.usage = usage;
+        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // will only be used by 1 queue family
+        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.flags = 0; //optional - used for multisampling
+
+        if (vkCreateImage(m_Device.GetDevice(), &imageInfo, nullptr, &image) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create image!");
+        }
+
+
+        //ALLOCATING MEMORY
+        VkMemoryRequirements memRequirements;
+        vkGetImageMemoryRequirements(m_Device.GetDevice(), image, &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+
+        if (vkAllocateMemory(m_Device.GetDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to allocate image memory!");
+        }
+
+        vkBindImageMemory(m_Device.GetDevice(), image, imageMemory, 0);
+    }
+
 	// Creators
 	//--------------------
     void SwapChain::CreateSwapChain()
@@ -107,26 +173,6 @@ namespace cat
 
         m_SwapChainImageFormat = surfaceFormat.format;
         m_SwapChainExtent = extent;
-    }
-
-    void SwapChain::RecreateSwapChain()
-    {
-        // HANDLE MINIMIZATION
-        int width = 0, height = 0;
-        while (width == 0 || height == 0)
-        {
-            glfwGetFramebufferSize(m_Window, &width, &height);
-            glfwWaitEvents();
-        }
-
-        vkDeviceWaitIdle(m_Device.GetDevice());
-
-        CleanupSwapChain();
-
-        CreateSwapChain();
-        CreateImageViews();
-        CreateDepthResources();
-        CreateFramebuffers();
     }
 
     void SwapChain::CleanupSwapChain() const
@@ -263,50 +309,6 @@ namespace cat
             m_DepthImage, m_DepthImageMemory);
         m_DepthImageView = CreateImageView(m_DepthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
-    }
-
-    void SwapChain::CreateImage(uint32_t width, uint32_t height, VkFormat format,
-        VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
-        VkImage& image, VkDeviceMemory& imageMemory) const
-    {
-        //STAGING BUFFER
-        VkImageCreateInfo imageInfo{};
-        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        imageInfo.imageType = VK_IMAGE_TYPE_2D;  // with what kind of coordinate system the texels in the image are going to be addressed
-        imageInfo.extent.width = width;
-        imageInfo.extent.height = height;
-        imageInfo.extent.depth = 1; // how many texels there are on each axis
-        imageInfo.mipLevels = 1;
-        imageInfo.arrayLayers = 1;
-        imageInfo.format = format;
-        imageInfo.tiling = tiling;
-        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageInfo.usage = usage;
-        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // will only be used by 1 queue family
-        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        imageInfo.flags = 0; //optional - used for multisampling
-
-        if (vkCreateImage(m_Device.GetDevice(), &imageInfo, nullptr, &image) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create image!");
-        }
-
-
-        //ALLOCATING MEMORY
-        VkMemoryRequirements memRequirements;
-        vkGetImageMemoryRequirements(m_Device.GetDevice(), image, &memRequirements);
-
-        VkMemoryAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
-
-        if (vkAllocateMemory(m_Device.GetDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to allocate image memory!");
-        }
-
-        vkBindImageMemory(m_Device.GetDevice(), image, imageMemory, 0);
     }
 
     void SwapChain::CreateFramebuffers()

@@ -1,45 +1,47 @@
 #include "Renderer.h"
 
+#include "Window.h"
+
 namespace cat
 {
-    void Renderer::InitializeVulkan()
-    {
-        m_Device = new cat::Device(m_Window.GetWindow());
-        m_SwapChain = new cat::SwapChain(*m_Device, m_Window.GetWindow());
-        createDescriptorSetLayout();
-        m_GraphicsPipeline = new cat::Pipeline(
-            m_Device->GetDevice(),
-            "shaders/simple_shader.vert.spv",
-            "shaders/simple_shader.frag.spv",
-            m_SwapChain->GetRenderPass(), m_SwapChain->GetSwapChainExtent(), descriptorSetLayout
-        );
-        createTextureImage();
-        createTextureImageView();
-        createTextureSampler();
-        m_Model = new cat::Model(m_Device, vertices, indices);
-        createUniformBuffers();
-        createDescriptorPool();
-        createDescriptorSet();
-        createCommandBuffer();
-    }
 
-	void Renderer::Initialize(Window* window)
+	Renderer::Renderer(Window& window, Device& device )
+		: m_Window(window), m_Device(device)
 	{
-		m_Window = window;
-		InitializeVulkan();
+        if (!m_pSwapChain) m_pSwapChain = new SwapChain(m_Device,m_Window.GetWindow());
+		else m_pSwapChain->RecreateSwapChain();
+
+        CreateCommandBuffer();
 	}
 
-    void Renderer::Destroy()
+    Renderer::~Renderer()
     {
+        vkDeviceWaitIdle(m_Device.GetDevice());
+
+
+        //  CLEANUP
+        //-----------
+        delete m_pSwapChain;
+
+        vkDestroySampler(m_Device->GetDevice(), textureSampler, nullptr);
+        vkDestroyImageView(m_Device->GetDevice(), textureImageView, nullptr);
+
+        vkDestroyImage(m_Device->GetDevice(), textureImage, nullptr);
+        vkFreeMemory(m_Device->GetDevice(), textureImageMemory, nullptr);
+
+        for (size_t i = 0; i < cat::MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            vkDestroyBuffer(m_Device->GetDevice(), uniformBuffers[i], nullptr);
+            vkFreeMemory(m_Device->GetDevice(), uniformBuffersMemory[i], nullptr);
+        }
+
+
+        delete m_pGraphicsPipeline;
+
+        delete m_Device;
+
+        glfwTerminate();
     }
-
-
-
-	void Renderer::Render() const
-	{
-	}
-
-
 
 	void Renderer::CreateCommandBuffer()
     {

@@ -118,7 +118,7 @@ struct SwapChainSupportDetails
 		VkSurfaceKHR GetSurface() const { return m_Surface; }
 		VkQueue GetGraphicsQueue() const { return m_GraphicsQueue; }
 		VkQueue GetPresentQueue() const { return m_PresentQueue; }
-		VkCommandPool GetCommandPool() const { return m_CommandPool; }
+		VkCommandPool GetCommandPool() const { return m_CommandPool; } 
 		SwapChainSupportDetails GetSwapChainSupport()const { return QuerySwapChainSupport(m_PhysicalDevice); }
 		QueueFamilyIndices GetPhysicalQueueFamilies()const { return FindQueueFamilies(m_PhysicalDevice); }
 
