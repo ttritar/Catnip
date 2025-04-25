@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Device.h"
+#include "UniformBuffer.h"
+#include "Image.h"
 
 namespace cat
 {
@@ -47,13 +49,15 @@ namespace cat
 	class DescriptorSet final
 	{
 	public:
-		DescriptorSet(Device& device, DescriptorSetLayout& setLayout, DescriptorPool& pool);
+		DescriptorSet(Device& device, UniformBuffer& ubo, Image& image, DescriptorSetLayout& setLayout, DescriptorPool& pool);
 		~DescriptorSet();
 
 		DescriptorSet(const DescriptorSet&) = delete;
 		DescriptorSet& operator=(const DescriptorSet&) = delete;
 		DescriptorSet(DescriptorSet&&) = delete;
 		DescriptorSet& operator=(DescriptorSet&&) = delete;
+
+		VkDescriptorSet* GetDescriptorSet(uint16_t idx) { return &m_DescriptorSets[idx]; }
 
 	private:
 		std::vector<VkDescriptorSet> m_DescriptorSets;

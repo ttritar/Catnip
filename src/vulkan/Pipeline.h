@@ -6,10 +6,11 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
-
 #include <fstream>
 #include <string>
 #include <vector>
+
+#include "Mesh.h"
 
 namespace cat
 {

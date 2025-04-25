@@ -84,7 +84,7 @@ namespace cat
 // DESCRIPTOR SET
 //============================================
 
-    DescriptorSet::DescriptorSet(Device& device, DescriptorSetLayout& setLayout, DescriptorPool& pool)
+    DescriptorSet::DescriptorSet(Device& device, UniformBuffer& ubo, Image& image, DescriptorSetLayout& setLayout, DescriptorPool& pool)
 		: m_Device(device), m_DescriptorSetLayout(setLayout), m_DescriptorPool(pool)
 	{
         std::vector<VkDescriptorSetLayout> layouts(cat::MAX_FRAMES_IN_FLIGHT, m_DescriptorSetLayout.GetDescriptorSetLayout());
@@ -103,20 +103,20 @@ namespace cat
         for (size_t i = 0; i < cat::MAX_FRAMES_IN_FLIGHT; i++)
         {
             VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = uniformBuffers[i];
+            bufferInfo.buffer = ubo.GetUniformBuffer(i);
             bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(m_Device.);
+            bufferInfo.range = sizeof(UniformBuffer::UniformBufferObject);
 
             VkDescriptorImageInfo imageInfo{};
             imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = textureImageView;
-            imageInfo.sampler = textureSampler;
+            imageInfo.imageView = image.GetTextureImageView();
+            imageInfo.sampler = image.GetTextureSampler();
 
 
             std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
 
             descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[0].dstSet = descriptorSets[i];
+            descriptorWrites[0].dstSet = m_DescriptorSets[i];
             descriptorWrites[0].dstBinding = 0;
             descriptorWrites[0].dstArrayElement = 0;
             descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -126,7 +126,7 @@ namespace cat
             descriptorWrites[0].pTexelBufferView = nullptr; //optional
 
             descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[1].dstSet = descriptorSets[i];
+            descriptorWrites[1].dstSet = m_DescriptorSets[i];
             descriptorWrites[1].dstBinding = 1;
             descriptorWrites[1].dstArrayElement = 0;
             descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -134,7 +134,7 @@ namespace cat
             descriptorWrites[1].pImageInfo = &imageInfo;
 
 
-            vkUpdateDescriptorSets(m_Device->GetDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+            vkUpdateDescriptorSets(m_Device.GetDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }
 
 	}

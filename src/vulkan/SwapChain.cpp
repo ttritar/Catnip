@@ -4,8 +4,6 @@
 #include <array>
 #include <stdexcept>
 
-#include "Utils.h"
-
 namespace cat
 {
 	// CTOR & DTOR

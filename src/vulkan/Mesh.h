@@ -74,6 +74,11 @@ namespace cat
 		void Draw(VkCommandBuffer commandBuffer);
         void Bind(VkCommandBuffer commandBuffer);
 
+        // Getters & Setters
+        VkBuffer GetVertexBuffer()const { return m_VertexBuffer->GetBuffer(); }
+        VkBuffer GetIndexBuffer()const { return m_IndexBuffer->GetBuffer(); }
+
+
 	private:
 		// Private methods
 		//--------------------

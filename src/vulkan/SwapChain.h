@@ -45,7 +45,12 @@ namespace cat
 		const std::vector<VkImage>& GetSwapChainImages() const { return m_SwapChainImages; }
 		const std::vector<VkImageView>& GetSwapChainImageViews() const { return m_SwapChainImageViews; }
 		VkRenderPass GetRenderPass() const { return m_RenderPass; }
-		const std::vector<VkFramebuffer>& GetSwapChainFramebuffers() const { return m_SwapChainFramebuffers; }
+		VkFramebuffer GetSwapChainFramebuffer(uint16_t idx) const { return m_SwapChainFramebuffers[idx]; }
+		void SetFrameBufferResized(bool value) { m_FramebufferResized = value; }
+		bool GetFrameBufferResized() const { return m_FramebufferResized; }
+		VkFence* GetInFlightFences(uint16_t idx) { return &m_InFlightFences[idx]; }
+		VkSemaphore GetImageAvailableSemaphores(uint16_t idx) const { return m_ImageAvailableSemaphores[idx]; }
+		VkSemaphore GetRenderFinishedSemaphores(uint16_t idx) const { return m_RenderFinishedSemaphores[idx]; }
 
 	private:
 		// Private Methods
@@ -72,6 +77,7 @@ namespace cat
 
 		// Private Members
 		//--------------------
+		bool m_FramebufferResized;
 		VkSwapchainKHR m_SwapChain;
 		std::vector<VkImage> m_SwapChainImages;
 		VkFormat m_SwapChainImageFormat;

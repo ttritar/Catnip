@@ -36,12 +36,12 @@ namespace cat
 
     void Mesh::Bind(VkCommandBuffer commandBuffer)
     {
-        VkBuffer buffers[] = { m_VertexBuffer };
+        VkBuffer buffers[] = { m_VertexBuffer->GetBuffer() };
         VkDeviceSize offsets[] = { 0 };
 
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
         if (m_HasIndexBuffer) 
-            vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
     }
 
     // Creators

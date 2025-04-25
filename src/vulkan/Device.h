@@ -103,9 +103,10 @@ struct SwapChainSupportDetails
 
 		// Methods
 		//--------------------
-		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-			VkBuffer& buffer,
-			VkDeviceMemory& bufferMemory) const;
+		VkCommandBuffer BeginSingleTimeCommands() const;
+		void EndSingleTimeCommands(VkCommandBuffer commandBuffer) const;
+
+		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) const;
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
 
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)const;
@@ -143,8 +144,6 @@ struct SwapChainSupportDetails
 		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device) const;
 		static bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
 		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device) const;
-		VkCommandBuffer BeginSingleTimeCommands() const;
-		void EndSingleTimeCommands(VkCommandBuffer commandBuffer) const;
 
 		// Private Members
 		//--------------------

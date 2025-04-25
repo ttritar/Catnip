@@ -1,10 +1,13 @@
 #pragma once
-#include "../vulkan/SwapChain.h"
+#include "../vulkan/Descriptors.h"
+#include "../vulkan/Image.h"
+#include "../vulkan/Pipeline.h"
+#include "../vulkan/Mesh.h"
+#include "../vulkan/UniformBuffer.h"
+#include "../vulkan/CommandBuffer.h"
 
 namespace cat
 {
-	class Pipeline;
-	class Model;
 	class Window;
 
 	class Renderer final
@@ -12,7 +15,7 @@ namespace cat
 	public:
 		// CTOR & DTOR
 		//--------------------
-		Renderer(Window& window, Device& device);
+		Renderer(Window& window);
 		~Renderer();
 
 		Renderer(const Renderer&) = delete;
@@ -22,6 +25,7 @@ namespace cat
 
 		// Methods
 		//--------------------
+		void Update();
 		void Render()const;
 
 		// Getters & Setters
@@ -31,17 +35,39 @@ namespace cat
 		// Private Methods
 		//--------------------
 		void InitializeVulkan();
-
-		// Creators
-		void CreateCommandBuffer();
-
-		// Helpers
-
+		void DrawFrame()const;
+		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) const;
 
 		// Private Members
 		//--------------------
 		Window& m_Window;
-		Device& m_Device;
+		Device m_Device;
 		SwapChain* m_pSwapChain;
+		DescriptorSetLayout* m_pDescriptorSetLayout;
+		Pipeline* m_pGraphicsPipeline;
+		Image* m_pImage;
+		Mesh* m_pMesh;
+		const std::vector<cat::Mesh::Vertex> m_Vertices = {
+			{{-0.5f, -0.5f,0.0f},  {1.0f, 0.0f, 0.0f},    {1.0f,0.0f}},
+			{{0.5f, -0.5f,0.0f},   {0.0f, 1.0f, 0.0f},    {0.0f,0.0}},
+			{{0.5f, 0.5f,0.0f},    {0.0f, 0.0f, 1.0f},    {0.0f,1.0f,}},
+			{{-0.5f, 0.5f,0.0f},   {1.0f, 1.0f, 1.0f},    {1.0f,1.0f}},
+
+			{{-0.5f, -0.5f, -0.5f},     {1.0f, 0.0f, 0.0f},     {0.0f, 0.0f}},
+			{{0.5f, -0.5f, -0.5f},      {0.0f, 1.0f, 0.0f},     {1.0f, 0.0f}},
+			{{0.5f, 0.5f, -0.5f},       {0.0f, 0.0f, 1.0f},     {1.0f, 1.0f}},
+			{{-0.5f, 0.5f, -0.5f},      {1.0f, 1.0f, 1.0f},     {0.0f, 1.0f}}
+		};
+		const std::vector<uint16_t> m_Indices = {
+			0, 1, 2, 2, 3, 0,
+			4, 5, 6, 6, 7, 4
+		};
+		UniformBuffer* m_pUniformBuffer;
+		DescriptorPool* m_pDescriptorPool;
+		DescriptorSet* m_pDescriptorSet;
+		CommandBuffer* m_pCommandBuffer;
+
+		mutable uint16_t m_CurrentFrame = 0;
+
 	};
 }

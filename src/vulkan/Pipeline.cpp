@@ -1,5 +1,4 @@
 #include "Pipeline.h"
-#include "Utils.h"
 
 namespace cat
 {
@@ -71,8 +70,8 @@ namespace cat
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
 
-        auto bindingDescription = Vertex::getBindingDescription();
-        auto attributeDescriptions = Vertex::getAttributeDescriptions();
+        auto bindingDescription = Mesh::Vertex::getBindingDescription();
+        auto attributeDescriptions = Mesh::Vertex::getAttributeDescriptions();
 
         vertexInputInfo.vertexBindingDescriptionCount = 1;
         vertexInputInfo.pVertexBindingDescriptions = &bindingDescription; //optional   -> point to array of struct that describe the aforementioned details for loading vertex data
