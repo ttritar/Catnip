@@ -50,12 +50,6 @@ namespace cat
 	{
 	public:
 		DescriptorSet(Device& device, UniformBuffer& ubo, Image& image, DescriptorSetLayout& setLayout, DescriptorPool& pool);
-		~DescriptorSet();
-
-		DescriptorSet(const DescriptorSet&) = delete;
-		DescriptorSet& operator=(const DescriptorSet&) = delete;
-		DescriptorSet(DescriptorSet&&) = delete;
-		DescriptorSet& operator=(DescriptorSet&&) = delete;
 
 		VkDescriptorSet* GetDescriptorSet(uint16_t idx) { return &m_DescriptorSets[idx]; }
 

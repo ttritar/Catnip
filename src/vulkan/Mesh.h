@@ -1,16 +1,14 @@
 #pragma once
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include <tiny_obj_loader.h>
-
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/hash.hpp>
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
 
 #include "Device.h"
+#include "Buffer.h"
 
 // std
 #include <array>
-#include "Buffer.h"
 
 namespace cat
 {
@@ -56,6 +54,11 @@ namespace cat
 
                 return attributeDescriptions;
             }
+
+            bool operator==(const Vertex& other) const
+        	{
+                return pos == other.pos && color == other.color && uv == other.uv ;
+            }
         };
 
 		// CTOR & DTOR
@@ -77,6 +80,9 @@ namespace cat
         // Getters & Setters
         VkBuffer GetVertexBuffer()const { return m_VertexBuffer->GetBuffer(); }
         VkBuffer GetIndexBuffer()const { return m_IndexBuffer->GetBuffer(); }
+
+        std::vector<Vertex> GetVertices()const { return m_Vertices; }
+        std::vector<uint16_t>GetIndices()const { return  m_Indices; }
 
 
 	private:

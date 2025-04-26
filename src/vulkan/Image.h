@@ -3,7 +3,6 @@
 #include "SwapChain.h"
 #include "Device.h"
 
-#include <stb_image.h>
 
 namespace cat
 {
@@ -28,6 +27,7 @@ namespace cat
 		VkDeviceMemory GetTextureImageMemory()const { return  m_TextureImageMemory; }
 		VkImageView GetTextureImageView()const { return  m_TextureImageView; }
 		VkSampler GetTextureSampler()const { return  m_TextureSampler; }
+
 
 	private:
 		// Private Methods

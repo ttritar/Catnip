@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <array>
 #include <stdexcept>
-
 namespace cat
 {
 	// CTOR & DTOR
@@ -90,7 +89,7 @@ namespace cat
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+        allocInfo.memoryTypeIndex = m_Device.FindMemoryType(memRequirements.memoryTypeBits, properties);
 
         if (vkAllocateMemory(m_Device.GetDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
         {
@@ -111,11 +110,11 @@ namespace cat
         VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities);
 
 
-        uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+        m_ImageCount = swapChainSupport.capabilities.minImageCount + 1;
 
-        if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
+        if (swapChainSupport.capabilities.maxImageCount > 0 && m_ImageCount > swapChainSupport.capabilities.maxImageCount)
         {
-            imageCount = swapChainSupport.capabilities.maxImageCount;
+            m_ImageCount = swapChainSupport.capabilities.maxImageCount;
         }
 
 
@@ -124,7 +123,7 @@ namespace cat
         createInfo.surface = m_Device.GetSurface();
 
 
-        createInfo.minImageCount = imageCount;
+        createInfo.minImageCount = m_ImageCount;
         createInfo.imageFormat = surfaceFormat.format;
         createInfo.imageColorSpace = surfaceFormat.colorSpace;
         createInfo.imageExtent = extent;
@@ -165,9 +164,9 @@ namespace cat
             throw std::runtime_error("failed to create swap chain!");
         }
 
-        vkGetSwapchainImagesKHR(m_Device.GetDevice(), m_SwapChain, &imageCount, nullptr);
-        m_SwapChainImages.resize(imageCount);
-        vkGetSwapchainImagesKHR(m_Device.GetDevice(), m_SwapChain, &imageCount, m_SwapChainImages.data());
+        vkGetSwapchainImagesKHR(m_Device.GetDevice(), m_SwapChain, &m_ImageCount, nullptr);
+        m_SwapChainImages.resize(m_ImageCount);
+        vkGetSwapchainImagesKHR(m_Device.GetDevice(), m_SwapChain, &m_ImageCount, m_SwapChainImages.data());
 
         m_SwapChainImageFormat = surfaceFormat.format;
         m_SwapChainExtent = extent;

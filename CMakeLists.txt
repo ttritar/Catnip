@@ -11,10 +11,10 @@ find_package(Vulkan REQUIRED)
 # Define the executable
 add_executable(GP2_VulkanTutorial 
     src/main.cpp 
-    src/core/Renderer.cpp
+    src/core/Renderer.cpp src/core/Window.cpp
     src/vulkan/Pipeline.cpp src/vulkan/Device.cpp src/vulkan/SwapChain.cpp src/vulkan/Buffer.cpp src/vulkan/Descriptors.cpp src/vulkan/CommandBuffer.cpp src/vulkan/Mesh.cpp src/vulkan/Image.cpp src/vulkan/UniformBuffer.cpp 
 
-    )
+      )
 
 
 

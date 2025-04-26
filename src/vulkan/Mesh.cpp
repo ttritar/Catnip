@@ -1,5 +1,22 @@
 #include "Mesh.h"
 
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tiny_obj_loader.h" 
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
+
+namespace std
+{
+    template<> struct hash<cat::Mesh::Vertex>
+	{
+        size_t operator()(cat::Mesh::Vertex const& vertex) const
+    	{
+            return ((hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^ (hash<glm::vec2>()(vertex.uv) << 1);
+        }
+    };
+}
+
 namespace cat
 {
     // CTOR & DTOR
@@ -15,13 +32,17 @@ namespace cat
 		: m_Device{ device }
     {
         LoadObj(path);
-		Mesh(device, m_Vertices, m_Indices);
+        CreateVertexBuffer();
+        CreateIndexBuffer();
     }
 
     Mesh::~Mesh()
     {
 		delete m_VertexBuffer;
+        m_VertexBuffer = nullptr;
+
 		delete m_IndexBuffer;
+        m_IndexBuffer = nullptr;
     }
 
 
@@ -53,7 +74,7 @@ namespace cat
 
         // USING THE STAGING BUFFER
         Buffer stagingBuffer{
-         m_Device, vertexSize,
+         m_Device, bufferSize,
          VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         };
@@ -62,7 +83,7 @@ namespace cat
 		stagingBuffer.WriteToBuffer((void*)m_Vertices.data());
 
         m_VertexBuffer = new Buffer(
-            m_Device, vertexSize,
+            m_Device, bufferSize,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
         );
@@ -80,8 +101,7 @@ namespace cat
         uint32_t indexSize = sizeof(m_Indices[0]);
 
         Buffer stagingBuffer{
-            m_Device,
-            indexSize,
+            m_Device, bufferSize,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         };
@@ -90,8 +110,7 @@ namespace cat
         stagingBuffer.WriteToBuffer((void*)m_Indices.data());
 
         m_IndexBuffer = new Buffer(
-            m_Device,
-            indexSize,
+            m_Device,bufferSize,
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 

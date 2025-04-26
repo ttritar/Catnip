@@ -7,15 +7,15 @@ class Application final
 public:
 	void Run()
 		{
-			while (!glfwWindowShouldClose(m_Window.GetWindow()))
+			cat::Window window{ 800,500,"cati" };
+			cat::Renderer renderer{ window };
+			while (!glfwWindowShouldClose(window.GetWindow()))
 			{
 				glfwPollEvents();
-				m_Renderer.Update();
-				m_Renderer.Render();
+				renderer.Update();
+				renderer.Render();
 			}
 		}
 
 private:
-	cat::Window m_Window{ 800,500,"cati" };
-	cat::Renderer m_Renderer{ m_Window };
 };

@@ -1,5 +1,4 @@
 #include "Renderer.h"
-
 #include "Window.h"
 
 namespace cat
@@ -43,8 +42,7 @@ namespace cat
 
     void Renderer::InitializeVulkan()
     {
-        if (!m_pSwapChain) m_pSwapChain = new SwapChain(m_Device, m_Window.GetWindow());
-        else m_pSwapChain->RecreateSwapChain();
+        m_pSwapChain = new SwapChain(m_Device, m_Window.GetWindow());
 
         m_pDescriptorSetLayout = new DescriptorSetLayout(m_Device);
         m_pGraphicsPipeline = new cat::Pipeline(
@@ -54,8 +52,8 @@ namespace cat
             m_pSwapChain->GetRenderPass(), m_pSwapChain->GetSwapChainExtent(), m_pDescriptorSetLayout->GetDescriptorSetLayout()
         );
 
-        m_pImage = new Image(m_Device, *m_pSwapChain, "resources/texture.jpg");
-        m_pMesh = new Mesh(m_Device, m_Vertices, m_Indices);
+        m_pImage = new Image(m_Device, *m_pSwapChain, "resources/viking_room.png");
+        m_pMesh = new Mesh(m_Device, "resources/viking_room.obj");
         m_pUniformBuffer = new UniformBuffer(m_Device, m_pSwapChain);
         m_pDescriptorPool = new DescriptorPool(m_Device);
         m_pDescriptorSet = new DescriptorSet(m_Device,*m_pUniformBuffer,*m_pImage, *m_pDescriptorSetLayout, *m_pDescriptorPool);
@@ -67,8 +65,7 @@ namespace cat
         vkWaitForFences(m_Device.GetDevice(), 1, m_pSwapChain->GetInFlightFences(m_CurrentFrame), VK_TRUE, UINT64_MAX); // wait until previous frame has finished
 
         // AQUIRING AN IMAGE FROM THE SWAPCHAIN
-        uint32_t imageIndex;
-        VkResult result = vkAcquireNextImageKHR(m_Device.GetDevice(), m_pSwapChain->GetSwapChain(), UINT64_MAX, m_pSwapChain->GetImageAvailableSemaphores(m_CurrentFrame), VK_NULL_HANDLE, &imageIndex);
+        VkResult result = vkAcquireNextImageKHR(m_Device.GetDevice(), m_pSwapChain->GetSwapChain(), UINT64_MAX, m_pSwapChain->GetImageAvailableSemaphores(m_CurrentFrame), VK_NULL_HANDLE, &m_pSwapChain->GetImageIndex());
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
@@ -88,7 +85,7 @@ namespace cat
         // RECORDING THE COMMAND BUFFER
         vkResetCommandBuffer(*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame), 0);
 
-        RecordCommandBuffer(*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame), imageIndex);
+        RecordCommandBuffer(*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame), m_pSwapChain->GetImageIndex());
 
         // SUNMITTING THE COMMAND BUFFER
         VkSubmitInfo submitInfo{};
@@ -122,7 +119,7 @@ namespace cat
         VkSwapchainKHR swapChains[] = { m_pSwapChain->GetSwapChain() };
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
-        presentInfo.pImageIndices = &imageIndex;
+        presentInfo.pImageIndices = &m_pSwapChain->GetImageIndex();
 
         presentInfo.pResults = nullptr; //optional
 
@@ -160,7 +157,7 @@ namespace cat
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = m_pSwapChain->GetRenderPass();
-        renderPassInfo.framebuffer = m_pSwapChain->GetSwapChainFramebuffer(m_CurrentFrame);
+        renderPassInfo.framebuffer = m_pSwapChain->GetSwapChainFramebuffer();
 
         renderPassInfo.renderArea.offset = { 0,0 };                 // size -> where shader loads and stores willtake place
         renderPassInfo.renderArea.extent = m_pSwapChain->GetSwapChainExtent();
@@ -201,7 +198,7 @@ namespace cat
 
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pGraphicsPipeline->GetPipelineLayout(), 0, 1, m_pDescriptorSet->GetDescriptorSet(m_CurrentFrame), 0, nullptr);
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_pMesh->GetIndices().size()), 1, 0, 0, 0);
 
 
         // Finishing up:

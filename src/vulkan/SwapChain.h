@@ -7,6 +7,8 @@
 #include <GLFW/glfw3native.h>
 
 #include "Device.h"
+#include "../core/Window.h"
+
 
 #include <vector>
 
@@ -40,12 +42,14 @@ namespace cat
 
 		// Getters & Setters
 		VkSwapchainKHR GetSwapChain() const { return m_SwapChain; }
+		uint32_t GetImageCount()const { return m_ImageCount; }
+		uint32_t& GetImageIndex() { return m_ImageIndex; }
 		VkFormat GetSwapChainImageFormat() const { return m_SwapChainImageFormat; }
 		VkExtent2D GetSwapChainExtent() const { return m_SwapChainExtent; }
 		const std::vector<VkImage>& GetSwapChainImages() const { return m_SwapChainImages; }
 		const std::vector<VkImageView>& GetSwapChainImageViews() const { return m_SwapChainImageViews; }
 		VkRenderPass GetRenderPass() const { return m_RenderPass; }
-		VkFramebuffer GetSwapChainFramebuffer(uint16_t idx) const { return m_SwapChainFramebuffers[idx]; }
+		VkFramebuffer GetSwapChainFramebuffer() const { return m_SwapChainFramebuffers[m_ImageIndex]; }
 		void SetFrameBufferResized(bool value) { m_FramebufferResized = value; }
 		bool GetFrameBufferResized() const { return m_FramebufferResized; }
 		VkFence* GetInFlightFences(uint16_t idx) { return &m_InFlightFences[idx]; }
@@ -72,13 +76,14 @@ namespace cat
 		VkFormat FindDepthFormat() const;
 		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
 		                             VkFormatFeatureFlags features) const;
-		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
 
 
 		// Private Members
 		//--------------------
 		bool m_FramebufferResized;
 		VkSwapchainKHR m_SwapChain;
+		uint32_t m_ImageCount ;
+		uint32_t m_ImageIndex;
 		std::vector<VkImage> m_SwapChainImages;
 		VkFormat m_SwapChainImageFormat;
 		VkExtent2D m_SwapChainExtent;

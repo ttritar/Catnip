@@ -30,7 +30,7 @@ public:
 
 
 	// Getters & Setters
-	GLFWwindow* GetWindow() const { return m_pWindow; }
+	GLFWwindow* GetWindow()const { return m_pWindow; }
 
 	int GetWidth() const { return m_Width; }	
 	int GetHeight() const { return m_Height; }
