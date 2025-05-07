@@ -14,7 +14,7 @@ add_executable(GP2_VulkanTutorial
     src/core/Renderer.cpp src/core/Window.cpp
     src/vulkan/Pipeline.cpp src/vulkan/Device.cpp src/vulkan/SwapChain.cpp src/vulkan/Buffer.cpp src/vulkan/Descriptors.cpp src/vulkan/CommandBuffer.cpp src/vulkan/Mesh.cpp src/vulkan/Image.cpp src/vulkan/UniformBuffer.cpp 
 
-      )
+       "src/vulkan/Scene.h" "src/vulkan/Scene.cpp" "src/vulkan/Model.h" "src/vulkan/Model.cpp")
 
 
 
@@ -64,8 +64,18 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(tiny)
 
 
+# assimp
+#-----------
+FetchContent_Declare(
+    assimp
+    GIT_REPOSITORY https://github.com/assimp/assimp.git
+    GIT_TAG v5.4.3 
+)
+FetchContent_MakeAvailable(assimp)
+
+
 # Link necessary libraries
-target_link_libraries(GP2_VulkanTutorial PRIVATE glfw glm Vulkan::Vulkan)
+target_link_libraries(GP2_VulkanTutorial PRIVATE glfw glm Vulkan::Vulkan assimp)
 
 # Include directories
 target_include_directories(GP2_VulkanTutorial PRIVATE 
@@ -75,6 +85,7 @@ target_include_directories(GP2_VulkanTutorial PRIVATE
     ${stb_SOURCE_DIR}   
     ${CMAKE_SOURCE_DIR}/include  
     ${tiny_SOURCE_DIR}   
+    ${assimp_SOURCE_DIR}        
 )
 
 target_link_directories(GP2_VulkanTutorial PRIVATE 

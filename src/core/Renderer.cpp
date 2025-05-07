@@ -21,7 +21,7 @@ namespace cat
         delete m_pDescriptorSetLayout;
         delete m_pGraphicsPipeline;
         delete m_pImage;
-        delete m_pMesh;
+        delete m_pModel;
         delete m_pUniformBuffer;
         delete m_pDescriptorPool;
         delete m_pDescriptorSet;
@@ -52,8 +52,8 @@ namespace cat
             m_pSwapChain->GetRenderPass(), m_pSwapChain->GetSwapChainExtent(), m_pDescriptorSetLayout->GetDescriptorSetLayout()
         );
 
-        m_pImage = new Image(m_Device, *m_pSwapChain, "resources/viking_room.png");
-        m_pMesh = new Mesh(m_Device, "resources/viking_room.obj");
+        m_pImage = new Image(m_Device, *m_pSwapChain, "resources/Sheep_albedo.jpg");
+		m_pModel = new Model(m_Device, *m_pSwapChain, "resources/Sheep.fbx");
         m_pUniformBuffer = new UniformBuffer(m_Device, m_pSwapChain);
         m_pDescriptorPool = new DescriptorPool(m_Device);
         m_pDescriptorSet = new DescriptorSet(m_Device,*m_pUniformBuffer,*m_pImage, *m_pDescriptorSetLayout, *m_pDescriptorPool);
@@ -175,12 +175,7 @@ namespace cat
         // Basic drawing commands:
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pGraphicsPipeline->GetGraphicsPipeline());
 
-        VkBuffer vertexBuffers[] = { m_pMesh->GetVertexBuffer() };
-        VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-
-        vkCmdBindIndexBuffer(commandBuffer, m_pMesh->GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT16);
-
+		m_pModel->Bind(commandBuffer);
 
         VkViewport viewport{};
         viewport.x = 0.0f;
@@ -198,7 +193,7 @@ namespace cat
 
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pGraphicsPipeline->GetPipelineLayout(), 0, 1, m_pDescriptorSet->GetDescriptorSet(m_CurrentFrame), 0, nullptr);
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_pMesh->GetIndices().size()), 1, 0, 0, 0);
+		m_pModel->Draw(commandBuffer);
 
 
         // Finishing up:

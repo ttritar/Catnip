@@ -6,6 +6,7 @@
 
 #include "Device.h"
 #include "Buffer.h"
+#include "Image.h"
 
 // std
 #include <array>
@@ -63,8 +64,7 @@ namespace cat
 
 		// CTOR & DTOR
 		//--------------------
-        Mesh(Device& device, const std::vector<Vertex>& vertices, const std::vector<uint16_t>& indices);
-		Mesh(Device& device, const std::string& path);
+        Mesh(Device& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::vector<Image>& images);
 		~Mesh();
 
 		Mesh(const Mesh&) = delete;
@@ -82,7 +82,7 @@ namespace cat
         VkBuffer GetIndexBuffer()const { return m_IndexBuffer->GetBuffer(); }
 
         std::vector<Vertex> GetVertices()const { return m_Vertices; }
-        std::vector<uint16_t>GetIndices()const { return  m_Indices; }
+        std::vector<uint32_t>GetIndices()const { return  m_Indices; }
 
 
 	private:
@@ -94,13 +94,21 @@ namespace cat
 
 		// Private Datamembers
 		//--------------------
+        Device& m_Device;
+
+
 		std::vector<Vertex> m_Vertices;
+		uint32_t m_VertexCount = 0;
         Buffer* m_VertexBuffer;
+		uint32_t m_VertexBufferSize = 0;
 
 		bool m_HasIndexBuffer = true;
-		std::vector<uint16_t> m_Indices;
+		std::vector<uint32_t> m_Indices;
+		uint32_t m_IndexCount = 0;
         Buffer* m_IndexBuffer;
+        uint32_t m_IndexBufferSize = 0;
 
-		Device& m_Device;
+		//std::vector<Texture> m_Textures;
+
 	};
 }

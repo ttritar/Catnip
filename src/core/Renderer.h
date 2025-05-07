@@ -1,8 +1,7 @@
 #pragma once
 #include "../vulkan/Descriptors.h"
-#include "../vulkan/Image.h"
 #include "../vulkan/Pipeline.h"
-#include "../vulkan/Mesh.h"
+#include "../vulkan/Model.h"
 #include "../vulkan/UniformBuffer.h"
 #include "../vulkan/CommandBuffer.h"
 
@@ -46,7 +45,7 @@ namespace cat
 		DescriptorSetLayout* m_pDescriptorSetLayout;
 		Pipeline* m_pGraphicsPipeline;
 		Image* m_pImage;
-		Mesh* m_pMesh;
+		Model* m_pModel;
 		//const std::vector<cat::Mesh::Vertex> m_Vertices = {
 		//	{{-0.5f, -0.5f,0.0f},  {1.0f, 0.0f, 0.0f},    {1.0f,0.0f}},
 		//	{{0.5f, -0.5f,0.0f},   {0.0f, 1.0f, 0.0f},    {0.0f,0.0}},

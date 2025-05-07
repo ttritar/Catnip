@@ -6,6 +6,8 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
+#include "Image.h"
+
 namespace std
 {
     template<> struct hash<cat::Mesh::Vertex>
@@ -21,17 +23,9 @@ namespace cat
 {
     // CTOR & DTOR
     //--------------------
-    Mesh::Mesh(Device& device, const std::vector<Vertex>& vertices, const std::vector<uint16_t>& indices)
+    Mesh::Mesh(Device& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::vector<Image>& images)
         : m_Device{ device }, m_Vertices{ vertices }, m_Indices{ indices }
     {
-        CreateVertexBuffer();
-        CreateIndexBuffer();
-    }
-
-    Mesh::Mesh(Device& device, const std::string& path)
-		: m_Device{ device }
-    {
-        LoadObj(path);
         CreateVertexBuffer();
         CreateIndexBuffer();
     }
@@ -50,9 +44,9 @@ namespace cat
     void Mesh::Draw(VkCommandBuffer commandBuffer)
 	{
 		if(m_HasIndexBuffer)
-			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
+			vkCmdDrawIndexed(commandBuffer, m_IndexCount, 1, 0, 0, 0);
 		else
-			vkCmdDraw(commandBuffer, static_cast<uint32_t>(m_Vertices.size()), 1, 0, 0);
+			vkCmdDraw(commandBuffer, m_VertexCount, 1, 0, 0);
     }
 
     void Mesh::Bind(VkCommandBuffer commandBuffer)
@@ -63,18 +57,19 @@ namespace cat
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
         if (m_HasIndexBuffer) 
             vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
     }
 
     // Creators
     //--------------------
     void Mesh::CreateVertexBuffer()
     {
-        VkDeviceSize bufferSize = sizeof(m_Vertices[0]) * m_Vertices.size();
-        uint32_t vertexSize = sizeof(m_Vertices[0]);
+		m_VertexBufferSize = sizeof(m_Vertices[0]) * m_Vertices.size();
+		m_VertexCount = m_Vertices.size();
 
         // USING THE STAGING BUFFER
         Buffer stagingBuffer{
-         m_Device, bufferSize,
+         m_Device, m_VertexBufferSize,
          VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         };
@@ -83,12 +78,12 @@ namespace cat
 		stagingBuffer.WriteToBuffer((void*)m_Vertices.data());
 
         m_VertexBuffer = new Buffer(
-            m_Device, bufferSize,
+            m_Device, m_VertexBufferSize,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
         );
 
-        m_Device.CopyBuffer(stagingBuffer.GetBuffer(), m_VertexBuffer->GetBuffer(), bufferSize);
+        m_Device.CopyBuffer(stagingBuffer.GetBuffer(), m_VertexBuffer->GetBuffer(), m_VertexBufferSize);
     }
 
     void Mesh::CreateIndexBuffer()
@@ -97,11 +92,11 @@ namespace cat
 
         if (!m_HasIndexBuffer) return;
 
-        VkDeviceSize bufferSize = sizeof(m_Indices[0]) * static_cast<uint32_t>(m_Indices.size());
-        uint32_t indexSize = sizeof(m_Indices[0]);
+    	m_IndexBufferSize = sizeof(m_Indices[0]) * m_Indices.size();
+        m_IndexCount = m_Indices.size();
 
         Buffer stagingBuffer{
-            m_Device, bufferSize,
+            m_Device, m_IndexBufferSize,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         };
@@ -110,59 +105,10 @@ namespace cat
         stagingBuffer.WriteToBuffer((void*)m_Indices.data());
 
         m_IndexBuffer = new Buffer(
-            m_Device,bufferSize,
+            m_Device, m_IndexBufferSize,
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        m_Device.CopyBuffer(stagingBuffer.GetBuffer(), m_IndexBuffer->GetBuffer(), bufferSize);
-    }
-
-
-    // Helpers
-    //--------------------
-    void Mesh::LoadObj(const std::string& path)
-    {
-        tinyobj::attrib_t attrib;
-        std::vector<tinyobj::shape_t> shapes;
-        std::vector<tinyobj::material_t> materials;
-        std::string warn, err;
-
-        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str())) 
-        {
-            throw std::runtime_error(warn + err);
-        }
-
-        std::unordered_map<Vertex, uint32_t> uniqueVertices{};
-
-        for (const auto& shape : shapes) 
-        {
-            for (const auto& index : shape.mesh.indices) 
-            {
-                Vertex vertex{};
-
-                vertex.pos =
-                {
-                    attrib.vertices[3 * index.vertex_index + 0],
-                    attrib.vertices[3 * index.vertex_index + 1],
-                    attrib.vertices[3 * index.vertex_index + 2]
-                };
-
-                vertex.uv = 
-                {
-                    attrib.texcoords[2 * index.texcoord_index + 0],
-                    1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
-                };
-
-                vertex.color = { 1.0f, 1.0f, 1.0f };
-
-                if (uniqueVertices.count(vertex) == 0) 
-                {
-                    uniqueVertices[vertex] = static_cast<uint32_t>(m_Vertices.size());
-                    m_Vertices.push_back(vertex);
-                }
-
-                m_Indices.push_back(uniqueVertices[vertex]);
-            }
-        }
+        m_Device.CopyBuffer(stagingBuffer.GetBuffer(), m_IndexBuffer->GetBuffer(), m_IndexBufferSize);
     }
 }
