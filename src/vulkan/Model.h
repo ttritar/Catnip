@@ -22,7 +22,6 @@ namespace cat
 
 		// Methods
 		//--------------------
-		void Bind(VkCommandBuffer commandBuffer) const;
 		void Draw(VkCommandBuffer commandBuffer) const;
 
 		// Getters & Setters

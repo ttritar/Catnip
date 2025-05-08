@@ -175,8 +175,6 @@ namespace cat
         // Basic drawing commands:
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pGraphicsPipeline->GetGraphicsPipeline());
 
-		m_pModel->Bind(commandBuffer);
-
         VkViewport viewport{};
         viewport.x = 0.0f;
         viewport.y = 0.0f;

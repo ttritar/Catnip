@@ -25,19 +25,11 @@ namespace cat
 	// Methods
 	//--------------------
 
-	void Model::Bind(VkCommandBuffer commandBuffer) const
-	{
-		for (auto& mesh : m_Meshes)
-		{
-			mesh->Bind(commandBuffer);
-		}
-	}
-
-
 	void Model::Draw(VkCommandBuffer commandBuffer) const
 	{
 		for (auto& mesh : m_Meshes)
 		{
+			mesh->Bind(commandBuffer);
 			mesh->Draw(commandBuffer);
 		}
 	}
