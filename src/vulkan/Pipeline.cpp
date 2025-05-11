@@ -178,13 +178,19 @@ namespace cat
         colorBlending.blendConstants[3] = 0.0f; //optional
 
 
+		// PUSH CONSTANTS -> will help with model transformations
+        VkPushConstantRange psRange;
+		psRange.offset = 0;
+		psRange.size = sizeof(glm::mat4);
+		psRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
         // PIPELINE LAYOUT
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = 1; //optional
         pipelineLayoutInfo.pSetLayouts = &m_DescriptorSetLayout; //optional
-        pipelineLayoutInfo.pushConstantRangeCount = 0; //optional
-        pipelineLayoutInfo.pPushConstantRanges = nullptr; //optional
+        pipelineLayoutInfo.pushConstantRangeCount = 1;
+        pipelineLayoutInfo.pPushConstantRanges = &psRange; 
 
         if (vkCreatePipelineLayout(m_Device, &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS)
         {

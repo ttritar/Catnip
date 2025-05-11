@@ -4,8 +4,8 @@ namespace cat
 {
 	// CTOR & DTOR
 	//--------------------
-	Scene::Scene(std::vector<Model*> models)
-		: m_pModels{ models }
+	Scene::Scene(Device& device, SwapChain& swapchain, Pipeline* pipeline)
+		: m_Device{ device }, m_SwapChain{ swapchain }, m_pGraphicsPipeline{ pipeline }
 	{
 	}
 
@@ -21,18 +21,21 @@ namespace cat
 
 	// Methods
 	//--------------------
-	void Scene::AddModel()
+	Model* Scene::AddModel(const std::string& path)
 	{
-		m_pModels.emplace_back();
+		Model* model = new Model(m_Device, m_SwapChain, path);
+		m_pModels.push_back(model);
+		return model;
 	}
 
-	void Scene::RemoveModel(const Model* model)
+	void Scene::RemoveModel(const std::string& path)
 	{
-		auto it = std::find(m_pModels.begin(), m_pModels.end(), model);
+		auto it = std::remove_if(m_pModels.begin(), m_pModels.end(),
+			[&](Model* model) { return model->GetPath() == path; });
 		if (it != m_pModels.end())
 		{
-			delete* it; // if Scene owns the Model*
-			m_pModels.erase(it);
+			delete* it;
+			m_pModels.erase(it, m_pModels.end());
 		}
 	}
 
@@ -40,6 +43,7 @@ namespace cat
 	{
 		for (const auto& model : m_pModels)
 		{
+			vkCmdPushConstants(commandBuffer, m_pGraphicsPipeline->GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), model->GetTransform());
 			model->Draw(commandBuffer);
 		}
 	}

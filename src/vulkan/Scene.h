@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Model.h"
+#include "Pipeline.h"
 
 #include <vector>
 
@@ -11,8 +12,7 @@ namespace cat
 	public:
 		// CTOR & DTOR
 		//--------------------
-		Scene()=default;
-		Scene(std::vector<Model*> models);
+		Scene(Device& device, SwapChain& swapchain, Pipeline* pipeline);
 		~Scene();
 		Scene(const Scene&) = delete;
 		Scene& operator=(const Scene&) = delete;
@@ -21,8 +21,9 @@ namespace cat
 
 		// Methods
 		//--------------------
-		void AddModel();
-		void RemoveModel(const Model* model);
+		Model* AddModel(const std::string& path);
+		void RemoveModel(const std::string& path);
+
 		void Draw(VkCommandBuffer commandBuffer) const;
 
 		// Getters & Setters
@@ -31,6 +32,10 @@ namespace cat
 	private:
 		// Private members
 		//--------------------
+		Device& m_Device;
+		SwapChain& m_SwapChain;
+		Pipeline* m_pGraphicsPipeline;
+
 		std::vector<Model*> m_pModels;
 	};
 }

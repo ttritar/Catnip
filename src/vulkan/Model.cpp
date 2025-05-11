@@ -8,7 +8,7 @@ namespace cat
 	//--------------------
 
 	Model::Model(Device& device,SwapChain& swapchain, const std::string& path)
-		: m_Device{ device }, m_SwapChain{ swapchain }, m_Directory{ path }
+		: m_Device{ device }, m_SwapChain{ swapchain }, m_Path(path), m_Directory{ path }
 	{
 		LoadModel(path);
 	}
@@ -24,7 +24,6 @@ namespace cat
 
 	// Methods
 	//--------------------
-
 	void Model::Draw(VkCommandBuffer commandBuffer) const
 	{
 		for (auto& mesh : m_Meshes)

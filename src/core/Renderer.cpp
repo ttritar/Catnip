@@ -21,7 +21,7 @@ namespace cat
         delete m_pDescriptorSetLayout;
         delete m_pGraphicsPipeline;
         delete m_pImage;
-        delete m_pModel;
+        delete m_pScene;
         delete m_pUniformBuffer;
         delete m_pDescriptorPool;
         delete m_pDescriptorSet;
@@ -52,8 +52,20 @@ namespace cat
             m_pSwapChain->GetRenderPass(), m_pSwapChain->GetSwapChainExtent(), m_pDescriptorSetLayout->GetDescriptorSetLayout()
         );
 
-        m_pImage = new Image(m_Device, *m_pSwapChain, "resources/Sheep_albedo.jpg");
-		m_pModel = new Model(m_Device, *m_pSwapChain, "resources/Sheep.fbx");
+        m_pImage = new Image(m_Device, *m_pSwapChain, "resources/Tralala_Base_color.png");
+		m_pScene = new Scene(m_Device, *m_pSwapChain, m_pGraphicsPipeline);
+
+		// MODELS!
+		glm::mat4 transformTrala = glm::mat4(1.0f);
+		transformTrala = glm::translate(transformTrala, { -2.0f,0.0f,0.0f });
+		transformTrala = glm::rotate(transformTrala, glm::radians(90.0f), { 0.0f,0.0f,1.0f });
+        m_pScene->AddModel("resources/Low.fbx")
+					->SetTransform(transformTrala);
+
+		m_pScene->AddModel("resources/Sheep.fbx")
+					->SetTranslation({ 1.0,0,0 });
+
+
         m_pUniformBuffer = new UniformBuffer(m_Device, m_pSwapChain);
         m_pDescriptorPool = new DescriptorPool(m_Device);
         m_pDescriptorSet = new DescriptorSet(m_Device,*m_pUniformBuffer,*m_pImage, *m_pDescriptorSetLayout, *m_pDescriptorPool);
@@ -191,7 +203,8 @@ namespace cat
 
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pGraphicsPipeline->GetPipelineLayout(), 0, 1, m_pDescriptorSet->GetDescriptorSet(m_CurrentFrame), 0, nullptr);
-		m_pModel->Draw(commandBuffer);
+
+		m_pScene->Draw(commandBuffer);
 
 
         // Finishing up:
