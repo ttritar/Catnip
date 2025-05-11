@@ -21,6 +21,11 @@ namespace cat
 
 	// Methods
 	//--------------------
+	void Scene::Update(float deltaTime)
+	{
+		// Update logic for the scene can be added here
+	}
+
 	Model* Scene::AddModel(const std::string& path)
 	{
 		Model* model = new Model(m_Device, m_SwapChain, path);

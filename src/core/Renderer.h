@@ -24,7 +24,7 @@ namespace cat
 
 		// Methods
 		//--------------------
-		void Update();
+		void Update(float deltaTime);
 		void Render()const;
 
 		// Getters & Setters

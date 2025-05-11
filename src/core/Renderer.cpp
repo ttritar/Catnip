@@ -30,8 +30,9 @@ namespace cat
         glfwTerminate();
     }
 
-    void Renderer::Update()
+    void Renderer::Update(float deltaTime)
     {
+		m_pScene->Update(deltaTime);
         m_pUniformBuffer->Update(m_CurrentFrame);
     }
 

@@ -14,6 +14,7 @@ namespace cat
 		//--------------------
 		Scene(Device& device, SwapChain& swapchain, Pipeline* pipeline);
 		~Scene();
+
 		Scene(const Scene&) = delete;
 		Scene& operator=(const Scene&) = delete;
 		Scene(Scene&&) = delete;
@@ -21,6 +22,8 @@ namespace cat
 
 		// Methods
 		//--------------------
+		void Update(float deltaTime);
+
 		Model* AddModel(const std::string& path);
 		void RemoveModel(const std::string& path);
 
