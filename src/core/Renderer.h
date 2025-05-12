@@ -1,4 +1,5 @@
 #pragma once
+#include "Camera.h"
 #include "../vulkan/Descriptors.h"
 #include "../vulkan/Pipeline.h"
 #include "../vulkan/UniformBuffer.h"
@@ -40,26 +41,12 @@ namespace cat
 		// Private Members
 		//--------------------
 		Window& m_Window;
+		Camera m_Camera;
 		Device m_Device;
 		SwapChain* m_pSwapChain;
 		DescriptorSetLayout* m_pDescriptorSetLayout;
 		Pipeline* m_pGraphicsPipeline;
 		Scene* m_pScene;
-		//const std::vector<cat::Mesh::Vertex> m_Vertices = {
-		//	{{-0.5f, -0.5f,0.0f},  {1.0f, 0.0f, 0.0f},    {1.0f,0.0f}},
-		//	{{0.5f, -0.5f,0.0f},   {0.0f, 1.0f, 0.0f},    {0.0f,0.0}},
-		//	{{0.5f, 0.5f,0.0f},    {0.0f, 0.0f, 1.0f},    {0.0f,1.0f,}},
-		//	{{-0.5f, 0.5f,0.0f},   {1.0f, 1.0f, 1.0f},    {1.0f,1.0f}},
-		//
-		//	{{-0.5f, -0.5f, -0.5f},     {1.0f, 0.0f, 0.0f},     {0.0f, 0.0f}},
-		//	{{0.5f, -0.5f, -0.5f},      {0.0f, 1.0f, 0.0f},     {1.0f, 0.0f}},
-		//	{{0.5f, 0.5f, -0.5f},       {0.0f, 0.0f, 1.0f},     {1.0f, 1.0f}},
-		//	{{-0.5f, 0.5f, -0.5f},      {1.0f, 1.0f, 1.0f},     {0.0f, 1.0f}}
-		//};
-		//const std::vector<uint16_t> m_Indices = {
-		//	0, 1, 2, 2, 3, 0,
-		//	4, 5, 6, 6, 7, 4
-		//};
 		UniformBuffer* m_pUniformBuffer;
 		DescriptorPool* m_pDescriptorPool;
 		DescriptorSet* m_pDescriptorSet;

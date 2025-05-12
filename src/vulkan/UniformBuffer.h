@@ -32,7 +32,7 @@ namespace cat
 
 		// Methods
 		//--------------------
-		void Update(uint32_t currentImage);
+		void Update(unsigned int currentImage, glm::mat4 view, glm::mat4 proj);
 
 		// Getters & Setters
 		VkBuffer GetUniformBuffer(uint16_t idx)const { return m_UniformBuffers[idx]; }

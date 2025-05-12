@@ -5,7 +5,8 @@ namespace cat
 {
 
 	Renderer::Renderer(Window& window)
-		: m_Window(window), m_Device(m_Window.GetWindow())
+		: m_Window(window), m_Device(m_Window.GetWindow()),
+		m_Camera(m_Window, { 0.f,0.f,-1.f }, 90.0f, 0.1f, 100.0f)
 	{
         InitializeVulkan();
 	}
@@ -31,8 +32,9 @@ namespace cat
 
     void Renderer::Update(float deltaTime)
     {
+		m_Camera.Update(deltaTime);
 		m_pScene->Update(deltaTime);
-        m_pUniformBuffer->Update(m_CurrentFrame);
+        m_pUniformBuffer->Update(m_CurrentFrame, m_Camera.GetView(), m_Camera.GetProjection());
     }
 
     void Renderer::Render() const
@@ -80,8 +82,6 @@ namespace cat
         {
             throw std::runtime_error("failed to acquire swap chain image!");
         }
-
-        m_pUniformBuffer->Update(m_CurrentFrame);
 
         vkResetFences(m_Device.GetDevice(), 1, m_pSwapChain->GetInFlightFences(m_CurrentFrame)); //reset fence to unsignaled
 
