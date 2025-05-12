@@ -84,14 +84,27 @@ namespace cat
 			vector.z = mesh->mVertices[i].z;
 			vertex.pos = vector;
 
-			// normals
-			if (mesh->HasNormals())
+			// colors
+			if (mesh->HasVertexColors(i))
 			{
-				vector.x = mesh->mNormals[i].x;
-				vector.y = mesh->mNormals[i].y;
-				vector.z = mesh->mNormals[i].z;
-				vertex.normal = vector;
+				vector.x = mesh->mColors[i][i].r;
+				vector.y = mesh->mColors[i][i].g;
+				vector.z = mesh->mColors[i][i].b;
+				vertex.color = vector;
 			}
+			else
+			{
+				vertex.color = { 1.0f, 1.0f, 1.0f };
+			}
+
+			// normals
+			//if (mesh->HasNormals())
+			//{
+			//	vector.x = mesh->mNormals[i].x;
+			//	vector.y = mesh->mNormals[i].y;
+			//	vector.z = mesh->mNormals[i].z;
+			//	vertex.normal = vector;
+			//}
 
 			// texture coordinates
 			if (mesh->mTextureCoords[0]) 

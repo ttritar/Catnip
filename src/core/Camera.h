@@ -13,7 +13,7 @@ namespace cat
 	public:
 		// Ctor & Dtor
 		//-----------------
-		Camera(Window& window, glm::vec3 origin = { 0.f,0.f,0.f } ,float fovy = 90.0f, float near = 0.1f, float far = 100.0f);
+		Camera(Window& window, glm::vec3 origin = { 0.f,0.f,0.f } ,float fovy = glm::radians(90.0f), float nearPlane = 0.1f, float farPlane = 100.0f);
 
 
 		// Methods
