@@ -84,7 +84,7 @@ namespace cat
 // DESCRIPTOR SET
 //============================================
 
-    DescriptorSet::DescriptorSet(Device& device, UniformBuffer& ubo, Image& image, DescriptorSetLayout& setLayout, DescriptorPool& pool)
+    DescriptorSet::DescriptorSet(Device& device, UniformBuffer& ubo, std::vector<Image*> images, DescriptorSetLayout& setLayout, DescriptorPool& pool)
 		: m_Device(device), m_DescriptorSetLayout(setLayout), m_DescriptorPool(pool)
 	{
         std::vector<VkDescriptorSetLayout> layouts(cat::MAX_FRAMES_IN_FLIGHT, m_DescriptorSetLayout.GetDescriptorSetLayout());
@@ -107,31 +107,40 @@ namespace cat
             bufferInfo.offset = 0;
             bufferInfo.range = sizeof(UniformBuffer::UniformBufferObject);
 
-            VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = image.GetTextureImageView();
-            imageInfo.sampler = image.GetTextureSampler();
+           
+            std::vector<VkWriteDescriptorSet> descriptorWrites{};
+
+			VkWriteDescriptorSet descriptorWrite{};
+            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrite.dstSet = m_DescriptorSets[i];
+            descriptorWrite.dstBinding = 0;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrite.descriptorCount = 1;
+            descriptorWrite.pBufferInfo = &bufferInfo;
+            descriptorWrite.pImageInfo = nullptr; //optional
+            descriptorWrite.pTexelBufferView = nullptr; //optional
+            descriptorWrites.emplace_back(descriptorWrite);
+
+            for (int j{1}; j <images.size() + 1; j++)
+            {
+                VkDescriptorImageInfo imageInfo{};
+                imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                imageInfo.imageView = images[i]->GetTextureImageView();
+                imageInfo.sampler = images[i]->GetTextureSampler();
 
 
-            std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+                descriptorWrite = {};
+                descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                descriptorWrite.dstSet = m_DescriptorSets[i];
+                descriptorWrite.dstBinding = 1;
+                descriptorWrite.dstArrayElement = 0;
+                descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                descriptorWrite.descriptorCount = 1;
+                descriptorWrite.pImageInfo = &imageInfo;
 
-            descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[0].dstSet = m_DescriptorSets[i];
-            descriptorWrites[0].dstBinding = 0;
-            descriptorWrites[0].dstArrayElement = 0;
-            descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrites[0].descriptorCount = 1;
-            descriptorWrites[0].pBufferInfo = &bufferInfo;
-            descriptorWrites[0].pImageInfo = nullptr; //optional
-            descriptorWrites[0].pTexelBufferView = nullptr; //optional
-
-            descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[1].dstSet = m_DescriptorSets[i];
-            descriptorWrites[1].dstBinding = 1;
-            descriptorWrites[1].dstArrayElement = 0;
-            descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites[1].descriptorCount = 1;
-            descriptorWrites[1].pImageInfo = &imageInfo;
+				descriptorWrites.emplace_back(descriptorWrite);
+            }
 
 
             vkUpdateDescriptorSets(m_Device.GetDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);

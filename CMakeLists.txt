@@ -12,9 +12,9 @@ find_package(Vulkan REQUIRED)
 add_executable(GP2_VulkanTutorial 
     src/main.cpp 
     src/core/Renderer.cpp src/core/Window.cpp
-    src/vulkan/Pipeline.cpp src/vulkan/Device.cpp src/vulkan/SwapChain.cpp src/vulkan/Buffer.cpp src/vulkan/Descriptors.cpp src/vulkan/CommandBuffer.cpp src/vulkan/Mesh.cpp src/vulkan/Image.cpp src/vulkan/UniformBuffer.cpp 
-
-       "src/vulkan/Scene.h" "src/vulkan/Scene.cpp" "src/vulkan/Model.h" "src/vulkan/Model.cpp")
+    src/vulkan/Pipeline.cpp src/vulkan/Device.cpp src/vulkan/SwapChain.cpp src/vulkan/Buffer.cpp src/vulkan/Descriptors.cpp src/vulkan/CommandBuffer.cpp  src/vulkan/Image.cpp src/vulkan/UniformBuffer.cpp 
+   src/vulkan/Scene.cpp src/vulkan/Model.cpp src/vulkan/Mesh.cpp 
+    src/core/Camera.cpp  )
 
 
 
@@ -24,7 +24,7 @@ add_executable(GP2_VulkanTutorial
 
 include(FetchContent)
 
-# stb GLFW
+# GLFW
 #-----------
 FetchContent_Declare(
     GLFW
@@ -34,7 +34,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(GLFW) 
 
 
-# stb glm
+# glm
 #-----------
 FetchContent_Declare(
     glm
@@ -44,7 +44,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glm)
 
 
-# stb fetch
+# stb
 #-----------
 FetchContent_Declare(
     stb
@@ -74,6 +74,17 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(assimp)
 
 
+# models
+#-----------
+FetchContent_Declare(
+    model
+    GIT_REPOSITORY https://github.com/ttritar/GP2_Models.git
+    GIT_TAG main 
+)
+FetchContent_MakeAvailable(model)
+
+
+
 # Link necessary libraries
 target_link_libraries(GP2_VulkanTutorial PRIVATE glfw glm Vulkan::Vulkan assimp)
 
@@ -85,7 +96,7 @@ target_include_directories(GP2_VulkanTutorial PRIVATE
     ${stb_SOURCE_DIR}   
     ${CMAKE_SOURCE_DIR}/include  
     ${tiny_SOURCE_DIR}   
-    ${assimp_SOURCE_DIR}        
+    ${assimp_SOURCE_DIR} 
 )
 
 target_link_directories(GP2_VulkanTutorial PRIVATE 
@@ -173,4 +184,11 @@ add_custom_target(CopyResources ALL
         COMMENT "Copying resources folder to build directory"
 )
 
+# Copy downloaded models to resources/models
+add_custom_target(CopyModels ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${model_SOURCE_DIR} ${RESOURCE_DST_DIR}
+    COMMENT "Copying models from GP2_Models repo to resources/models"
+)
+
+add_dependencies(${PROJECT_NAME} CopyModels)
 add_dependencies(${PROJECT_NAME} CopyResources)

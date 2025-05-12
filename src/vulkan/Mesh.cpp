@@ -1,8 +1,5 @@
 #include "Mesh.h"
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include "tiny_obj_loader.h" 
-
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
@@ -23,22 +20,30 @@ namespace cat
 {
     // CTOR & DTOR
     //--------------------
-    Mesh::Mesh(Device& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::vector<Image>& images)
-        : m_Device{ device }, m_Vertices{ vertices }, m_Indices{ indices }
+    Mesh::Mesh(Device& device, SwapChain& swapchain, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const Material &material)
+		: m_Device{ device }, m_Vertices{ vertices }, m_Indices{ indices }
     {
         CreateVertexBuffer();
         CreateIndexBuffer();
+
+    	m_Images.push_back(new Image(device, swapchain, material.diffusePath.c_str()));
     }
 
     Mesh::~Mesh()
     {
+	    for (auto& image : m_Images)
+	    {
+            delete image;
+			image = nullptr;
+	    }
+
+        delete m_IndexBuffer;
+        m_IndexBuffer = nullptr;
+
 		delete m_VertexBuffer;
         m_VertexBuffer = nullptr;
 
-		delete m_IndexBuffer;
-        m_IndexBuffer = nullptr;
     }
-
 
 
     void Mesh::Draw(VkCommandBuffer commandBuffer)
@@ -51,6 +56,7 @@ namespace cat
 
     void Mesh::Bind(VkCommandBuffer commandBuffer)
     {
+
         VkBuffer buffers[] = { m_VertexBuffer->GetBuffer() };
         VkDeviceSize offsets[] = { 0 };
 
@@ -59,6 +65,7 @@ namespace cat
             vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
     }
+
 
     // Creators
     //--------------------

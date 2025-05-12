@@ -31,6 +31,16 @@ namespace cat
 
 		// Getters & Setters
 		const std::vector<Model*>& GetModels() const { return m_pModels; }
+		std::vector<Image*> GetImages() const
+		{
+			std::vector<Image*> images;
+			for (auto& model : m_pModels)
+			{
+				const auto& modelImages = model->GetImages();
+				images.insert(images.end(), modelImages.begin(), modelImages.end());
+			}
+			return images;
+		}
 
 	private:
 		// Private members

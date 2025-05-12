@@ -26,16 +26,17 @@ namespace cat
     void Image::CreateTextureImage(char const* path)
     {
         // LOADING IMAGE
-        int texWidth,
-            texHeight,
-            texChannels;
+        int texWidth;
+        int texHeight;
+    	int texChannels;
 
         stbi_uc* pixels = stbi_load(path, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
         VkDeviceSize imageSize = texWidth * texHeight * 4;  // 4 bytes per pixel
 
         if (!pixels)
         {
-            throw std::runtime_error("failed to load texture image!");
+            pixels = stbi_load("resources/textureNotFound.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+            imageSize = texWidth * texHeight * 4;  // 4 bytes per pixel
         }
 
 

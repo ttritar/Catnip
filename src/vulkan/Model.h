@@ -7,20 +7,14 @@
 #include <assimp/postprocess.h>
 
 // std
+#include <memory>
 #include <string>
-
-#include "glm/ext/matrix_transform.hpp"
 
 namespace cat
 {
 	class Model final
 	{
 	public:
-		struct ModelUBO {
-			glm::mat4 model;
-			glm::mat4 view;
-			glm::mat4 proj;
-		};
 
 		// CTOR & DTOR
 		//--------------------
@@ -47,6 +41,16 @@ namespace cat
 
 		const std::vector<Mesh*>& GetMeshes() const { return m_Meshes; }
 		std::string GetPath() const { return m_Path; }
+		const std::vector<Image*> GetImages() const
+		{
+			std::vector<Image*> images;
+			for (auto& mesh : m_Meshes)
+			{
+				const auto& meshImages = mesh->GetImages();
+				images.insert(images.end(), meshImages.begin(), meshImages.end());
+			}
+			return images;
+		}
 
 
 	private:
@@ -62,7 +66,7 @@ namespace cat
 		SwapChain& m_SwapChain;
 
 		std::vector<Mesh*> m_Meshes;
-		std::vector<Image> m_Images;
+		std::vector<Mesh::Material> m_LoadedTextures;
 		std::string m_Path;
 		std::string m_Directory;
 

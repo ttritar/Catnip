@@ -6,16 +6,20 @@
 
 #include "Device.h"
 #include "Buffer.h"
-#include "Image.h"
+#include "Descriptors.h"
 
 // std
 #include <array>
+#include <memory>
 
 namespace cat
 {
 	class Mesh final
 	{
 	public:
+        struct Material {
+            std::string diffusePath;
+        };
 
         struct Vertex
         {
@@ -64,7 +68,7 @@ namespace cat
 
 		// CTOR & DTOR
 		//--------------------
-        Mesh(Device& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::vector<Image>& images);
+        Mesh(Device& device, SwapChain& swapchain, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const Material& textures);
 		~Mesh();
 
 		Mesh(const Mesh&) = delete;
@@ -84,6 +88,8 @@ namespace cat
         std::vector<Vertex> GetVertices()const { return m_Vertices; }
         std::vector<uint32_t>GetIndices()const { return  m_Indices; }
 
+		std::vector<Image*> GetImages()const{ return m_Images; }
+
 
 	private:
 		// Private methods
@@ -96,7 +102,6 @@ namespace cat
 		//--------------------
         Device& m_Device;
 
-
 		std::vector<Vertex> m_Vertices;
 		uint32_t m_VertexCount = 0;
         Buffer* m_VertexBuffer;
@@ -108,7 +113,7 @@ namespace cat
         Buffer* m_IndexBuffer;
         uint32_t m_IndexBufferSize = 0;
 
-		//std::vector<Texture> m_Textures;
+		std::vector<Image*> m_Images;
 
 	};
 }

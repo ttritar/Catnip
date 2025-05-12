@@ -12,7 +12,7 @@ public:
 			while (!glfwWindowShouldClose(window.GetWindow()))
 			{
 				glfwPollEvents();
-				renderer.Update(TODO);
+				renderer.Update(1);
 				renderer.Render();
 			}
 		}

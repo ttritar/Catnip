@@ -11,7 +11,7 @@ namespace cat
 	public:
 		// CTOR & DTOR
 		//--------------------
-		DescriptorSetLayout(Device& devic);
+		DescriptorSetLayout(Device& device);
 		~DescriptorSetLayout();
 
 		DescriptorSetLayout(const DescriptorSetLayout&) = delete;
@@ -49,7 +49,7 @@ namespace cat
 	class DescriptorSet final
 	{
 	public:
-		DescriptorSet(Device& device, UniformBuffer& ubo, Image& image, DescriptorSetLayout& setLayout, DescriptorPool& pool);
+		DescriptorSet(Device& device, UniformBuffer& ubo, std::vector<Image*> images, DescriptorSetLayout& setLayout, DescriptorPool& pool);
 
 		VkDescriptorSet* GetDescriptorSet(uint16_t idx) { return &m_DescriptorSets[idx]; }
 

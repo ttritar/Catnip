@@ -44,7 +44,6 @@ namespace cat
 		SwapChain* m_pSwapChain;
 		DescriptorSetLayout* m_pDescriptorSetLayout;
 		Pipeline* m_pGraphicsPipeline;
-		Image* m_pImage;
 		Scene* m_pScene;
 		//const std::vector<cat::Mesh::Vertex> m_Vertices = {
 		//	{{-0.5f, -0.5f,0.0f},  {1.0f, 0.0f, 0.0f},    {1.0f,0.0f}},

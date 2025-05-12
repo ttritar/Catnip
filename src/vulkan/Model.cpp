@@ -66,11 +66,11 @@ namespace cat
 		}
 	}
 
-	Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene) const
+	Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)const
 	{
 		std::vector<Mesh::Vertex> vertices;
 		std::vector<uint32_t> indices;
-		std::vector<Image> images;
+		Mesh::Material material;
 
 		// process vertices
 		for (unsigned int i = 0; i< mesh->mNumVertices ; i++)
@@ -85,18 +85,34 @@ namespace cat
 			vertex.pos = vector;
 
 			// normals
-			vector.x = mesh->mNormals[i].x;
-			vector.y = mesh->mNormals[i].y;
-			vector.z = mesh->mNormals[i].z;
-			vertex.color = vector;
+			if (mesh->HasNormals())
+			{
+				vector.x = mesh->mNormals[i].x;
+				vector.y = mesh->mNormals[i].y;
+				vector.z = mesh->mNormals[i].z;
+				vertex.normal = vector;
+			}
 
-			// uv
+			// texture coordinates
 			if (mesh->mTextureCoords[0]) 
 			{
+				// uv
 				glm::vec2 vec;
 				vec.x = mesh->mTextureCoords[0][i].x; 
 				vec.y = mesh->mTextureCoords[0][i].y;
 				vertex.uv = vec;
+
+				// tangent
+				//vector.x = mesh->mTangents[i].x;
+				//vector.y = mesh->mTangents[i].y;
+				//vector.z = mesh->mTangents[i].z;
+				//vertex.tangent = vector;
+
+				// bitangent
+				//vector.x = mesh->mBitangents[i].x;
+				//vector.y = mesh->mBitangents[i].y;
+				//vector.z = mesh->mBitangents[i].z;
+				//vertex.bitangent = vector;
 			}
 			else
 			{
@@ -117,12 +133,33 @@ namespace cat
 		}
 
 		// process materials
-		if (mesh->mMaterialIndex>=0)
-		{
-			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-			
+		if (scene->mNumMaterials > 0 && mesh->mMaterialIndex >= 0) {
+			aiMaterial* aiMaterial = scene->mMaterials[mesh->mMaterialIndex];
+			aiString path;
+
+			if (aiMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &path) == AI_SUCCESS)
+				material.diffusePath = m_Directory + "/" + path.C_Str() ;
+			else
+				material.diffusePath = "";
+
+			//if (aiMaterial->GetTexture(aiTextureType_NORMALS, 0, &path) == AI_SUCCESS)
+			//	material.normalPath = path.C_Str();
+			//else
+			//	textureInfo.normalPath = "";
+			//
+			//if (aiMaterial->GetTexture(aiTextureType_SPECULAR, 0, &path) == AI_SUCCESS)
+			//	textureInfo.specularPath = path.C_Str();
+			//else
+			//	textureInfo.specularPath = "";
+			//
+			//if (aiMaterial->GetTexture(aiTextureType_HEIGHT, 0, &path) == AI_SUCCESS)
+			//	textureInfo.bumpPath = path.C_Str();
+			//else
+			//	textureInfo.bumpPath = "";
 		}
 
-		return Mesh(m_Device, vertices, indices, images);;
+		return Mesh(m_Device,m_SwapChain, vertices, indices, material);
 	}
+
+
 }
