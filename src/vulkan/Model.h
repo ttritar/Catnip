@@ -29,7 +29,7 @@ namespace cat
 
 		// Methods
 		//--------------------
-		void Draw(VkCommandBuffer commandBuffer) const;
+		void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkDescriptorSet descriptorSet) const;
 
 		// Getters & Setters
 		void SetTransform(const glm::mat4& transform){ m_TransformMatrix = transform; }

@@ -27,7 +27,7 @@ namespace cat
 		Model* AddModel(const std::string& path);
 		void RemoveModel(const std::string& path);
 
-		void Draw(VkCommandBuffer commandBuffer) const;
+		void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkDescriptorSet descriptorSet) const;
 
 		// Getters & Setters
 		const std::vector<Model*>& GetModels() const { return m_pModels; }

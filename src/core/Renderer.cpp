@@ -196,7 +196,7 @@ namespace cat
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pGraphicsPipeline->GetPipelineLayout(), 0, 1, m_pDescriptorSet->GetDescriptorSet(m_CurrentFrame), 0, nullptr);
 
-		m_pScene->Draw(commandBuffer);
+		m_pScene->Draw(commandBuffer, m_pGraphicsPipeline->GetPipelineLayout(), *m_pDescriptorSet->GetDescriptorSet(m_CurrentFrame));
 
 
         // Finishing up:

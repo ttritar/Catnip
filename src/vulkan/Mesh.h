@@ -79,7 +79,7 @@ namespace cat
 		// Methods
 		//--------------------
 		void Draw(VkCommandBuffer commandBuffer);
-        void Bind(VkCommandBuffer commandBuffer);
+        void Bind(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkDescriptorSet descriptorSet);
 
         // Getters & Setters
         VkBuffer GetVertexBuffer()const { return m_VertexBuffer->GetBuffer(); }

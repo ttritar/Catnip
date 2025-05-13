@@ -24,11 +24,11 @@ namespace cat
 
 	// Methods
 	//--------------------
-	void Model::Draw(VkCommandBuffer commandBuffer) const
+	void Model::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkDescriptorSet descriptorSet) const
 	{
 		for (auto& mesh : m_Meshes)
 		{
-			mesh->Bind(commandBuffer);
+			mesh->Bind(commandBuffer, pipelineLayout, descriptorSet);
 			mesh->Draw(commandBuffer);
 		}
 	}
