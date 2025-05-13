@@ -33,7 +33,8 @@ namespace cat
         }
     }
 
-    void UniformBuffer::Update(uint32_t currentImage, glm::mat4 view, glm::mat4 proj)
+    void UniformBuffer::Update(unsigned int currentImage, 
+        const glm::mat4& model, const glm::mat4& view, const glm::mat4& proj)
     {
         static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -41,9 +42,10 @@ namespace cat
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 
-        // MODEL ROTATION
         UniformBufferObject ubo{};
-        ubo.model = glm::mat4(1.f);
+
+        // MODEL ROTATION
+        ubo.model = model;
 
         // VIEW TRANSFORMATION
         ubo.view = view;
@@ -55,4 +57,5 @@ namespace cat
         // Copy data to uniform buffer
         memcpy(m_UniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
     }
+
 }

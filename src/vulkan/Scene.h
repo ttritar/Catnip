@@ -2,6 +2,7 @@
 
 #include "Model.h"
 #include "Pipeline.h"
+#include "../core/Camera.h"
 
 #include <vector>
 
@@ -12,7 +13,9 @@ namespace cat
 	public:
 		// CTOR & DTOR
 		//--------------------
-		Scene(Device& device, SwapChain& swapchain, Pipeline* pipeline);
+		Scene(Device& device, SwapChain& swapchain, Pipeline* pipeline, 
+			DescriptorSetLayout& layout, DescriptorPool& pool,
+			Camera& camera);
 		~Scene();
 
 		Scene(const Scene&) = delete;
@@ -22,7 +25,7 @@ namespace cat
 
 		// Methods
 		//--------------------
-		void Update(float deltaTime);
+		void Update(float deltaTime, uint16_t currentFrame);
 
 		Model* AddModel(const std::string& path);
 		void RemoveModel(const std::string& path);
@@ -48,7 +51,10 @@ namespace cat
 		Device& m_Device;
 		SwapChain& m_SwapChain;
 		Pipeline* m_pGraphicsPipeline;
+		DescriptorSetLayout& m_pDescriptorSetLayout;
+		DescriptorPool& m_pDescriptorPool;
 
+		Camera m_Camera;
 		std::vector<Model*> m_pModels;
 	};
 }

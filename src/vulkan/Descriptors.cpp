@@ -12,13 +12,14 @@ namespace cat
 	DescriptorSetLayout::DescriptorSetLayout(Device& device)
 		: m_Device(device)
 	{
+		// Making a UBO layout binding
         VkDescriptorSetLayoutBinding uboLayoutBinding{};
         uboLayoutBinding.binding = 0;
         uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         uboLayoutBinding.descriptorCount = 1;
         uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;   //which shader stages the descriptor is going to be referenced
-        uboLayoutBinding.pImmutableSamplers = nullptr; //optional
 
+		// Making the sampler layout bindings -> TODO: MAKE THIS SCALABLE
         VkDescriptorSetLayoutBinding samplerLayoutBinding{};
         samplerLayoutBinding.binding = 1;
         samplerLayoutBinding.descriptorCount = 1;
@@ -56,6 +57,7 @@ namespace cat
 	DescriptorPool::DescriptorPool(Device& device)
 		: m_Device(device)
 	{
+		// Making the pool -> TODO: MAKE THIS SCALABLE
         std::array<VkDescriptorPoolSize, 2> poolSizes{};
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[0].descriptorCount = static_cast<uint32_t>(cat::MAX_FRAMES_IN_FLIGHT);
