@@ -19,16 +19,6 @@ void cat::Camera::Update(float deltaTime)
 	const float moveSpeed = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ? 60.0f : 30.0f);
 	const float mouseSensitivity = 0.005f;
 
-
-	// KEYBOARD INPUT
-	//-----------------
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) m_Origin += m_Forward * moveSpeed * deltaTime;
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) m_Origin -= m_Forward * moveSpeed * deltaTime;
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) m_Origin -= m_Right * moveSpeed * deltaTime;
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) m_Origin += m_Right * moveSpeed * deltaTime;
-	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) m_Origin += m_Up * moveSpeed * deltaTime;
-	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) m_Origin -= m_Up * moveSpeed * deltaTime;
-
 	// MOUSE INPUT
 	//-----------------
 	double mouseX, mouseY;
@@ -47,7 +37,7 @@ void cat::Camera::Update(float deltaTime)
 	}
 	else if (rmb)
 	{
-		m_TotalYaw -= deltaX * mouseSensitivity; 
+		m_TotalYaw += deltaX * mouseSensitivity; 
 		m_TotalPitch += deltaY * mouseSensitivity;
 
 		// Clamp to avoid flipping
@@ -68,6 +58,16 @@ void cat::Camera::Update(float deltaTime)
 	m_Forward = glm::normalize(glm::vec3(rotation * glm::vec4(0, 0, 1, 0)));
 	m_Right = glm::normalize(glm::cross(m_Forward, glm::vec3(0, 1, 0)));
 	m_Up = glm::normalize(glm::cross(m_Right, m_Forward));
+
+
+	// KEYBOARD INPUT
+	//-----------------
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) m_Origin -= m_Forward * moveSpeed * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) m_Origin += m_Forward * moveSpeed * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) m_Origin -= m_Right * moveSpeed * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) m_Origin += m_Right * moveSpeed * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) m_Origin += m_Up * moveSpeed * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) m_Origin -= m_Up * moveSpeed * deltaTime;
 }
 
 

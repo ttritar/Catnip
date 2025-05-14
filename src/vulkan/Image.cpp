@@ -35,7 +35,7 @@ namespace cat
 
         if (!pixels)
         {
-            pixels = stbi_load("resources/textureNotFound.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+            pixels = stbi_load("resources/error.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
             imageSize = texWidth * texHeight * 4;  // 4 bytes per pixel
         }
 
