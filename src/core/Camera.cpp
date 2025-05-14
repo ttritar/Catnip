@@ -13,89 +13,61 @@ cat::Camera::Camera(Window& window,glm::vec3 origin, float fovy, float nearPlane
 }
 
 
-// Methods
-//-----------------
 void cat::Camera::Update(float deltaTime)
 {
 	GLFWwindow* window = m_Window.GetWindow();
-	float moveSpeed = 30.0f;
-	const float rotationSpeed = 30.0f;
+	const float moveSpeed = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ? 60.0f : 30.0f);
+	const float mouseSensitivity = 0.005f;
 
 
-	// CAMERA MOVEMENT
+	// KEYBOARD INPUT
 	//-----------------
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) m_Origin += m_Forward * moveSpeed * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) m_Origin -= m_Forward * moveSpeed * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) m_Origin -= m_Right * moveSpeed * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) m_Origin += m_Right * moveSpeed * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) m_Origin += m_Up * moveSpeed * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) m_Origin -= m_Up * moveSpeed * deltaTime;
 
-	// Keyboard Input
-	if (glfwGetKey(window,GLFW_KEY_LEFT_SHIFT))	moveSpeed *= 2;
+	// MOUSE INPUT
+	//-----------------
+	double mouseX, mouseY;
+	glfwGetCursorPos(window, &mouseX, &mouseY);
+	float deltaX = static_cast<float>(mouseX - m_LastMouseX);
+	float deltaY = static_cast<float>(mouseY - m_LastMouseY);
+	m_LastMouseX = static_cast<float>(mouseX);
+	m_LastMouseY = static_cast<float>(mouseY);
 
-	if (glfwGetKey(window, GLFW_KEY_W) || glfwGetKey(window, GLFW_KEY_UP))		// Move (local) Forward (Arrow Up) and (‘W’)
-	{
-		m_Origin += m_Forward * deltaTime * moveSpeed;
-	}
-	if (glfwGetKey(window, GLFW_KEY_A) || glfwGetKey(window, GLFW_KEY_LEFT))		// Move (local) Left (Arrow Left) and (‘A’)
-	{
-		m_Origin += m_Right * (deltaTime * moveSpeed * -1);
-	}
-	if (glfwGetKey(window, GLFW_KEY_S) || glfwGetKey(window, GLFW_KEY_DOWN))		// Move (local) Backward (Arrow Down) and (‘S’)
-	{
-		m_Origin += m_Forward * (deltaTime * moveSpeed * -1);
-	}
-	if (glfwGetKey(window, GLFW_KEY_D) || glfwGetKey(window, GLFW_KEY_RIGHT))	// Move (local) Right (Arrow Right) and (‘D’)
-	{
-		m_Origin += m_Right * deltaTime * moveSpeed;
-	}
-
-	// Mouse Input
-	double x{}, y{};
-	glfwGetCursorPos(window, &x, &y);
-	float mouseX = static_cast<float>(x - m_LastMouseX);
-	float mouseY = static_cast<float>(y - m_LastMouseY);
-	m_LastMouseX = x;
-	m_LastMouseY = y;
-
-	bool lmb = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
 	bool rmb = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
+	bool lmb = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
 
-	glm::mat4 finalRotation{1.0f};
-
-	if (lmb && rmb)
+	if (rmb&&lmb)
 	{
-		m_Origin += m_Up * static_cast<float>(x);
-	}
-	else if (lmb)
-	{
-		m_TotalYaw += mouseX / 360 * glm::pi<float>();	// Rotate Yaw (LMB + Mouse Move X)
-		m_Origin -= m_Forward * mouseY * 0.2f;			// Move (local) Forward/Backward (LMB + Mouse Move Y)
-
-		finalRotation = glm::rotate(finalRotation, m_TotalYaw, { 0,1,0 });
-
-		m_Forward = glm::vec3(finalRotation * glm::vec4({ 0.0f, 0.0f, 1.0f ,0.0f }));
-		m_Forward = glm::normalize(m_Forward);
-
-		m_Up = glm::vec3(finalRotation * glm::vec4({ 0.0f, 1.0f, 0.0f ,0.0f }));
-		m_Up = glm::normalize(m_Up);
-
-		m_Right= glm::vec3(finalRotation * glm::vec4({ 1.0f, 0.0f, 0.0f ,0.0f }));
-		m_Right = glm::normalize(m_Right);
+		m_Origin += m_Up * deltaY* mouseSensitivity;
 	}
 	else if (rmb)
 	{
-		m_TotalYaw += mouseX / 360 * glm::pi<float>();		// Rotate Yaw (LMB + Mouse Move X)
-		m_TotalPitch -= mouseY / 360 * glm::pi<float>();	// Rotate Pitch (RMB + Mouse Move Y)
+		m_TotalYaw -= deltaX * mouseSensitivity; 
+		m_TotalPitch += deltaY * mouseSensitivity;
 
-		finalRotation = glm::rotate(finalRotation, m_TotalPitch, { 1,0,0 });
-		finalRotation = glm::rotate(finalRotation, m_TotalYaw, { 0,1,0 });
-
-		m_Forward = glm::vec3(finalRotation * glm::vec4({ 0.0f, 0.0f, 1.0f ,0.0f }));
-		m_Forward = glm::normalize(m_Forward);
-
-		m_Up = glm::vec3(finalRotation * glm::vec4({ 0.0f, 1.0f, 0.0f ,0.0f }));
-		m_Up = glm::normalize(m_Up);
-
-		m_Right = glm::vec3(finalRotation * glm::vec4({ 1.0f, 0.0f, 0.0f ,0.0f }));
-		m_Right = glm::normalize(m_Right);
+		// Clamp to avoid flipping
+		const float pitchLimit = glm::radians(89.0f);
+		m_TotalPitch = glm::clamp(m_TotalPitch, -pitchLimit, pitchLimit);
+	}
+	else if (lmb)
+	{
+		m_TotalYaw += deltaX * mouseSensitivity;
+		m_Origin += m_Forward * deltaY * mouseSensitivity;
 	}
 
+	// Build direction vectors
+	glm::mat4 rotation = glm::mat4(1.0f);
+	rotation = glm::rotate(rotation, m_TotalYaw, glm::vec3(0, 1, 0));
+	rotation = glm::rotate(rotation, m_TotalPitch, glm::vec3(1, 0, 0));
+
+	m_Forward = glm::normalize(glm::vec3(rotation * glm::vec4(0, 0, 1, 0)));
+	m_Right = glm::normalize(glm::cross(m_Forward, glm::vec3(0, 1, 0)));
+	m_Up = glm::normalize(glm::cross(m_Right, m_Forward));
 }
 
 
@@ -107,6 +79,8 @@ const glm::mat4& cat::Camera::GetProjection()
 	m_ProjectionMatrix = glm::perspectiveLH_ZO(m_FieldOfView,
 		m_Window.GetAspectRatio(),
 		m_NearPlane, m_FarPlane);
+
+	m_ProjectionMatrix[1][1] *= -1; // flip the Y axis
 
 	return m_ProjectionMatrix;
 }
