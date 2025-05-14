@@ -17,7 +17,9 @@ namespace cat
 	class Mesh final
 	{
 	public:
-        struct Material {
+
+        struct Material
+		{
             std::string diffusePath;
         };
 
@@ -66,9 +68,18 @@ namespace cat
             }
         };
 
+        struct RawMeshData
+		{
+            std::vector<Vertex> vertices;
+            std::vector<uint32_t> indices;
+            Material material;
+        };
+
 		// CTOR & DTOR
 		//--------------------
-        Mesh(Device& device, SwapChain& swapchain, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const Material& textures);
+        Mesh(Device& device, SwapChain& swapchain, 
+            UniformBuffer* ubo, DescriptorSetLayout* layout, DescriptorPool* pool,
+            const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const Material& material);
 		~Mesh();
 
 		Mesh(const Mesh&) = delete;
@@ -79,7 +90,7 @@ namespace cat
 		// Methods
 		//--------------------
 		void Draw(VkCommandBuffer commandBuffer);
-        void Bind(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkDescriptorSet descriptorSet);
+        void Bind(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t idx);
 
         // Getters & Setters
         VkBuffer GetVertexBuffer()const { return m_VertexBuffer->GetBuffer(); }
@@ -87,8 +98,6 @@ namespace cat
 
         std::vector<Vertex> GetVertices()const { return m_Vertices; }
         std::vector<uint32_t>GetIndices()const { return  m_Indices; }
-
-		std::vector<Image*> GetImages()const{ return m_Images; }
 
 
 	private:
@@ -101,6 +110,7 @@ namespace cat
 		// Private Datamembers
 		//--------------------
         Device& m_Device;
+        DescriptorSet* m_pDescriptorSet;
 
 		std::vector<Vertex> m_Vertices;
 		uint32_t m_VertexCount = 0;

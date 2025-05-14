@@ -4,8 +4,9 @@ namespace cat
 {
 	// CTOR & DTOR
 	//--------------------
-	Scene::Scene(Device& device, SwapChain& swapchain, Pipeline* pipeline)
-		: m_Device{ device }, m_SwapChain{ swapchain }, m_pGraphicsPipeline{ pipeline }
+	Scene::Scene(Device& device, SwapChain& swapchain, Pipeline* pipeline, UniformBuffer* ubo)
+		: m_Device{ device }, m_SwapChain{ swapchain }, m_pGraphicsPipeline{ pipeline },
+		m_pUniformBuffer(ubo)
 	{
 	}
 
@@ -28,7 +29,7 @@ namespace cat
 
 	Model* Scene::AddModel(const std::string& path)
 	{
-		Model* model = new Model(m_Device, m_SwapChain, path);
+		Model* model = new Model(m_Device, m_SwapChain,m_pUniformBuffer,path);
 		m_pModels.push_back(model);
 		return model;
 	}
@@ -44,12 +45,12 @@ namespace cat
 		}
 	}
 
-	void Scene::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkDescriptorSet descriptorSet) const
+	void Scene::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t frameIdx) const
 	{
 		for (const auto& model : m_pModels)
 		{
 			vkCmdPushConstants(commandBuffer, m_pGraphicsPipeline->GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), model->GetTransform());
-			model->Draw(commandBuffer, pipelineLayout, descriptorSet);
+			model->Draw(commandBuffer, pipelineLayout, frameIdx);
 		}
 	}
 

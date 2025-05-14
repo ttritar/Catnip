@@ -20,17 +20,22 @@ namespace cat
 {
     // CTOR & DTOR
     //--------------------
-    Mesh::Mesh(Device& device, SwapChain& swapchain, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const Material &material)
+	Mesh::Mesh(Device& device, SwapChain& swapchain, UniformBuffer* ubo, DescriptorSetLayout* layout, DescriptorPool* pool,
+        const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const Material &material)
 		: m_Device{ device }, m_Vertices{ vertices }, m_Indices{ indices }
     {
         CreateVertexBuffer();
         CreateIndexBuffer();
 
     	m_Images.push_back(new Image(device, swapchain, material.diffusePath.c_str()));
-    }
+        m_pDescriptorSet = new DescriptorSet(device, *ubo, m_Images, *layout, *pool);
+    } 
 
     Mesh::~Mesh()
     {
+		delete m_pDescriptorSet;
+		m_pDescriptorSet = nullptr;
+
 	    for (auto& image : m_Images)
 	    {
             delete image;
@@ -54,7 +59,7 @@ namespace cat
 			vkCmdDraw(commandBuffer, m_VertexCount, 1, 0, 0);
     }
 
-    void Mesh::Bind(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkDescriptorSet descriptorSet)
+    void Mesh::Bind(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t idx)
     {
         vkCmdBindDescriptorSets(
             commandBuffer,
@@ -62,7 +67,7 @@ namespace cat
             pipelineLayout,
             0,
             1,
-            &descriptorSet,
+            m_pDescriptorSet->GetDescriptorSet(idx),
             0,
             nullptr
         );

@@ -12,7 +12,7 @@ namespace cat
 	public:
 		// CTOR & DTOR
 		//--------------------
-		Scene(Device& device, SwapChain& swapchain, Pipeline* pipeline);
+		Scene(Device& device, SwapChain& swapchain, Pipeline* pipeline, UniformBuffer* ubo);
 		~Scene();
 
 		Scene(const Scene&) = delete;
@@ -27,20 +27,10 @@ namespace cat
 		Model* AddModel(const std::string& path);
 		void RemoveModel(const std::string& path);
 
-		void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkDescriptorSet descriptorSet) const;
+		void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t frameIdx) const;
 
 		// Getters & Setters
 		const std::vector<Model*>& GetModels() const { return m_pModels; }
-		std::vector<Image*> GetImages() const
-		{
-			std::vector<Image*> images;
-			for (auto& model : m_pModels)
-			{
-				const auto& modelImages = model->GetImages();
-				images.insert(images.end(), modelImages.begin(), modelImages.end());
-			}
-			return images;
-		}
 
 	private:
 		// Private members
@@ -48,7 +38,9 @@ namespace cat
 		Device& m_Device;
 		SwapChain& m_SwapChain;
 		Pipeline* m_pGraphicsPipeline;
-
+		UniformBuffer* m_pUniformBuffer;
+		DescriptorPool* m_pDescriptorPool;
+		
 		std::vector<Model*> m_pModels;
 	};
 }

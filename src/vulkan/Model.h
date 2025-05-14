@@ -1,5 +1,4 @@
 #pragma once
-#include "Image.h"
 #include "Mesh.h"
 
 #include <assimp/Importer.hpp>
@@ -18,7 +17,8 @@ namespace cat
 
 		// CTOR & DTOR
 		//--------------------
-		Model(Device& device, SwapChain& swapchain, const std::string& path);
+		Model(Device& device, SwapChain& swapchain, 
+			UniformBuffer* ubo, const std::string& path);
 		~Model();
 
 		Model(const Model&) = delete;
@@ -29,7 +29,7 @@ namespace cat
 
 		// Methods
 		//--------------------
-		void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkDescriptorSet descriptorSet) const;
+		void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t frameIdx) const;
 
 		// Getters & Setters
 		void SetTransform(const glm::mat4& transform){ m_TransformMatrix = transform; }
@@ -41,32 +41,27 @@ namespace cat
 
 		const std::vector<Mesh*>& GetMeshes() const { return m_Meshes; }
 		std::string GetPath() const { return m_Path; }
-		const std::vector<Image*> GetImages() const
-		{
-			std::vector<Image*> images;
-			for (auto& mesh : m_Meshes)
-			{
-				const auto& meshImages = mesh->GetImages();
-				images.insert(images.end(), meshImages.begin(), meshImages.end());
-			}
-			return images;
-		}
-
 
 	private:
 		// Private methods
 		//--------------------
 		void LoadModel(const std::string& path);
 		void ProcessNode(aiNode* node, const aiScene* scene);
-		Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene) const;
+		void ProcessMesh(aiMesh* mesh, const aiScene* scene);
 
 		// Private Datamembers
 		//--------------------
 		Device& m_Device;
 		SwapChain& m_SwapChain;
+		UniformBuffer* m_pUniformBuffer;
+		DescriptorSetLayout* m_pDescriptorSetLayout;
+		DescriptorPool* m_pDescriptorPool;
 
 		std::vector<Mesh*> m_Meshes;
-		std::vector<Mesh::Material> m_LoadedTextures;
+		std::vector<Mesh::RawMeshData> m_RawMeshes;
+		std::vector<Mesh::Vertex> m_Vertices;
+		std::vector<uint32_t> m_Indices;
+		Mesh::Material m_Material;
 		std::string m_Path;
 		std::string m_Directory;
 

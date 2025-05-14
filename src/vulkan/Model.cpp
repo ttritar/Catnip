@@ -7,10 +7,37 @@ namespace cat
 	// CTOR & DTOR
 	//--------------------
 
-	Model::Model(Device& device,SwapChain& swapchain, const std::string& path)
-		: m_Device{ device }, m_SwapChain{ swapchain }, m_Path(path), m_Directory{ path }
+	Model::Model(Device& device,SwapChain& swapchain,
+		UniformBuffer* ubo, const std::string& path)
+		: m_Device{ device }, m_SwapChain{ swapchain },
+		m_pUniformBuffer{ ubo },
+		m_Path(path), m_Directory{ path }
 	{
 		LoadModel(path);
+
+		// Create descriptor pool
+		m_pDescriptorPool = new DescriptorPool(device);
+		m_pDescriptorPool
+					->AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<uint32_t>(m_RawMeshes.size()*2))
+					->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, static_cast<uint32_t>(m_RawMeshes.size() * 2));
+		m_pDescriptorPool = m_pDescriptorPool->Create(static_cast<uint32_t>(m_RawMeshes.size() * 2));
+
+		// Create descriptor set layout
+		m_pDescriptorSetLayout = new DescriptorSetLayout(device);
+		m_pDescriptorSetLayout = m_pDescriptorSetLayout
+					->AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+					->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// diffuse sampler
+			->Create();
+
+		// Create meshes
+		for (auto& data : m_RawMeshes)
+		{
+			m_Meshes.push_back(new Mesh(m_Device, m_SwapChain, m_pUniformBuffer,
+				m_pDescriptorSetLayout, m_pDescriptorPool,
+				data.vertices, data.indices, data.material));
+		}
+
+		m_RawMeshes.clear();
 	}
 
 	Model::~Model()
@@ -20,15 +47,21 @@ namespace cat
 			delete mesh;
 			mesh = nullptr;
 		}
+
+		delete m_pDescriptorPool;
+		m_pDescriptorPool = nullptr;
+
+		delete m_pDescriptorSetLayout;
+		m_pDescriptorSetLayout = nullptr;
 	}
 
 	// Methods
 	//--------------------
-	void Model::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkDescriptorSet descriptorSet) const
+	void Model::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t frameIdx) const
 	{
 		for (auto& mesh : m_Meshes)
 		{
-			mesh->Bind(commandBuffer, pipelineLayout, descriptorSet);
+			mesh->Bind(commandBuffer, pipelineLayout, frameIdx);
 			mesh->Draw(commandBuffer);
 		}
 	}
@@ -56,7 +89,7 @@ namespace cat
 		for (unsigned int i = 0; i < node->mNumMeshes; i++)
 		{
 			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-			m_Meshes.emplace_back(new Mesh(ProcessMesh(mesh, scene)));
+			ProcessMesh(mesh, scene);
 		}
 
 		// for each of its children
@@ -66,7 +99,7 @@ namespace cat
 		}
 	}
 
-	Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)const
+	void Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 	{
 		std::vector<Mesh::Vertex> vertices;
 		std::vector<uint32_t> indices;
@@ -170,8 +203,13 @@ namespace cat
 			//else
 			//	textureInfo.bumpPath = "";
 		}
+	
 
-		return Mesh(m_Device,m_SwapChain, vertices, indices, material);
+		m_RawMeshes.emplace_back(Mesh::RawMeshData{
+			vertices,
+			indices,
+			material
+		});
 	}
 
 

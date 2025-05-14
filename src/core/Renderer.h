@@ -44,12 +44,9 @@ namespace cat
 		Camera m_Camera;
 		Device m_Device;
 		SwapChain* m_pSwapChain;
-		DescriptorSetLayout* m_pDescriptorSetLayout;
 		Pipeline* m_pGraphicsPipeline;
 		Scene* m_pScene;
 		UniformBuffer* m_pUniformBuffer;
-		DescriptorPool* m_pDescriptorPool;
-		DescriptorSet* m_pDescriptorSet;
 		CommandBuffer* m_pCommandBuffer;
 
 		mutable uint16_t m_CurrentFrame = 0;

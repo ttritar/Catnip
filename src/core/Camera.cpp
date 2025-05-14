@@ -19,6 +19,16 @@ void cat::Camera::Update(float deltaTime)
 	const float moveSpeed = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ? 60.0f : 30.0f);
 	const float mouseSensitivity = 0.005f;
 
+	// KEYBOARD INPUT
+	//-----------------
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) m_Origin += m_Forward * moveSpeed * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) m_Origin -= m_Forward * moveSpeed * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) m_Origin -= m_Right * moveSpeed * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) m_Origin += m_Right * moveSpeed * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) m_Origin += m_Up * moveSpeed * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) m_Origin -= m_Up * moveSpeed * deltaTime;
+
+
 	// MOUSE INPUT
 	//-----------------
 	double mouseX, mouseY;
@@ -31,6 +41,7 @@ void cat::Camera::Update(float deltaTime)
 	bool rmb = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
 	bool lmb = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
 
+	glm::mat4  finalRotation = glm::mat4(1.0f);
 	if (rmb&&lmb)
 	{
 		m_Origin += m_Up * deltaY* mouseSensitivity;
@@ -40,34 +51,30 @@ void cat::Camera::Update(float deltaTime)
 		m_TotalYaw += deltaX * mouseSensitivity; 
 		m_TotalPitch += deltaY * mouseSensitivity;
 
-		// Clamp to avoid flipping
-		const float pitchLimit = glm::radians(89.0f);
-		m_TotalPitch = glm::clamp(m_TotalPitch, -pitchLimit, pitchLimit);
+		m_TotalPitch = glm::clamp(m_TotalPitch, -glm::half_pi<float>(), glm::half_pi<float>()); // clamp pitch to avoid gimbal lock
+
+		// Handle rotation on axises
+		finalRotation = glm::rotate(finalRotation, m_TotalPitch, glm::vec3(1, 0, 0));
+		finalRotation = glm::rotate(finalRotation, m_TotalYaw, glm::vec3(0, 1, 0));
+
+		m_Forward = glm::normalize(glm::vec3(finalRotation * glm::vec4(0, 0, 1, 0)));
+		m_Right = glm::normalize(glm::cross(m_Forward, glm::vec3(0, 1, 0)));
+		m_Up = glm::normalize(glm::cross(m_Right, m_Forward));
 	}
 	else if (lmb)
 	{
 		m_TotalYaw += deltaX * mouseSensitivity;
-		m_Origin += m_Forward * deltaY * mouseSensitivity;
+		m_Origin -= m_Forward * deltaY * mouseSensitivity;
+
+
+		// Handle rotation on axises
+		finalRotation = glm::rotate(finalRotation, m_TotalPitch, glm::vec3(1, 0, 0));
+		finalRotation = glm::rotate(finalRotation, m_TotalYaw, glm::vec3(0, 1, 0));
+
+		m_Forward = glm::normalize(glm::vec3(finalRotation * glm::vec4(0, 0, 1, 0)));
+		m_Right = glm::normalize(glm::cross(m_Forward, glm::vec3(0, 1, 0)));
+		m_Up = glm::normalize(glm::cross(m_Right, m_Forward));
 	}
-
-	// Build direction vectors
-	glm::mat4 rotation = glm::mat4(1.0f);
-	rotation = glm::rotate(rotation, m_TotalYaw, glm::vec3(0, 1, 0));
-	rotation = glm::rotate(rotation, m_TotalPitch, glm::vec3(1, 0, 0));
-
-	m_Forward = glm::normalize(glm::vec3(rotation * glm::vec4(0, 0, 1, 0)));
-	m_Right = glm::normalize(glm::cross(m_Forward, glm::vec3(0, 1, 0)));
-	m_Up = glm::normalize(glm::cross(m_Right, m_Forward));
-
-
-	// KEYBOARD INPUT
-	//-----------------
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) m_Origin -= m_Forward * moveSpeed * deltaTime;
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) m_Origin += m_Forward * moveSpeed * deltaTime;
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) m_Origin -= m_Right * moveSpeed * deltaTime;
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) m_Origin += m_Right * moveSpeed * deltaTime;
-	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) m_Origin += m_Up * moveSpeed * deltaTime;
-	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) m_Origin -= m_Up * moveSpeed * deltaTime;
 }
 
 
@@ -76,7 +83,7 @@ void cat::Camera::Update(float deltaTime)
 //----------------
 const glm::mat4& cat::Camera::GetProjection()
 {
-	m_ProjectionMatrix = glm::perspectiveLH_ZO(m_FieldOfView,
+	m_ProjectionMatrix = glm::perspectiveRH_ZO(m_FieldOfView,
 		m_Window.GetAspectRatio(),
 		m_NearPlane, m_FarPlane);
 

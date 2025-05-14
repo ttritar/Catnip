@@ -19,12 +19,9 @@ namespace cat
         //  CLEANUP
         //-----------
         delete m_pSwapChain;
-        delete m_pDescriptorSetLayout;
         delete m_pGraphicsPipeline;
         delete m_pScene;
         delete m_pUniformBuffer;
-        delete m_pDescriptorPool;
-        delete m_pDescriptorSet;
         delete m_pCommandBuffer;
 
         glfwTerminate();
@@ -46,23 +43,29 @@ namespace cat
     {
         m_pSwapChain = new SwapChain(m_Device, m_Window.GetWindow());
 
-        m_pDescriptorSetLayout = new DescriptorSetLayout(m_Device);
+        m_pUniformBuffer = new UniformBuffer(m_Device, m_pSwapChain);
+
+        //rawr
+        DescriptorSetLayout* descriptorSetLayout = new DescriptorSetLayout(m_Device);
+        descriptorSetLayout = descriptorSetLayout
+            ->AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+            ->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// diffuse sampler
+            ->Create();
+
         m_pGraphicsPipeline = new cat::Pipeline(
             m_Device.GetDevice(),
             "shaders/simple_shader.vert.spv",
             "shaders/simple_shader.frag.spv",
-            m_pSwapChain->GetRenderPass(), m_pSwapChain->GetSwapChainExtent(), m_pDescriptorSetLayout->GetDescriptorSetLayout()
+            m_pSwapChain->GetRenderPass(), m_pSwapChain->GetSwapChainExtent(), descriptorSetLayout->GetDescriptorSetLayout()
         );
 
+       delete descriptorSetLayout;
+
 		// MODELS!
-        m_pScene = new Scene(m_Device, *m_pSwapChain, m_pGraphicsPipeline);
+        m_pScene = new Scene(m_Device, *m_pSwapChain, m_pGraphicsPipeline, m_pUniformBuffer);
 
-        m_pScene->AddModel("resources/sibenik.obj");
+        m_pScene->AddModel("resources/sponza.obj");
 
-
-        m_pUniformBuffer = new UniformBuffer(m_Device, m_pSwapChain);
-        m_pDescriptorPool = new DescriptorPool(m_Device);
-        m_pDescriptorSet = new DescriptorSet(m_Device,*m_pUniformBuffer,m_pScene->GetImages(), *m_pDescriptorSetLayout, *m_pDescriptorPool);
         m_pCommandBuffer = new CommandBuffer(m_Device);
     }
 
@@ -193,10 +196,7 @@ namespace cat
         scissor.extent = m_pSwapChain->GetSwapChainExtent();
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor); // dynamic -  needs to be set in cmd buffer before issuing draw cmd
 
-
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pGraphicsPipeline->GetPipelineLayout(), 0, 1, m_pDescriptorSet->GetDescriptorSet(m_CurrentFrame), 0, nullptr);
-
-		m_pScene->Draw(commandBuffer, m_pGraphicsPipeline->GetPipelineLayout(), *m_pDescriptorSet->GetDescriptorSet(m_CurrentFrame));
+		m_pScene->Draw(commandBuffer, m_pGraphicsPipeline->GetPipelineLayout(),m_CurrentFrame);
 
 
         // Finishing up:
