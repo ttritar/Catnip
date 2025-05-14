@@ -18,8 +18,7 @@ namespace cat
 
 		// CTOR & DTOR
 		//--------------------
-		Model(Device& device, SwapChain& swapchain, const std::string& path, 
-			DescriptorSetLayout& layout, DescriptorPool& pool);
+		Model(Device& device, SwapChain& swapchain, const std::string& path);
 		~Model();
 
 		Model(const Model&) = delete;
@@ -30,7 +29,6 @@ namespace cat
 
 		// Methods
 		//--------------------
-		void UpdateUniformBuffer(uint32_t currentImage, const glm::mat4& view, const glm::mat4& proj) const;
 		void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkDescriptorSet descriptorSet) const;
 
 		// Getters & Setters
@@ -73,8 +71,5 @@ namespace cat
 		std::string m_Directory;
 
 		glm::mat4 m_TransformMatrix = glm::mat4(1);
-
-		DescriptorSet* m_pDescriptorSet;
-		UniformBuffer* m_pUniformBuffer;
 	};
 }

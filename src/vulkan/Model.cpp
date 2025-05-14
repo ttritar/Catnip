@@ -7,34 +7,19 @@ namespace cat
 	// CTOR & DTOR
 	//--------------------
 
-	Model::Model(Device& device,SwapChain& swapchain, const std::string& path,
-		DescriptorSetLayout& layout, DescriptorPool& pool)
+	Model::Model(Device& device,SwapChain& swapchain, const std::string& path)
 		: m_Device{ device }, m_SwapChain{ swapchain }, m_Path(path), m_Directory{ path }
 	{
 		LoadModel(path);
-
-		m_pUniformBuffer = new UniformBuffer(device, &swapchain);
-		m_pDescriptorSet= new DescriptorSet(device, *m_pUniformBuffer, GetImages(), layout, pool);
 	}
 
 	Model::~Model()
 	{
-		delete m_pDescriptorSet;
-		m_pDescriptorSet = nullptr;
-
-		delete m_pUniformBuffer;
-		m_pUniformBuffer = nullptr;
-
 		for (auto mesh : m_Meshes)
 		{
 			delete mesh;
 			mesh = nullptr;
 		}
-	}
-
-	void Model::UpdateUniformBuffer(uint32_t currentImage, const glm::mat4& view, const glm::mat4& proj) const
-	{
-		m_pUniformBuffer->Update(currentImage, m_TransformMatrix, view, proj);
 	}
 
 	// Methods

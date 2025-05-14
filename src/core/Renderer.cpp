@@ -33,7 +33,8 @@ namespace cat
     void Renderer::Update(float deltaTime)
     {
 		m_Camera.Update(deltaTime);
-		m_pScene->Update(deltaTime, m_CurrentFrame);
+		m_pScene->Update(deltaTime);
+        m_pUniformBuffer->Update(m_CurrentFrame, m_Camera.GetView(), m_Camera.GetProjection() );
     }
 
     void Renderer::Render() const
@@ -54,14 +55,15 @@ namespace cat
         );
 
 		// MODELS!
-        m_pDescriptorPool = new DescriptorPool(m_Device);
-        m_pScene = new Scene(m_Device, *m_pSwapChain, m_pGraphicsPipeline,
-            *m_pDescriptorSetLayout, *m_pDescriptorPool,
-            m_Camera);
+        m_pScene = new Scene(m_Device, *m_pSwapChain, m_pGraphicsPipeline);
 
         m_pScene->AddModel("resources/sibenik.obj");
 
-		m_pCommandBuffer = new CommandBuffer(m_Device);
+
+        m_pUniformBuffer = new UniformBuffer(m_Device, m_pSwapChain);
+        m_pDescriptorPool = new DescriptorPool(m_Device);
+        m_pDescriptorSet = new DescriptorSet(m_Device,*m_pUniformBuffer,m_pScene->GetImages(), *m_pDescriptorSetLayout, *m_pDescriptorPool);
+        m_pCommandBuffer = new CommandBuffer(m_Device);
     }
 
     void Renderer::DrawFrame() const
