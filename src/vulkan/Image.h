@@ -1,8 +1,6 @@
 #pragma once
 
-#include "SwapChain.h"
 #include "Device.h"
-
 
 namespace cat
 {
@@ -11,8 +9,13 @@ namespace cat
 	public:
 		// CTOR & DTOR
 		//--------------------
-		Image(Device& device, SwapChain& swapChain, char const* path);
-		~Image();
+		Image(Device& device, const std::string& path);
+		Image(Device& device, VkExtent2D extent, VkFormat format, VkImageUsageFlags usage,
+		      VkImageAspectFlags aspectFlags);
+
+		Image(Device& device, VkExtent2D extent, VkFormat format, VkImageUsageFlags usage,
+			VkImageAspectFlags aspectFlags, VkImage image);
+;		~Image();
 
 		Image(const Image&) = delete;
 		Image& operator=(const Image&) = delete;
@@ -21,18 +24,31 @@ namespace cat
 
 		// Methods
 		//--------------------
+		void TransitionImageLayout(VkCommandBuffer commandBuffer, VkImageLayout newLayout);
 
 		// Getters & Setters
-		VkImage GetTextureImage()const { return m_TextureImage; }
-		VkDeviceMemory GetTextureImageMemory()const { return  m_TextureImageMemory; }
-		VkImageView GetTextureImageView()const { return  m_TextureImageView; }
-		VkSampler GetTextureSampler()const { return  m_TextureSampler; }
-
+		VkImage GetImage()const { return m_Image; }
+		VkDeviceMemory GetImageMemory()const { return  m_ImageMemory; }
+		VkImageView GetImageView()const { return  m_ImageView; }
+		VkSampler GetSampler()const { return  m_Sampler; }
+		bool HasDepth() const {
+			switch (m_Format)
+			{
+			case VK_FORMAT_D16_UNORM:
+			case VK_FORMAT_X8_D24_UNORM_PACK32:
+			case VK_FORMAT_D32_SFLOAT:
+			case VK_FORMAT_D24_UNORM_S8_UINT:
+			case VK_FORMAT_D32_SFLOAT_S8_UINT:
+				return true;
+			default:
+				return false;
+			}
+		}
 
 	private:
 		// Private Methods
 		//--------------------
-		void CreateTextureImage(char const* path);
+		void CreateTextureImage(const std::string& path);
 		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) const;
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const;
 		void CreateTextureImageView();
@@ -42,13 +58,15 @@ namespace cat
 		// Private Members
 		//--------------------
 		Device& m_Device;
-		SwapChain& m_SwapChain;
 
-		const std::string m_Path;
+		std::string m_Path;
 
-		VkImage m_TextureImage;
-		VkDeviceMemory m_TextureImageMemory;
-		VkImageView m_TextureImageView;
-		VkSampler m_TextureSampler;
+		VkImage m_Image;
+		VkDeviceMemory m_ImageMemory;
+		VkImageView m_ImageView;
+		VkSampler m_Sampler;
+
+		VkFormat m_Format;
+		VkImageLayout m_ImageLayout{ VK_IMAGE_LAYOUT_UNDEFINED };
 	};
 }

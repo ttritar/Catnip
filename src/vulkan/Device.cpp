@@ -4,6 +4,18 @@
 #include <stdexcept>
 #include <set>
 
+
+//namespace cat {
+//    PFN_vkCmdBeginRenderingKHR vkCmdBeginRenderingKHR = nullptr;
+//    PFN_vkCmdEndRenderingKHR vkCmdEndRenderingKHR = nullptr;
+//}
+
+PFN_vkCmdBeginRenderingKHR cat::vkCmdBeginRenderingKHR = nullptr;
+PFN_vkCmdEndRenderingKHR cat::vkCmdEndRenderingKHR = nullptr;
+
+
+
+
 namespace cat
 {
 	Device::Device(GLFWwindow* window)
@@ -135,26 +147,6 @@ namespace cat
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
 
-        // Extension support
-        uint32_t glfwExtensionCount = 0;
-        const char** glfwExtensions;
-
-        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-        createInfo.enabledExtensionCount = glfwExtensionCount;
-        createInfo.ppEnabledExtensionNames = glfwExtensions;
-
-        // Validation layers
-        if (ENABLE_VALIDATION_LAYERS) // include the validation layer names if they are enabled :
-        {
-            createInfo.enabledLayerCount = static_cast<uint32_t>(VALIDATION_LAYERS.size());
-            createInfo.ppEnabledLayerNames = VALIDATION_LAYERS.data();
-        }
-        else
-        {
-            createInfo.enabledLayerCount = 0;
-        }
-
         // Message Callback
         auto extensions = GetRequiredExtensions();
         createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
@@ -172,7 +164,6 @@ namespace cat
         else
         {
             createInfo.enabledLayerCount = 0;
-
             createInfo.pNext = nullptr;
         }
 
@@ -275,6 +266,10 @@ namespace cat
         VkPhysicalDeviceFeatures deviceFeatures{};
         deviceFeatures.samplerAnisotropy = VK_TRUE;
 
+        VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeatures{};
+        dynamicRenderingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
+        dynamicRenderingFeatures.dynamicRendering = VK_TRUE;
+
 
         // 3. Creating the logical device
         //------------------------------
@@ -283,12 +278,12 @@ namespace cat
 
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
         createInfo.pQueueCreateInfos = queueCreateInfos.data();
-        createInfo.queueCreateInfoCount = 1;
 
         createInfo.pEnabledFeatures = &deviceFeatures;
-
         createInfo.enabledExtensionCount = static_cast<uint32_t>(DEVICE_EXTENSIONS.size());
         createInfo.ppEnabledExtensionNames = DEVICE_EXTENSIONS.data();
+
+        createInfo.pNext = &dynamicRenderingFeatures;
 
         // Validation layers
         if (ENABLE_VALIDATION_LAYERS)
@@ -308,6 +303,15 @@ namespace cat
 
         vkGetDeviceQueue(m_Device, indices.graphicsFamily.value(), 0, &m_GraphicsQueue);
         vkGetDeviceQueue(m_Device, indices.graphicsFamily.value(), 0, &m_PresentQueue);
+
+        vkCmdBeginRenderingKHR = (PFN_vkCmdBeginRenderingKHR)vkGetDeviceProcAddr(m_Device, "vkCmdBeginRenderingKHR");
+        vkCmdEndRenderingKHR = (PFN_vkCmdEndRenderingKHR)vkGetDeviceProcAddr(m_Device, "vkCmdEndRenderingKHR");
+
+        if (!vkCmdBeginRenderingKHR || !vkCmdEndRenderingKHR)
+        {
+            throw std::runtime_error("Unable to dynamically load vkCmdBeginRenderingKHR and vkCmdEndRenderingKHR");
+        }
+
     }
 
     void Device::CreateCommandPool()
@@ -367,6 +371,10 @@ namespace cat
 
         std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
+        // Add this for dynamic rendering support!
+        extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+		// Add the debug messenger extension if validation layers are enabled
         if (ENABLE_VALIDATION_LAYERS)
         {
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);    //debug messenger with a callback using the VK_EXT_debug_utils extension
@@ -467,6 +475,8 @@ namespace cat
         }
 
         return requiredExtensions.empty();
+
+
     }
 
     SwapChainSupportDetails Device::QuerySwapChainSupport(VkPhysicalDevice device) const

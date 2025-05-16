@@ -138,8 +138,8 @@ namespace cat
             {
                 VkDescriptorImageInfo imageInfo{};
                 imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                imageInfo.imageView = images[j-1]->GetTextureImageView();
-                imageInfo.sampler = images[j-1]->GetTextureSampler();
+                imageInfo.imageView = images[j-1]->GetImageView();
+                imageInfo.sampler = images[j-1]->GetSampler();
 
 
                 descriptorWrite = {};

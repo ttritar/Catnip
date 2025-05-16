@@ -2,17 +2,17 @@
 
 namespace cat
 {
-	Pipeline::Pipeline(const VkDevice& device,const std::string& vertPath, const std::string& fragPath, const VkRenderPass& renderPass, const VkExtent2D& swapChainExtent, const VkDescriptorSetLayout& descriptorSetLayout)
+	Pipeline::Pipeline(Device& device, SwapChain* swapchain,const std::string& vertPath, const std::string& fragPath, const VkDescriptorSetLayout& descriptorSetLayout)
 		:   m_VertPath(vertPath), m_FragPath(fragPath),
-		m_Device(device), m_RenderPass(renderPass), m_SwapChainExtent(swapChainExtent), m_DescriptorSetLayout(descriptorSetLayout)
+		m_Device(device),m_pSwapChain(swapchain), m_SwapChainExtent(swapchain->GetSwapChainExtent()), m_DescriptorSetLayout(descriptorSetLayout)
 	{
 		CreateGraphicsPipeline();
 	}
 
     Pipeline::~Pipeline()
 	{
-		vkDestroyPipeline(m_Device, m_GraphicsPipeline, nullptr);
-		vkDestroyPipelineLayout(m_Device, m_PipelineLayout, nullptr);
+		vkDestroyPipeline(m_Device.GetDevice(), m_GraphicsPipeline, nullptr);
+		vkDestroyPipelineLayout(m_Device.GetDevice(), m_PipelineLayout, nullptr);
     }
 
 
@@ -192,12 +192,19 @@ namespace cat
         pipelineLayoutInfo.pushConstantRangeCount = 1;
         pipelineLayoutInfo.pPushConstantRanges = &psRange; 
 
-        if (vkCreatePipelineLayout(m_Device, &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS)
+        if (vkCreatePipelineLayout(m_Device.GetDevice(), &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create pipeline layout!");
         }
 
-
+		VkPipelineRenderingCreateInfoKHR renderingInfo{};
+		renderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+		renderingInfo.pNext = nullptr;
+        renderingInfo.viewMask = 0;
+		renderingInfo.colorAttachmentCount = 1;
+        renderingInfo.pColorAttachmentFormats = m_pSwapChain->GetSwapChainImageFormat();
+        renderingInfo.depthAttachmentFormat = m_pSwapChain->FindDepthFormat();
+        renderingInfo.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
 
         // Creating the Graphics Pipeline (Conclusion)
         //-------------------
@@ -217,16 +224,14 @@ namespace cat
 
         pipelineInfo.layout = m_PipelineLayout;
 
-        pipelineInfo.renderPass = m_RenderPass;
-        pipelineInfo.subpass = 0;
-
-        pipelineInfo.renderPass = m_RenderPass;
+        pipelineInfo.pNext = &renderingInfo;
+        pipelineInfo.renderPass = VK_NULL_HANDLE;
         pipelineInfo.subpass = 0;
 
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; //optional
         pipelineInfo.basePipelineIndex = -1; //optional
 
-        if (vkCreateGraphicsPipelines(m_Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_GraphicsPipeline) != VK_SUCCESS)
+        if (vkCreateGraphicsPipelines(m_Device.GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_GraphicsPipeline) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create graphics pipeline!");
         }
@@ -234,8 +239,8 @@ namespace cat
 
         // Module deletion
         //-------------------
-        vkDestroyShaderModule(m_Device, fragShaderModule, nullptr);
-        vkDestroyShaderModule(m_Device, vertShaderModule, nullptr);
+        vkDestroyShaderModule(m_Device.GetDevice(), fragShaderModule, nullptr);
+        vkDestroyShaderModule(m_Device.GetDevice(), vertShaderModule, nullptr);
     }
 
     VkShaderModule Pipeline::CreateShaderModule(const std::vector<char>& code) const
@@ -246,7 +251,7 @@ namespace cat
         createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
         VkShaderModule shaderModule;
-        if (vkCreateShaderModule(m_Device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+        if (vkCreateShaderModule(m_Device.GetDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
         {
             throw std::runtime_error("Failed to create shader module!");
         }

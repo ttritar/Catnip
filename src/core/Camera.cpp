@@ -66,12 +66,22 @@ void cat::Camera::Update(float deltaTime)
 		m_TotalYaw += deltaX * mouseSensitivity;
 		m_Origin -= m_Forward * deltaY * mouseSensitivity;
 
+		const glm::mat4 yawMatrix = glm::rotate(glm::mat4(1.0f), -m_TotalYaw, glm::vec3(0, 1, 0));
+		const glm::mat4 pitchMatrix = glm::rotate(glm::mat4(1.0f), m_TotalPitch, glm::vec3(0, 0, 1));
+
+		const glm::mat4 rotationMatrix = yawMatrix * pitchMatrix;
+
+
 
 		// Handle rotation on axises
-		finalRotation = glm::rotate(finalRotation, m_TotalPitch, glm::vec3(1, 0, 0));
+		/*finalRotation = glm::rotate(finalRotation, m_TotalPitch, glm::vec3(1, 0, 0));
 		finalRotation = glm::rotate(finalRotation, m_TotalYaw, glm::vec3(0, 1, 0));
 
 		m_Forward = glm::normalize(glm::vec3(finalRotation * glm::vec4(0, 0, 1, 0)));
+		m_Right = glm::normalize(glm::cross(m_Forward, glm::vec3(0, 1, 0)));
+		m_Up = glm::normalize(glm::cross(m_Right, m_Forward));*/
+
+		m_Forward = glm::vec3(rotationMatrix * glm::vec4(1, 0, 0, 0));
 		m_Right = glm::normalize(glm::cross(m_Forward, glm::vec3(0, 1, 0)));
 		m_Up = glm::normalize(glm::cross(m_Right, m_Forward));
 	}

@@ -4,6 +4,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
+#include <memory>
 #include <GLFW/glfw3native.h>
 
 #include "Device.h"
@@ -11,6 +12,7 @@
 
 
 #include <vector>
+#include "Image.h"
 
 namespace cat
 {
@@ -42,19 +44,22 @@ namespace cat
 
 		// Getters & Setters
 		VkSwapchainKHR GetSwapChain() const { return m_SwapChain; }
+
 		uint32_t GetImageCount()const { return m_ImageCount; }
 		uint32_t& GetImageIndex() { return m_ImageIndex; }
-		VkFormat GetSwapChainImageFormat() const { return m_SwapChainImageFormat; }
+		VkFormat* GetSwapChainImageFormat() { return &m_SwapChainImageFormat; }
 		VkExtent2D GetSwapChainExtent() const { return m_SwapChainExtent; }
-		const std::vector<VkImage>& GetSwapChainImages() const { return m_SwapChainImages; }
-		const std::vector<VkImageView>& GetSwapChainImageViews() const { return m_SwapChainImageViews; }
-		VkRenderPass GetRenderPass() const { return m_RenderPass; }
-		VkFramebuffer GetSwapChainFramebuffer() const { return m_SwapChainFramebuffers[m_ImageIndex]; }
+		std::vector<Image*> GetSwapChainImages() const { return m_pSwapChainImages; }
+		Image* GetSwapChainImage(size_t i) const { return m_pSwapChainImages[i]; }
+		Image* GetDepthImage() const { return m_pDepthImage; }
+		VkImageView GetSwapChainImageView(size_t i) const { return m_pSwapChainImages[i]->GetImageView(); }
+
 		void SetFrameBufferResized(bool value) { m_FramebufferResized = value; }
 		bool GetFrameBufferResized() const { return m_FramebufferResized; }
 		VkFence* GetInFlightFences(uint16_t idx) { return &m_InFlightFences[idx]; }
 		VkSemaphore GetImageAvailableSemaphores(uint16_t idx) const { return m_ImageAvailableSemaphores[idx]; }
 		VkSemaphore GetRenderFinishedSemaphores(uint16_t idx) const { return m_RenderFinishedSemaphores[idx]; }
+		VkFormat FindDepthFormat() const;
 
 	private:
 		// Private Methods
@@ -62,18 +67,15 @@ namespace cat
 
 		// Creators
 		void CreateSwapChain();
-		void CleanupSwapChain() const;
-		void CreateImageViews();
-		void CreateRenderPass();
+		void CleanupSwapChain();
 		void CreateDepthResources();
-		void CreateFramebuffers();
 		void CreateSyncObjects();
 
 		// Helpers
 		static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+		VkSurfaceFormatKHR GetSwapSurfaceFormat() const { return { m_SwapChainImageFormat, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR }; }
 		static VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) const;
-		VkFormat FindDepthFormat() const;
 		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
 		                             VkFormatFeatureFlags features) const;
 
@@ -84,19 +86,15 @@ namespace cat
 		VkSwapchainKHR m_SwapChain;
 		uint32_t m_ImageCount ;
 		uint32_t m_ImageIndex;
-		std::vector<VkImage> m_SwapChainImages;
+
+		std::vector<std::unique_ptr<Image>> m_pSwapChainImages;
 		VkFormat m_SwapChainImageFormat;
 		VkExtent2D m_SwapChainExtent;
-		std::vector<VkImageView> m_SwapChainImageViews;
-		VkRenderPass m_RenderPass;
-		std::vector<VkFramebuffer> m_SwapChainFramebuffers;
 		std::vector < VkSemaphore> m_ImageAvailableSemaphores;
 		std::vector < VkSemaphore> m_RenderFinishedSemaphores;
 		std::vector < VkFence> m_InFlightFences;
 
-		VkImage m_DepthImage;
-		VkDeviceMemory m_DepthImageMemory;
-		VkImageView m_DepthImageView;
+		std::unique_ptr<Image> m_pDepthImage;
 
 		Device& m_Device;
 		GLFWwindow* m_Window;

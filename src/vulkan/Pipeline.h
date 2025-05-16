@@ -19,7 +19,8 @@ namespace cat
 	public:
 		// CTOR & DTOR
 		//--------------------
-		Pipeline(const VkDevice& device, const std::string& vertPath, const std::string& fragPath, const VkRenderPass& renderPass, const VkExtent2D& swapChainExtent, const VkDescriptorSetLayout& descriptorSetLayout);
+		Pipeline(Device& device, SwapChain* swapchain, const std::string& vertPath, const std::string& fragPath,
+		         const VkDescriptorSetLayout& descriptorSetLayout);
 		~Pipeline();
 
 		Pipeline(const Pipeline&) = delete;
@@ -53,11 +54,10 @@ namespace cat
 		const std::string m_VertPath;
 		const std::string m_FragPath;
 
-		VkDevice m_Device;
-		VkRenderPass m_RenderPass;
+		Device& m_Device;
+		SwapChain* m_pSwapChain;
 		VkExtent2D m_SwapChainExtent;
 		VkDescriptorSetLayout m_DescriptorSetLayout;
-
 	};
 
 }
