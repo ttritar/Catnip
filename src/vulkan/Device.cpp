@@ -1,5 +1,11 @@
 #include "Device.h"
 
+#define VMA_IMPLEMENTATION
+#include <vma/vk_mem_alloc.h>
+
+#include "Buffer.h"
+
+// std
 #include <iostream>
 #include <stdexcept>
 #include <set>
@@ -27,6 +33,7 @@ namespace cat
 		PickPhysicalDevice();
 		CreateLogicalDevice();
 		CreateCommandPool();
+        allocVmaAllocator();
 	}
 
 	Device::~Device()
@@ -47,50 +54,36 @@ namespace cat
 
 
 
-    void Device::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-        VkBuffer& buffer, VkDeviceMemory& bufferMemory) const
+    void Device::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VmaMemoryUsage memoryUsage, bool mappable,
+        VkBuffer& buffer, VmaAllocation& allocation) const
     {
         VkBufferCreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = size; //size of buffer in bytes
-        bufferInfo.usage = usage; //specify what kind of buffer this is (use bitwise or to specify multiple types)
-        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; //specify how the data should be accessed
+        bufferInfo.usage = usageFlags;
+        bufferInfo.size = size;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        if (vkCreateBuffer(m_Device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
-        {
+        VmaAllocationCreateInfo allocationInfo{};
+        allocationInfo.usage = memoryUsage;
+
+        if (mappable) {
+            allocationInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        }
+
+        VmaAllocationInfo allocInfo{};
+        if (vmaCreateBuffer(m_allocator, &bufferInfo, &allocationInfo, &buffer, &allocation, &allocInfo) != VK_SUCCESS) {
             throw std::runtime_error("failed to create buffer!");
         }
 
-
-        // MEMORY REQUIREMENTS
-        VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(m_Device, buffer, &memRequirements);
-
-        // MEMORY ALLOCATION
-        VkMemoryAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
-
-        if (vkAllocateMemory(m_Device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to allocate buffer memory!");
-        }
-
-        vkBindBufferMemory(m_Device, buffer, bufferMemory, 0);    // if not 0, it should be divisibe by memRequirements.alignment
-
     }
 
-    void Device::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const
+    void Device::CopyBuffer(Buffer* srcBuffer, Buffer* destBuffer, VkDeviceSize size) const
     {
         VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
 
-        // COPY BUFFER
         VkBufferCopy copyRegion{};
-        copyRegion.srcOffset = 0; //optional
-        copyRegion.dstOffset = 0; //optional
         copyRegion.size = size;
-        vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+        vkCmdCopyBuffer(commandBuffer, srcBuffer->GetBuffer(), destBuffer->GetBuffer(), 1, &copyRegion);
 
         EndSingleTimeCommands(commandBuffer);
     }
@@ -231,6 +224,7 @@ namespace cat
             if (IsDeviceSuitable(device))
             {
                 m_PhysicalDevice = device;
+                vkGetPhysicalDeviceProperties(m_PhysicalDevice, &properties);
                 break;
             }
         }
@@ -361,6 +355,68 @@ namespace cat
         }
 
         return true;
+    }
+
+    void Device::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
+        VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
+        VkImageMemoryBarrier barrier{};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.oldLayout = oldLayout;
+        barrier.newLayout = newLayout;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = image;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = mipLevels;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = 0;
+
+        vkCmdPipelineBarrier(
+            commandBuffer,
+            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &barrier
+        );
+
+        EndSingleTimeCommands(commandBuffer);
+    }
+
+    void Device::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
+        VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
+
+        VkBufferImageCopy region{};
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+
+        region.imageOffset = { 0, 0, 0 };
+        region.imageExtent = {
+            width,
+            height,
+            1
+        };
+
+        vkCmdCopyBufferToImage(
+            commandBuffer,
+            buffer,
+            image,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1,
+            &region
+        );
+
+        EndSingleTimeCommands(commandBuffer);
     }
 
     std::vector<const char*> Device::GetRequiredExtensions() // Extension for Message Callback
@@ -542,6 +598,18 @@ namespace cat
         vkQueueWaitIdle(m_GraphicsQueue);
 
         vkFreeCommandBuffers(m_Device, m_CommandPool, 1, &commandBuffer);
+    }
+
+    void Device::allocVmaAllocator()
+    {
+        VmaAllocatorCreateInfo allocatorInfo = {};
+        allocatorInfo.physicalDevice = m_PhysicalDevice;
+        allocatorInfo.device = m_Device;
+        allocatorInfo.instance = m_Instance;
+
+        if (vmaCreateAllocator(&allocatorInfo, &m_allocator) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create VMA allocator!");
+        }
     }
 
 }

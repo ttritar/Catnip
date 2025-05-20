@@ -32,7 +32,7 @@ namespace cat
 		// Create meshes
 		for (auto& data : m_RawMeshes)
 		{
-			m_Meshes.push_back(new Mesh(m_Device, m_SwapChain, m_pUniformBuffer,
+			m_Meshes.push_back(new Mesh(m_Device, m_pUniformBuffer,
 				m_pDescriptorSetLayout, m_pDescriptorPool,
 				data.vertices, data.indices, data.material));
 		}

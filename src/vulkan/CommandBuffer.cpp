@@ -1,5 +1,7 @@
 #include "CommandBuffer.h"
 
+#include <stdexcept>
+
 namespace cat
 {
 	CommandBuffer::CommandBuffer(Device& device)

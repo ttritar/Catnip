@@ -9,7 +9,7 @@ namespace cat
 	public:
 		// CTOR & DTOR
 		//--------------------
-		Buffer(Device& device, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
+		Buffer(Device& deviceRef, VkDeviceSize size, VkBufferUsageFlags usageFlags, VmaMemoryUsage memoryUsage, bool mappable = true);
 		~Buffer();
 
 
@@ -17,11 +17,15 @@ namespace cat
 		//--------------------
 		VkResult Map(VkDeviceSize offset = 0);
 		void Unmap();
-		void WriteToBuffer(void* data, VkDeviceSize offset = 0) const;
+		void WriteToBuffer(void* data, VkDeviceSize size) const;
 
 		// Getters & Setters
 		VkBuffer GetBuffer() const { return m_Buffer; }
-		VkDeviceMemory GetBufferMemory() const { return m_BufferMemory; }
+
+		void Flush();
+		VmaAllocation GetAllocation() const { return m_Allocation; }
+		VmaAllocationInfo GetAllocationInfo() const { return m_AllocationInfo; }
+		void* GetRawData() const { return m_Mapped; }
 
 	private:
 		// Private Methods
@@ -35,12 +39,13 @@ namespace cat
 
 		// Private Members
 		//--------------------
+		Device& m_Device;
 		VkBuffer m_Buffer;
-		VkDeviceMemory m_BufferMemory;
-		VkDeviceSize m_BufferSize;
 		void* m_Mapped = nullptr;
 
-		Device& m_Device;
+		VmaAllocation m_Allocation = VK_NULL_HANDLE;
+		VmaAllocationInfo m_AllocationInfo{};
+
 
 	};
 }

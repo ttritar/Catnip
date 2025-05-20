@@ -98,7 +98,7 @@ namespace cat
 	//--------------------
     void SwapChain::CreateSwapChain()
     {
-        cat::SwapChainSupportDetails swapChainSupport = m_Device.GetSwapChainSupport();
+        SwapChainSupportDetails swapChainSupport = m_Device.GetSwapChainSupport();
 
         VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
         VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
@@ -166,10 +166,18 @@ namespace cat
         m_pSwapChainImages.clear();
 		m_pSwapChainImages.resize(m_ImageCount);
 
-        for (auto image : swapChainImages)
+        for (int i{}; i < m_ImageCount;i++)
         {
-            auto catImg = std::make_unique<Image>(
-				m_Device, m_SwapChainExtent, surfaceFormat.format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT, image);
+            auto myImg = new Image(
+                m_Device,
+                m_SwapChainExtent.width,
+                m_SwapChainExtent.height,
+                surfaceFormat.format,
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                VMA_MEMORY_USAGE_GPU_ONLY,
+                swapChainImages[i]);
+
+            m_pSwapChainImages[i]=std::move(myImg);
         }
 
         m_SwapChainImageFormat = surfaceFormat.format;
@@ -178,15 +186,13 @@ namespace cat
 
     void SwapChain::CleanupSwapChain()
     {
-		delete m_pDepthImage;
-		m_pDepthImage = nullptr;
-
 		for (size_t i = 0; i < m_pSwapChainImages.size(); i++)
 		{
 			delete m_pSwapChainImages[i];
 			m_pSwapChainImages[i] = nullptr;
 		}
 		m_pSwapChainImages.clear();
+        m_pDepthImages.clear();
 
         vkDestroySwapchainKHR(m_Device.GetDevice(), m_SwapChain, nullptr);
     }
@@ -215,11 +221,21 @@ namespace cat
 
     void SwapChain::CreateDepthResources()
     {
-        VkFormat depthFormat = FindDepthFormat();
+        m_pDepthImages.clear();
+        m_swapChainDepthFormat = FindDepthFormat();
 
-		m_pDepthImage = new Image(m_Device,m_SwapChain,m_SwapChainExtent,depthFormat, 
-            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-            VK_IMAGE_ASPECT_DEPTH_BIT);
+        for (size_t i = 0; i < m_ImageCount; i++) 
+        {
+            auto depthImage = new Image(
+                m_Device,
+                m_SwapChainExtent.width,
+                m_SwapChainExtent.height,
+                m_swapChainDepthFormat,
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                VMA_MEMORY_USAGE_GPU_ONLY);
+            m_pDepthImages.push_back(std::move(depthImage));
+        }
+        
     }
 
     void SwapChain::CreateSyncObjects()

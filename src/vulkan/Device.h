@@ -8,8 +8,10 @@
 
 #include <vector>
 #include <optional>
-#include <stdexcept>
 #include <vulkan/vulkan.h>
+
+#include <vma/vk_mem_alloc.h>
+
 
 namespace cat
 {
@@ -92,6 +94,9 @@ struct SwapChainSupportDetails
 
 
 
+// Forward Declarations
+	class Buffer;
+
 	class Device final
 	{
 	public:
@@ -111,10 +116,14 @@ struct SwapChainSupportDetails
 		VkCommandBuffer BeginSingleTimeCommands() const;
 		void EndSingleTimeCommands(VkCommandBuffer commandBuffer) const;
 
-		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) const;
-		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
+		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VmaMemoryUsage memoryUsage, bool mappable, VkBuffer& buffer, VmaAllocation& allocation) const;
+		void CopyBuffer(Buffer* srcBuffer, Buffer* destBuffer, VkDeviceSize size) const;
 
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)const;
+
+		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
+
+		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 	
 
 		// Getters & Setters
@@ -127,6 +136,9 @@ struct SwapChainSupportDetails
 		VkCommandPool GetCommandPool() const { return m_CommandPool; } 
 		SwapChainSupportDetails GetSwapChainSupport()const { return QuerySwapChainSupport(m_PhysicalDevice); }
 		QueueFamilyIndices GetPhysicalQueueFamilies()const { return FindQueueFamilies(m_PhysicalDevice); }
+		[[nodiscard]] VmaAllocator Allocator() const { return m_allocator; }
+
+		VkPhysicalDeviceProperties properties{};
 
 	private:
 		// Private Methods
@@ -139,6 +151,7 @@ struct SwapChainSupportDetails
 		void PickPhysicalDevice();
 		void CreateLogicalDevice();
 		void CreateCommandPool();
+		void allocVmaAllocator();
 
 		// Helpers
 		static bool CheckValidationLayerSupport();
@@ -161,6 +174,7 @@ struct SwapChainSupportDetails
 		VkSurfaceKHR m_Surface;
 		VkCommandPool m_CommandPool;
 
+		VmaAllocator m_allocator{};
 
 		GLFWwindow* m_Window;
 	};

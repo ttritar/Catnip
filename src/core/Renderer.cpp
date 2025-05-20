@@ -66,7 +66,7 @@ namespace cat
 		// MODELS!
 		m_pScene = new Scene(m_Device, *m_pSwapChain, m_pGraphicsPipeline, m_pUniformBuffer);
 
-		m_pScene->AddModel("resources/sponza.obj");
+		//m_pScene->AddModel("resources/sponza.obj");
 
 		m_pCommandBuffer = new CommandBuffer(m_Device);
 	}
@@ -165,7 +165,7 @@ namespace cat
 			commandBuffer,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		);
-		m_pSwapChain->GetDepthImage()->TransitionImageLayout(
+		m_pSwapChain->GetDepthImage(m_pSwapChain->GetImageIndex())->TransitionImageLayout(
 			commandBuffer,
 			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 		);
@@ -217,18 +217,18 @@ namespace cat
 		// Finishing up:
 		vkCmdEndRenderingKHR(commandBuffer);
 
-		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to record command buffer!");
-		}
-
 		m_pSwapChain->GetSwapChainImage(static_cast<int>(m_pSwapChain->GetImageIndex()))->TransitionImageLayout(
 			commandBuffer, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 		);
 
-		m_pSwapChain->GetDepthImage()->TransitionImageLayout(
+		m_pSwapChain->GetDepthImage(m_pSwapChain->GetImageIndex())->TransitionImageLayout(
 			commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 		);
+
+		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to record command buffer!");
+		}
 	}
 
 }

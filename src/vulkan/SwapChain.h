@@ -51,7 +51,7 @@ namespace cat
 		VkExtent2D GetSwapChainExtent() const { return m_SwapChainExtent; }
 		std::vector<Image*> GetSwapChainImages() const { return m_pSwapChainImages; }
 		Image* GetSwapChainImage(size_t i) const { return m_pSwapChainImages[i]; }
-		Image* GetDepthImage() const { return m_pDepthImage; }
+		Image* GetDepthImage(int frameIndex) const { return m_pDepthImages[frameIndex]; }
 		VkImageView GetSwapChainImageView(size_t i) const { return m_pSwapChainImages[i]->GetImageView(); }
 
 		void SetFrameBufferResized(bool value) { m_FramebufferResized = value; }
@@ -87,14 +87,16 @@ namespace cat
 		uint32_t m_ImageCount ;
 		uint32_t m_ImageIndex;
 
-		std::vector<std::unique_ptr<Image>> m_pSwapChainImages;
+		std::vector<Image*> m_pSwapChainImages;
 		VkFormat m_SwapChainImageFormat;
 		VkExtent2D m_SwapChainExtent;
 		std::vector < VkSemaphore> m_ImageAvailableSemaphores;
 		std::vector < VkSemaphore> m_RenderFinishedSemaphores;
 		std::vector < VkFence> m_InFlightFences;
 
-		std::unique_ptr<Image> m_pDepthImage;
+		std::vector<Image*> m_pDepthImages;
+		VkFormat m_swapChainDepthFormat;
+
 
 		Device& m_Device;
 		GLFWwindow* m_Window;

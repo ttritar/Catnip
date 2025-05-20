@@ -20,14 +20,14 @@ namespace cat
 {
     // CTOR & DTOR
     //--------------------
-	Mesh::Mesh(Device& device, SwapChain& swapchain, UniformBuffer* ubo, DescriptorSetLayout* layout, DescriptorPool* pool,
+	Mesh::Mesh(Device& device, UniformBuffer* ubo, DescriptorSetLayout* layout, DescriptorPool* pool,
         const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const Material &material)
 		: m_Device{ device }, m_Vertices{ vertices }, m_Indices{ indices }
     {
         CreateVertexBuffer();
         CreateIndexBuffer();
 
-    	m_Images.push_back(new Image(device, swapchain, material.diffusePath.c_str()));
+    	m_Images.push_back(new Image(device, material.diffusePath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO));
         m_pDescriptorSet = new DescriptorSet(device, *ubo, m_Images, *layout, *pool);
     } 
 
@@ -41,13 +41,6 @@ namespace cat
             delete image;
 			image = nullptr;
 	    }
-
-        delete m_IndexBuffer;
-        m_IndexBuffer = nullptr;
-
-		delete m_VertexBuffer;
-        m_VertexBuffer = nullptr;
-
     }
 
 
@@ -86,26 +79,25 @@ namespace cat
     //--------------------
     void Mesh::CreateVertexBuffer()
     {
-		m_VertexBufferSize = sizeof(m_Vertices[0]) * m_Vertices.size();
-		m_VertexCount = m_Vertices.size();
+        m_VertexCount = static_cast<uint32_t>(m_Vertices.size());
+        VkDeviceSize bufferSize = sizeof(m_Vertices[0]) * m_VertexCount;
 
-        // USING THE STAGING BUFFER
-        Buffer stagingBuffer{
-         m_Device, m_VertexBufferSize,
-         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        };
-
-        stagingBuffer.Map();
-		stagingBuffer.WriteToBuffer((void*)m_Vertices.data());
-
-        m_VertexBuffer = new Buffer(
-            m_Device, m_VertexBufferSize,
-            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+        // Create staging buffer (CPU-accessible)
+        auto stagingBuffer = std::make_unique<Buffer>(
+            m_Device, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY
         );
 
-        m_Device.CopyBuffer(stagingBuffer.GetBuffer(), m_VertexBuffer->GetBuffer(), m_VertexBufferSize);
+        stagingBuffer->Map();
+        stagingBuffer->WriteToBuffer((void*)m_Vertices.data(), bufferSize);
+        stagingBuffer->Unmap();
+
+        m_VertexBuffer = std::make_unique<Buffer>(
+            m_Device, bufferSize,
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            VMA_MEMORY_USAGE_GPU_ONLY
+        );
+
+        m_Device.CopyBuffer(stagingBuffer.get(), m_VertexBuffer.get(), bufferSize);
     }
 
     void Mesh::CreateIndexBuffer()
@@ -117,20 +109,21 @@ namespace cat
     	m_IndexBufferSize = sizeof(m_Indices[0]) * m_Indices.size();
         m_IndexCount = m_Indices.size();
 
-        Buffer stagingBuffer{
+        std::unique_ptr<Buffer> stagingBuffer = std::make_unique<Buffer>(
             m_Device, m_IndexBufferSize,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        };
+            VMA_MEMORY_USAGE_CPU_ONLY
+        );
 
-        stagingBuffer.Map();
-        stagingBuffer.WriteToBuffer((void*)m_Indices.data());
+        stagingBuffer->Map();
+        stagingBuffer->WriteToBuffer((void*)m_Indices.data(),m_IndexBufferSize);
 
-        m_IndexBuffer = new Buffer(
+        m_IndexBuffer = std::make_unique<Buffer>(
             m_Device, m_IndexBufferSize,
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+			VMA_MEMORY_USAGE_GPU_ONLY
+            );
 
-        m_Device.CopyBuffer(stagingBuffer.GetBuffer(), m_IndexBuffer->GetBuffer(), m_IndexBufferSize);
+        m_Device.CopyBuffer(stagingBuffer.get(), m_IndexBuffer.get(), m_IndexBufferSize);
     }
 }

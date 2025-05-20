@@ -1,6 +1,8 @@
 #include "Descriptors.h"
 
 #include <array>
+#include <stdexcept>
+
 #include "SwapChain.h"
 
 namespace cat

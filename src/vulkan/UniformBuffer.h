@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "Buffer.h"
 #include "SwapChain.h"
 
 namespace cat
@@ -35,12 +36,16 @@ namespace cat
 		void Update(unsigned int currentImage, glm::mat4 view, glm::mat4 proj);
 
 		// Getters & Setters
-		VkBuffer GetUniformBuffer(uint16_t idx)const { return m_UniformBuffers[idx]; }
-		std::vector<VkBuffer> GetUniformBuffers()const { return m_UniformBuffers; }
-		VkDeviceMemory UniformBufferMemory(uint16_t idx)const { return m_UniformBuffersMemory[idx]; }
-		std::vector<VkDeviceMemory> UniformBuffersMemory()const { return m_UniformBuffersMemory; }
-		void* GetUniformBufferMapped(uint16_t idx)const { return m_UniformBuffersMapped[idx]; }
-		std::vector<void*> GetUniformBuffersMapped()const { return m_UniformBuffersMapped; }
+		VkBuffer GetUniformBuffer(uint16_t idx)const { return m_UniformBuffers[idx]->GetBuffer(); }
+		std::vector<VkBuffer> GetUniformBuffers()const
+		{
+			std::vector<VkBuffer> buffers;
+			for (const auto& buffer : m_UniformBuffers)
+			{
+				buffers.push_back(buffer->GetBuffer());
+			}
+			return buffers;
+		}
 
 	private:
 		// Private Members
@@ -48,8 +53,6 @@ namespace cat
 		Device& m_Device;
 		SwapChain* m_SwapChain;
 
-		std::vector<VkBuffer> m_UniformBuffers;
-		std::vector<VkDeviceMemory> m_UniformBuffersMemory;
-		std::vector<void*> m_UniformBuffersMapped;
+		std::vector<std::unique_ptr<Buffer>> m_UniformBuffers;
 	};
 }

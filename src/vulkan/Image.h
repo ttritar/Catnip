@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "Device.h"
 
 namespace cat
@@ -9,13 +11,12 @@ namespace cat
 	public:
 		// CTOR & DTOR
 		//--------------------
-		Image(Device& device, const std::string& path);
-		Image(Device& device, VkExtent2D extent, VkFormat format, VkImageUsageFlags usage,
-		      VkImageAspectFlags aspectFlags);
+		explicit Image(Device& device, uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage, VkFilter filter = VK_FILTER_LINEAR);
+		Image(Device& device, const std::string& filename, VkFormat format, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage, VkFilter filter = VK_FILTER_LINEAR);
 
-		Image(Device& device, VkExtent2D extent, VkFormat format, VkImageUsageFlags usage,
-			VkImageAspectFlags aspectFlags, VkImage image);
-;		~Image();
+		//Used for swapchain only
+		Image(Device& device, uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage, VkImage existingImage);
+		~Image();
 
 		Image(const Image&) = delete;
 		Image& operator=(const Image&) = delete;
@@ -28,10 +29,10 @@ namespace cat
 
 		// Getters & Setters
 		VkImage GetImage()const { return m_Image; }
-		VkDeviceMemory GetImageMemory()const { return  m_ImageMemory; }
 		VkImageView GetImageView()const { return  m_ImageView; }
 		VkSampler GetSampler()const { return  m_Sampler; }
-		bool HasDepth() const {
+		bool HasDepth() const
+		{
 			switch (m_Format)
 			{
 			case VK_FORMAT_D16_UNORM:
@@ -44,16 +45,26 @@ namespace cat
 				return false;
 			}
 		}
+		bool HasStencil() const
+		{
+			switch (m_Format)
+			{
+			case VK_FORMAT_D24_UNORM_S8_UINT:
+			case VK_FORMAT_D32_SFLOAT_S8_UINT:
+				return true;
+			default:
+				return false;
+			}
+		}
 
 	private:
 		// Private Methods
 		//--------------------
-		void CreateTextureImage(const std::string& path);
-		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) const;
-		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const;
+		void CreateImage(uint32_t width, uint32_t height, uint32_t miplevels, VkFormat format, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage);
 		void CreateTextureImageView();
-		void CreateTextureSampler();
+		void CreateTextureSampler(VkFilter filter, VkSamplerAddressMode addressMode);
 
+		static VkImageAspectFlags getImageAspect(VkFormat format);
 
 		// Private Members
 		//--------------------
@@ -62,11 +73,16 @@ namespace cat
 		std::string m_Path;
 
 		VkImage m_Image;
-		VkDeviceMemory m_ImageMemory;
+		VmaAllocation m_Allocation;
 		VkImageView m_ImageView;
 		VkSampler m_Sampler;
 
 		VkFormat m_Format;
 		VkImageLayout m_ImageLayout{ VK_IMAGE_LAYOUT_UNDEFINED };
+		VkEvent m_ImageEvent{ VK_NULL_HANDLE };
+
+		VkExtent2D m_Extent{ 0, 0 };
+
+		bool m_IsSwapchainImage{ false };
 	};
 }

@@ -83,19 +83,20 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(model)
 
- FetchContent_Declare(
-            vma
-            GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
-            GIT_TAG v3.2.1
-    )
 
-    FetchContent_GetProperties(vma)
+# vma
+#-----------
+FetchContent_Declare(
+        vma
+        GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+        GIT_TAG v3.2.1
+)
 
-    if (NOT vma_POPULATED)
-        FetchContent_MakeAvailable(vma)
-    endif()
+FetchContent_GetProperties(vma)
 
-target_include_directories(${TARGET} ${ACCESS} ${vma_SOURCE_DIR})
+if (NOT vma_POPULATED)
+    FetchContent_MakeAvailable(vma)
+endif()
 
 
 
@@ -111,6 +112,7 @@ target_include_directories(GP2_VulkanTutorial PRIVATE
     ${CMAKE_SOURCE_DIR}/include  
     ${tiny_SOURCE_DIR}   
     ${assimp_SOURCE_DIR} 
+    ${vma_SOURCE_DIR}
 )
 
 target_link_directories(GP2_VulkanTutorial PRIVATE 
@@ -124,11 +126,12 @@ add_custom_command(TARGET GP2_VulkanTutorial POST_BUILD
         $<TARGET_FILE_DIR:GP2_VulkanTutorial>
 )
 
+set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT GP2_VulkanTutorial)
 
 
 
 #===================
-# COMPILATION
+# COMPILATION 
 #===================
 
 
