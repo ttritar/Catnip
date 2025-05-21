@@ -6,10 +6,12 @@
 namespace cat
 {
 
-    static void FramebufferResizeCallback(GLFWwindow* window, int width, int height)
+    void Window::FramebufferResizeCallback(GLFWwindow* window, int width, int height)
     {
-        //auto app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
-    	//app->SetFrameBufferResized(true);
+        auto ptr = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+        ptr->SetFrameBufferResized(true);
+		ptr->m_Width = width;
+		ptr->m_Height = height;
     }
     
     Window::Window(int width, int height, const char* title)

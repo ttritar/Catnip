@@ -7,7 +7,7 @@ namespace cat
 
 	Renderer::Renderer(Window& window)
 		: m_Window(window), m_Device(m_Window.GetWindow()),
-		m_Camera(m_Window, { 0.f,0.f,-1.f }, glm::radians(90.0f), 0.1f, 100.0f)
+		m_Camera(m_Window, { 0.f,0.f,-1.f })
 	{
 		InitializeVulkan();
 	}

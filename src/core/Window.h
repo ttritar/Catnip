@@ -28,7 +28,6 @@ public:
 	//--------------------
 	void InitializeWindow(int width, int height, const char* title);
 
-
 	// Getters & Setters
 	GLFWwindow* GetWindow()const { return m_pWindow; }
 
@@ -36,13 +35,18 @@ public:
 	int GetHeight() const { return m_Height; }
 	float GetAspectRatio() const{ return static_cast<float>(m_Width) / static_cast<float>(m_Height); }
 
+	void SetFrameBufferResized(bool value) { m_FrameBufferResized = value; }
+	bool GetFrameBufferResized() const { return m_FrameBufferResized; }
 
 private:
+	static void FramebufferResizeCallback(GLFWwindow* window, int width, int height);
 	GLFWwindow* m_pWindow;
 
 	// Window properties
-	const int m_Width;
-	const int m_Height;
+	int m_Width;
+	int m_Height;
+
+	bool m_FrameBufferResized = false;
 
 };
 

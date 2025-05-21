@@ -1,119 +1,182 @@
 #include "Camera.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
+#include <algorithm>
 #include <glm/gtx/hash.hpp>
 
+// std
 #include <iostream>
+
+
+
 
 // Ctor & Dtor
 //-----------------
-cat::Camera::Camera(Window& window,glm::vec3 origin, float fovy, float nearPlane, float farPlane)
-	: m_Window(window), m_Origin(origin), m_FieldOfView(fovy), m_NearPlane(nearPlane), m_FarPlane(farPlane)
+cat::Camera::Camera(Window& window,glm::vec3 origin, Specifications specs)
+	: m_Window(window), m_Origin(origin), m_Specs(specs)
 {
+	UpdateAspectRatio();
 }
 
 
 void cat::Camera::Update(float deltaTime)
 {
-	GLFWwindow* window = m_Window.GetWindow();
-	const float moveSpeed = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ? 60.0f : 30.0f);
-	const float mouseSensitivity = 0.005f;
+	if (m_Window.GetFrameBufferResized())
+		UpdateAspectRatio(); 
 
-	// KEYBOARD INPUT
+	// Handle Input
 	//-----------------
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) m_Origin += m_Forward * moveSpeed * deltaTime;
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) m_Origin -= m_Forward * moveSpeed * deltaTime;
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) m_Origin -= m_Right * moveSpeed * deltaTime;
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) m_Origin += m_Right * moveSpeed * deltaTime;
-	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) m_Origin += m_Up * moveSpeed * deltaTime;
-	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) m_Origin -= m_Up * moveSpeed * deltaTime;
+	HandleKeyboardInput(deltaTime);
+	HandleMouseInput();
 
 
-	// MOUSE INPUT
+	// UPDATING VECTORS
 	//-----------------
-	double mouseX, mouseY;
-	glfwGetCursorPos(window, &mouseX, &mouseY);
-	float deltaX = static_cast<float>(mouseX - m_LastMouseX);
-	float deltaY = static_cast<float>(mouseY - m_LastMouseY);
-	m_LastMouseX = static_cast<float>(mouseX);
-	m_LastMouseY = static_cast<float>(mouseY);
-
-	bool rmb = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
-	bool lmb = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
-
-	glm::mat4  finalRotation = glm::mat4(1.0f);
-	if (rmb&&lmb)
-	{
-		m_Origin += m_Up * deltaY* mouseSensitivity;
-	}
-	else if (rmb)
-	{
-		m_TotalYaw += deltaX * mouseSensitivity; 
-		m_TotalPitch += deltaY * mouseSensitivity;
-
-		m_TotalPitch = glm::clamp(m_TotalPitch, -glm::half_pi<float>(), glm::half_pi<float>()); // clamp pitch to avoid gimbal lock
-
-		// Handle rotation on axises
-		finalRotation = glm::rotate(finalRotation, m_TotalPitch, glm::vec3(1, 0, 0));
-		finalRotation = glm::rotate(finalRotation, m_TotalYaw, glm::vec3(0, 1, 0));
-
-		m_Forward = glm::normalize(glm::vec3(finalRotation * glm::vec4(0, 0, 1, 0)));
-		m_Right = glm::normalize(glm::cross(m_Forward, glm::vec3(0, 1, 0)));
-		m_Up = glm::normalize(glm::cross(m_Right, m_Forward));
-	}
-	else if (lmb)
-	{
-		m_TotalYaw += deltaX * mouseSensitivity;
-		m_Origin -= m_Forward * deltaY * mouseSensitivity;
-
-		const glm::mat4 yawMatrix = glm::rotate(glm::mat4(1.0f), -m_TotalYaw, glm::vec3(0, 1, 0));
-		const glm::mat4 pitchMatrix = glm::rotate(glm::mat4(1.0f), m_TotalPitch, glm::vec3(0, 0, 1));
-
-		const glm::mat4 rotationMatrix = yawMatrix * pitchMatrix;
-
-
-
-		// Handle rotation on axises
-		/*finalRotation = glm::rotate(finalRotation, m_TotalPitch, glm::vec3(1, 0, 0));
-		finalRotation = glm::rotate(finalRotation, m_TotalYaw, glm::vec3(0, 1, 0));
-
-		m_Forward = glm::normalize(glm::vec3(finalRotation * glm::vec4(0, 0, 1, 0)));
-		m_Right = glm::normalize(glm::cross(m_Forward, glm::vec3(0, 1, 0)));
-		m_Up = glm::normalize(glm::cross(m_Right, m_Forward));*/
-
-		m_Forward = glm::vec3(rotationMatrix * glm::vec4(1, 0, 0, 0));
-		m_Right = glm::normalize(glm::cross(m_Forward, glm::vec3(0, 1, 0)));
-		m_Up = glm::normalize(glm::cross(m_Right, m_Forward));
-	}
+	if (m_IsPositionDirty)	UpdateVectors();
 }
 
+void cat::Camera::UpdateAspectRatio()
+{
+	m_Specs.aspectRatio = m_Window.GetAspectRatio();
+	m_IsSpecsDirty = true;
+}
 
 
 // Getters & Setters
 //----------------
 const glm::mat4& cat::Camera::GetProjection()
 {
-	m_ProjectionMatrix = glm::perspectiveRH_ZO(m_FieldOfView,
-		m_Window.GetAspectRatio(),
-		m_NearPlane, m_FarPlane);
+	if (m_IsSpecsDirty)
+	{
+		m_IsSpecsDirty = false;
 
-	m_ProjectionMatrix[1][1] *= -1; // flip the Y axis
+		m_ProjectionMatrix = glm::perspectiveLH(
+			m_Specs.fovy,
+			m_Window.GetAspectRatio(),
+			m_Specs.nearPlane, m_Specs.farPlane
+		);
+
+		m_ProjectionMatrix[1][1] *= -1; // flip the Y axis
+	}
 
 	return m_ProjectionMatrix;
 }
 
 const glm::mat4& cat::Camera::GetView()
 {
-	m_ViewMatrix = glm::inverse(GetInverseView());
+	if (m_IsPositionDirty)
+	{
+		m_IsPositionDirty = false;
+		m_ViewMatrix = lookAtLH(m_Origin, m_Origin + m_Forward, m_Up);
+	}
 
 	return m_ViewMatrix;
 }
 
-const glm::mat4& cat::Camera::GetInverseView()
-{
-	m_InverseViewMatrix = glm::lookAtLH(m_Origin, m_Origin + m_Forward, m_Up);
-	return m_InverseViewMatrix;
-}
-
 // Private Methods
 //-----------------
+void cat::Camera::HandleKeyboardInput(float deltaTime)
+{
+	auto window = m_Window.GetWindow();
+
+
+
+	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+		m_Speed *= 2;
+
+
+	// WASD
+	//-----------------
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+	{
+		m_Origin += m_Forward * m_Speed * deltaTime;
+		m_IsPositionDirty = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+	{
+		m_Origin -= m_Forward * m_Speed * deltaTime;
+		m_IsPositionDirty = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+	{
+		m_Origin -= m_Right * m_Speed * deltaTime;
+		m_IsPositionDirty = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+	{
+		m_Origin += m_Right * m_Speed * deltaTime;
+		m_IsPositionDirty = true;
+	}
+
+
+	// QE
+	//-----------------
+	if (glfwGetKey(m_Window.GetWindow(), GLFW_KEY_E) == GLFW_PRESS)
+	{
+		m_Origin += m_Up * m_Speed * deltaTime;
+		m_IsPositionDirty = true;
+	}
+	if (glfwGetKey(m_Window.GetWindow(), GLFW_KEY_Q) == GLFW_PRESS)
+	{
+		m_Origin -= m_Up * m_Speed * deltaTime;
+		m_IsPositionDirty = true;
+	}
+}
+
+void cat::Camera::HandleMouseInput()
+{
+	auto window = m_Window.GetWindow();
+
+	// MOUSE INPUT
+	double mouseX, mouseY;
+	glfwGetCursorPos(window, &mouseX, &mouseY);
+
+	float deltaX = static_cast<float>(mouseX - m_LastMouseX);
+	float deltaY = static_cast<float>(mouseY - m_LastMouseY);
+
+	m_LastMouseX = static_cast<float>(mouseX);
+	m_LastMouseY = static_cast<float>(mouseY);
+
+	bool rmb = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
+	bool lmb = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+
+
+
+	// ROTATION
+	//-----------------
+	if (rmb||lmb)	m_IsPositionDirty = true;
+
+	if (rmb && lmb)
+	{
+	}
+	else if (rmb)
+	{
+	}
+	else if (lmb)
+	{
+		m_TotalPitch += deltaY * m_MouseSensitivity;
+		m_TotalYaw += deltaX * m_MouseSensitivity;
+		m_TotalPitch = std::clamp(m_TotalPitch, -89.9f, 89.9f);
+	}
+}
+
+void cat::Camera::UpdateVectors()
+{
+	if (!m_IsPositionDirty) return;
+
+	// rotation
+	float pitch = glm::radians(m_TotalPitch);
+	float yaw = glm::radians(m_TotalYaw);
+
+	glm::vec3 fwd;
+	fwd.x = cos(pitch) * sin(yaw);
+	fwd.y = -sin(pitch);
+	fwd.z = cos(pitch) * cos(yaw);
+
+	// recalculate vectors
+	m_Forward = glm::normalize(fwd);
+	m_Right = glm::normalize(glm::cross(m_Forward, glm::vec3(0, 1, 0)));
+	m_Up = glm::normalize(glm::cross(m_Right, m_Forward));
+
+	GetView();
+}
