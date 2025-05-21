@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <cassert>
+#include <iostream>
 
 namespace cat
 {
@@ -27,33 +28,33 @@ namespace cat
     {
     	Unmap();
         
-        vmaDestroyBuffer(m_Device.Allocator(), m_Buffer, m_Allocation);
+        vmaDestroyBuffer(m_Device.GetAllocator(), m_Buffer, m_Allocation);
     }
 
 	//                             >^._.^<      <3
 
     VkResult Buffer::Map(VkDeviceSize offset)
     {
-        return vmaMapMemory(m_Device.Allocator(), m_Allocation, &m_Mapped);
+        return vmaMapMemory(m_Device.GetAllocator(), m_Allocation, &m_Mapped);
     }
 
     void Buffer::Unmap()
     {
         if (m_Mapped != nullptr) 
         {
-            vmaUnmapMemory(m_Device.Allocator(), m_Allocation);
+            vmaUnmapMemory(m_Device.GetAllocator(), m_Allocation);
             m_Mapped = nullptr;
         }
     }
 
     void Buffer::WriteToBuffer(void* data,VkDeviceSize size) const
     {
-        vmaCopyMemoryToAllocation(m_Device.Allocator(), data, m_Allocation, 0, size);
+        vmaCopyMemoryToAllocation(m_Device.GetAllocator(), data, m_Allocation, 0, size);
     }
 
     void Buffer::Flush()
 	{
-        vmaFlushAllocation(m_Device.Allocator(), m_Allocation, 0, VK_WHOLE_SIZE);
+        vmaFlushAllocation(m_Device.GetAllocator(), m_Allocation, 0, VK_WHOLE_SIZE);
     }
 
 

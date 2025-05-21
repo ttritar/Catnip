@@ -136,9 +136,9 @@ struct SwapChainSupportDetails
 		VkCommandPool GetCommandPool() const { return m_CommandPool; } 
 		SwapChainSupportDetails GetSwapChainSupport()const { return QuerySwapChainSupport(m_PhysicalDevice); }
 		QueueFamilyIndices GetPhysicalQueueFamilies()const { return FindQueueFamilies(m_PhysicalDevice); }
-		[[nodiscard]] VmaAllocator Allocator() const { return m_allocator; }
-
-		VkPhysicalDeviceProperties properties{};
+		VmaAllocator GetAllocator() const { return m_Allocator; }
+		VkFormatProperties GetFormatProperties(VkFormat format) const;
+		VkPhysicalDeviceProperties GetPhysicalDeviceProperties() const { return m_PhysicalDeviceProperties; }
 
 	private:
 		// Private Methods
@@ -151,7 +151,7 @@ struct SwapChainSupportDetails
 		void PickPhysicalDevice();
 		void CreateLogicalDevice();
 		void CreateCommandPool();
-		void allocVmaAllocator();
+		void AllocVmaAllocator();
 
 		// Helpers
 		static bool CheckValidationLayerSupport();
@@ -173,8 +173,9 @@ struct SwapChainSupportDetails
 		VkQueue m_PresentQueue;
 		VkSurfaceKHR m_Surface;
 		VkCommandPool m_CommandPool;
+		VkPhysicalDeviceProperties m_PhysicalDeviceProperties{};
 
-		VmaAllocator m_allocator{};
+		VmaAllocator m_Allocator{};
 
 		GLFWwindow* m_Window;
 	};

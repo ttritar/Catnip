@@ -192,6 +192,12 @@ namespace cat
 			m_pSwapChainImages[i] = nullptr;
 		}
 		m_pSwapChainImages.clear();
+
+		for (size_t i = 0; i < m_pDepthImages.size(); i++)
+		{
+			delete m_pDepthImages[i];
+			m_pDepthImages[i] = nullptr;
+		}
         m_pDepthImages.clear();
 
         vkDestroySwapchainKHR(m_Device.GetDevice(), m_SwapChain, nullptr);

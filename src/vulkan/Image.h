@@ -63,8 +63,9 @@ namespace cat
 		void CreateImage(uint32_t width, uint32_t height, uint32_t miplevels, VkFormat format, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage);
 		void CreateTextureImageView();
 		void CreateTextureSampler(VkFilter filter, VkSamplerAddressMode addressMode);
+		void GenerateMipmaps(VkFormat format, uint32_t width, uint32_t height) const;
 
-		static VkImageAspectFlags getImageAspect(VkFormat format);
+		static VkImageAspectFlags GetImageAspect(VkFormat format);
 
 		// Private Members
 		//--------------------
@@ -76,6 +77,7 @@ namespace cat
 		VmaAllocation m_Allocation;
 		VkImageView m_ImageView;
 		VkSampler m_Sampler;
+		uint32_t m_MipLevels{};
 
 		VkFormat m_Format;
 		VkImageLayout m_ImageLayout{ VK_IMAGE_LAYOUT_UNDEFINED };

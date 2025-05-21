@@ -33,11 +33,13 @@ namespace cat
 		PickPhysicalDevice();
 		CreateLogicalDevice();
 		CreateCommandPool();
-        allocVmaAllocator();
+        AllocVmaAllocator();
 	}
 
 	Device::~Device()
 	{
+		vmaDestroyAllocator(m_Allocator);
+
         vkDestroyCommandPool(m_Device, m_CommandPool, nullptr);
 
         vkDestroyDevice(m_Device, nullptr);
@@ -71,7 +73,7 @@ namespace cat
         }
 
         VmaAllocationInfo allocInfo{};
-        if (vmaCreateBuffer(m_allocator, &bufferInfo, &allocationInfo, &buffer, &allocation, &allocInfo) != VK_SUCCESS) {
+        if (vmaCreateBuffer(m_Allocator, &bufferInfo, &allocationInfo, &buffer, &allocation, &allocInfo) != VK_SUCCESS) {
             throw std::runtime_error("failed to create buffer!");
         }
 
@@ -107,6 +109,12 @@ namespace cat
 
     // Getters & Setters
 	//--------------------
+    VkFormatProperties Device::GetFormatProperties(VkFormat format) const
+	{
+        VkFormatProperties formatProperties;
+        vkGetPhysicalDeviceFormatProperties(m_PhysicalDevice, format, &formatProperties);
+        return formatProperties;
+    }
 
 
 
@@ -224,7 +232,7 @@ namespace cat
             if (IsDeviceSuitable(device))
             {
                 m_PhysicalDevice = device;
-                vkGetPhysicalDeviceProperties(m_PhysicalDevice, &properties);
+                vkGetPhysicalDeviceProperties(m_PhysicalDevice, &m_PhysicalDeviceProperties);
                 break;
             }
         }
@@ -600,14 +608,15 @@ namespace cat
         vkFreeCommandBuffers(m_Device, m_CommandPool, 1, &commandBuffer);
     }
 
-    void Device::allocVmaAllocator()
+    void Device::AllocVmaAllocator()
     {
         VmaAllocatorCreateInfo allocatorInfo = {};
         allocatorInfo.physicalDevice = m_PhysicalDevice;
         allocatorInfo.device = m_Device;
         allocatorInfo.instance = m_Instance;
 
-        if (vmaCreateAllocator(&allocatorInfo, &m_allocator) != VK_SUCCESS) {
+        if (vmaCreateAllocator(&allocatorInfo, &m_Allocator) != VK_SUCCESS) 
+        {
             throw std::runtime_error("failed to create VMA allocator!");
         }
     }

@@ -66,7 +66,7 @@ namespace cat
 		// MODELS!
 		m_pScene = new Scene(m_Device, *m_pSwapChain, m_pGraphicsPipeline, m_pUniformBuffer);
 
-		//m_pScene->AddModel("resources/sponza.obj");
+		m_pScene->AddModel("resources/sponza.obj");
 
 		m_pCommandBuffer = new CommandBuffer(m_Device);
 	}

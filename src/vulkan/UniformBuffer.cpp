@@ -25,7 +25,6 @@ namespace cat
 				VMA_MEMORY_USAGE_CPU_TO_GPU, true
 				
 			);
-			m_UniformBuffers[i]->Map();
 		}
 	}
 
