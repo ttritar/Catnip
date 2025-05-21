@@ -66,7 +66,7 @@ namespace cat
 		// MODELS!
 		m_pScene = new Scene(m_Device, *m_pSwapChain, m_pGraphicsPipeline, m_pUniformBuffer);
 
-		m_pScene->AddModel("resources/sponza.obj");
+		m_pScene->AddModel("resources/FlightHelmet/FlightHelmet.gltf");
 
 		m_pCommandBuffer = new CommandBuffer(m_Device);
 	}
@@ -183,15 +183,22 @@ namespace cat
 		colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		colorAttachmentInfo.clearValue = clearValues[0];
 
-		VkRenderingInfoKHR renderInfo{};
+		VkRenderingAttachmentInfoKHR depthAttachmentInfo{};
+		depthAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+		depthAttachmentInfo.imageView = m_pSwapChain->GetDepthImage(m_pSwapChain->GetImageIndex())->GetImageView();
+		depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		depthAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		depthAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		depthAttachmentInfo.clearValue = clearValues[1];
 
+		VkRenderingInfoKHR renderInfo{};
 		renderInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
 		renderInfo.renderArea.offset = { 0, 0 };
 		renderInfo.renderArea.extent = m_pSwapChain->GetSwapChainExtent();
 		renderInfo.layerCount = 1;
 		renderInfo.colorAttachmentCount = 1;
 		renderInfo.pColorAttachments = &colorAttachmentInfo;
-
+		renderInfo.pDepthAttachment = &depthAttachmentInfo;
 		vkCmdBeginRenderingKHR(commandBuffer, &renderInfo);
 
 		// Basic drawing commands:

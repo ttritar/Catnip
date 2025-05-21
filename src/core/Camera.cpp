@@ -99,12 +99,12 @@ void cat::Camera::HandleKeyboardInput(float deltaTime)
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 	{
-		m_Origin -= m_Right * m_Speed * deltaTime;
+		m_Origin += m_Right * m_Speed * deltaTime;
 		m_IsPositionDirty = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 	{
-		m_Origin += m_Right * m_Speed * deltaTime;
+		m_Origin -= m_Right * m_Speed * deltaTime;
 		m_IsPositionDirty = true;
 	}
 
