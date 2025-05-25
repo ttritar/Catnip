@@ -1,10 +1,10 @@
 #pragma once
-#include "Camera.h"
+#include "../vulkan/scene/Camera.h"
 #include "../vulkan/Descriptors.h"
 #include "../vulkan/Pipeline.h"
 #include "../vulkan/buffers/CommandBuffer.h"
-#include "../vulkan/buffers/Buffer.h"
-#include "../vulkan/Scene.h"
+#include "../vulkan/scene/Scene.h"
+#include "../vulkan/passes/DepthPrepass.h"
 
 namespace cat
 {
@@ -37,6 +37,7 @@ namespace cat
 		void InitializeVulkan();
 		void DrawFrame()const;
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) const;
+		void RecordPasses() const;
 
 		// Private Members
 		//--------------------
@@ -45,11 +46,15 @@ namespace cat
 		Device m_Device;
 		SwapChain* m_pSwapChain;
 		Pipeline* m_pGraphicsPipeline;
-		Scene* m_pScene;
+		Scene* m_pCurrentScene;
+		std::vector<Scene*> m_pScenes;
 		UniformBuffer* m_pUniformBuffer;
 		CommandBuffer* m_pCommandBuffer;
 
 		mutable uint16_t m_CurrentFrame = 0;
+
+		// passes
+		std::unique_ptr<DepthPrepass> m_pDepthPrepass;
 
 	};
 }

@@ -4,7 +4,7 @@
 
 #include "Device.h"
 #include "buffers/UniformBuffer.h"
-#include "Image.h"
+#include "scene/Image.h"
 
 namespace cat
 {
@@ -63,6 +63,10 @@ namespace cat
 		DescriptorSet(Device& device, UniformBuffer& ubo, std::vector<Image*> images, DescriptorSetLayout& setLayout, DescriptorPool& pool);
 
 		VkDescriptorSet* GetDescriptorSet(uint16_t idx) { return &m_DescriptorSets[idx]; }
+		void Bind(VkCommandBuffer commandBuffer, const VkPipelineLayout& pipelineLayout, uint16_t idx) const
+		{
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &m_DescriptorSets[idx], 0, nullptr);
+		}
 
 	private:
 		std::vector<VkDescriptorSet> m_DescriptorSets;

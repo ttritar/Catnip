@@ -4,7 +4,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 
-#include "Window.h"
+#include "../../core/Window.h"
 
 namespace cat
 {

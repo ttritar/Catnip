@@ -4,9 +4,9 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 
-#include "Device.h"
-#include "buffers/Buffer.h"
-#include "Descriptors.h"
+#include "../Device.h"
+#include "../buffers/Buffer.h"
+#include "../Descriptors.h"
 
 // std
 #include <array>
@@ -96,7 +96,7 @@ namespace cat
 		// Methods
 		//--------------------
 		void Draw(VkCommandBuffer commandBuffer);
-        void Bind(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t idx);
+        void Bind(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t idx, bool isDepthPass);
 
         // Getters & Setters
         VkBuffer GetVertexBuffer()const { return m_VertexBuffer->GetBuffer(); }

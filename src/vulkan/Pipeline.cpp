@@ -18,15 +18,12 @@ namespace cat
 
     void Pipeline::CreateGraphicsPipeline(const PipelineInfo& pipelineInfo)
     {
-
-
-
         // Shader stage creation
         //-------------------
 		std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 
         //VERTEX
-        VkShaderModule vertShaderModule;
+        VkShaderModule vertShaderModule {VK_NULL_HANDLE};
         if (!m_VertPath.empty())
         {
             auto vertShaderCode = ReadFile(m_VertPath);
@@ -44,7 +41,7 @@ namespace cat
         }
 
         //FRAGMENT
-        VkShaderModule fragShaderModule;
+        VkShaderModule fragShaderModule{ VK_NULL_HANDLE };
         if (!m_FragPath.empty())
 		{
 			auto fragShaderCode = ReadFile(m_FragPath);
@@ -86,7 +83,7 @@ namespace cat
         //-------------------
         VkGraphicsPipelineCreateInfo graphicsPipelineInfo{};
         graphicsPipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        graphicsPipelineInfo.stageCount = 2;
+        graphicsPipelineInfo.stageCount = shaderStages.size();
         graphicsPipelineInfo.pStages = shaderStages.data();
 
         graphicsPipelineInfo.pVertexInputState = &vertexInputInfo;
@@ -115,9 +112,7 @@ namespace cat
 
         // Module deletion
         //-------------------
-        if (fragShaderModule)
 			vkDestroyShaderModule(m_Device.GetDevice(), fragShaderModule, nullptr);
-        if (vertShaderModule)
 			vkDestroyShaderModule(m_Device.GetDevice(), vertShaderModule, nullptr);
     }
 

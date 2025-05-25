@@ -45,12 +45,12 @@ namespace cat
 		}
 	}
 
-	void Scene::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t frameIdx) const
+	void Scene::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t frameIdx, bool isDepthPass) const
 	{
 		for (const auto& model : m_pModels)
 		{
 			vkCmdPushConstants(commandBuffer, m_pGraphicsPipeline->GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), model->GetTransform());
-			model->Draw(commandBuffer, pipelineLayout, frameIdx);
+			model->Draw(commandBuffer, pipelineLayout, frameIdx, isDepthPass);
 		}
 	}
 

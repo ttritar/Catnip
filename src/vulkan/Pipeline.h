@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "Mesh.h"
+#include "scene/Mesh.h"
 
 namespace cat
 {
@@ -175,6 +175,10 @@ namespace cat
 
 		// Methods
 		//--------------------
+		void Bind(VkCommandBuffer commandBuffer) const
+		{
+			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
+		}
 
 		// Getters & Setters
 		VkPipeline GetGraphicsPipeline() const { return m_GraphicsPipeline; }

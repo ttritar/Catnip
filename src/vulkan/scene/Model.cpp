@@ -57,11 +57,11 @@ namespace cat
 
 	// Methods
 	//--------------------
-	void Model::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t frameIdx) const
+	void Model::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t frameIdx, bool isDepthPass) const
 	{
 		for (auto& mesh : m_Meshes)
 		{
-			mesh->Bind(commandBuffer, pipelineLayout, frameIdx);
+			mesh->Bind(commandBuffer, pipelineLayout, frameIdx, isDepthPass);
 			mesh->Draw(commandBuffer);
 		}
 	}

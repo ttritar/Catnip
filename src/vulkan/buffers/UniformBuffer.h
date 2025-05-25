@@ -22,7 +22,7 @@ namespace cat
 
 		// CTOR & DTOR
 		//--------------------
-		UniformBuffer(Device& device, SwapChain* swapChain);
+		UniformBuffer(Device& device);
 		~UniformBuffer();
 
 		UniformBuffer(const UniformBuffer&) = delete;
@@ -50,7 +50,6 @@ namespace cat
 		// Private Members
 		//--------------------
 		Device& m_Device;
-		SwapChain* m_SwapChain;
 
 		std::vector<std::unique_ptr<Buffer>> m_UniformBuffers;
 	};

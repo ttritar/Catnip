@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Model.h"
-#include "Pipeline.h"
+#include "../Pipeline.h"
 
 #include <vector>
 
@@ -27,7 +27,7 @@ namespace cat
 		Model* AddModel(const std::string& path);
 		void RemoveModel(const std::string& path);
 
-		void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t frameIdx) const;
+		void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t frameIdx, bool isDepthPass = 0) const;
 
 		// Getters & Setters
 		const std::vector<Model*>& GetModels() const { return m_pModels; }

@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "Device.h"
+#include "../Device.h"
 
 namespace cat
 {
@@ -31,6 +31,7 @@ namespace cat
 		VkImage GetImage()const { return m_Image; }
 		VkImageView GetImageView()const { return  m_ImageView; }
 		VkSampler GetSampler()const { return  m_Sampler; }
+		VkExtent2D GetExtent() const { return m_Extent; }
 		bool HasDepth() const
 		{
 			switch (m_Format)

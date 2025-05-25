@@ -21,7 +21,10 @@ namespace cat
 		//-----------
 		delete m_pSwapChain;
 		delete m_pGraphicsPipeline;
-		delete m_pScene;
+		for (auto& scene : m_pScenes)
+		{
+			delete scene;
+		}
 		delete m_pUniformBuffer;
 		delete m_pCommandBuffer;
 
@@ -30,8 +33,12 @@ namespace cat
 
 	void Renderer::Update(float deltaTime)
 	{
+		if (glfwGetKey(m_Window.GetWindow(), GLFW_KEY_0)) m_pCurrentScene = m_pScenes[0];
+		if (glfwGetKey(m_Window.GetWindow(), GLFW_KEY_1)) m_pCurrentScene = m_pScenes[1];
+
+
 		m_Camera.Update(deltaTime);
-		m_pScene->Update(deltaTime);
+		m_pCurrentScene->Update(deltaTime);
 		m_pUniformBuffer->Update(m_CurrentFrame, m_Camera.GetView(), m_Camera.GetProjection());
 	}
 
@@ -44,7 +51,7 @@ namespace cat
 	{
 		m_pSwapChain = new SwapChain(m_Device, m_Window.GetWindow());
 
-		m_pUniformBuffer = new UniformBuffer(m_Device, m_pSwapChain);
+		m_pUniformBuffer = new UniformBuffer(m_Device);
 
 		//rawr
 		DescriptorSetLayout* descriptorSetLayout = new DescriptorSetLayout(m_Device);
@@ -62,15 +69,24 @@ namespace cat
 			"shaders/shader.frag.spv",
 			pipelineInfo
 		);
-
 		delete descriptorSetLayout;
 
-		// MODELS!
-		m_pScene = new Scene(m_Device, *m_pSwapChain, m_pGraphicsPipeline, m_pUniformBuffer);
+		m_pScenes.resize(2);
+		m_pScenes[0] = new Scene(m_Device, *m_pSwapChain, m_pGraphicsPipeline, m_pUniformBuffer);
+		m_pScenes[0]->AddModel("resources/FlightHelmet/FlightHelmet.gltf");
+		m_pScenes[1] = new Scene(m_Device, *m_pSwapChain, m_pGraphicsPipeline, m_pUniformBuffer);
+		m_pScenes[1]->AddModel("resources/Sponza/Sponza.gltf");
 
-		m_pScene->AddModel("resources/FlightHelmet/FlightHelmet.gltf");
+		m_pCurrentScene = m_pScenes[0]; // set default scene
+
+
 
 		m_pCommandBuffer = new CommandBuffer(m_Device);
+
+
+		// PASSES
+		//-----------------
+		m_pDepthPrepass = std::make_unique<DepthPrepass>(m_Device, cat::MAX_FRAMES_IN_FLIGHT);
 	}
 
 	void Renderer::DrawFrame() const
@@ -93,10 +109,31 @@ namespace cat
 		vkResetFences(m_Device.GetDevice(), 1, m_pSwapChain->GetInFlightFences(m_CurrentFrame)); //reset fence to unsignaled
 
 
-		// RECORDING THE COMMAND BUFFER
-		vkResetCommandBuffer(*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame), 0);
+		// RECORDING
+		//-----------------
+		{
+			vkResetCommandBuffer(*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame), 0);
 
-		RecordCommandBuffer(*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame), m_pSwapChain->GetImageIndex());
+			// Begin recording:
+			VkCommandBufferBeginInfo beginInfo{};   // will reset it, if buffer was alr recorded once
+			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			beginInfo.flags = 0; //optional - how we will use the cmd buffer
+			beginInfo.pInheritanceInfo = nullptr; //optional - relevant for 2nd buffer = specifies which state to inherit from the calling primary command buffers
+
+			if (vkBeginCommandBuffer(*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame), &beginInfo) != VK_SUCCESS)
+			{
+				throw std::runtime_error("failed to begin command buffer!");
+			}
+
+			RecordCommandBuffer(*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame), m_pSwapChain->GetImageIndex());
+			RecordPasses();
+
+			// End recording:
+			if (vkEndCommandBuffer(*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame)) != VK_SUCCESS)
+			{
+				throw std::runtime_error("failed to record command buffer!");
+			}
+		}
 
 		// SUNMITTING THE COMMAND BUFFER
 		VkSubmitInfo submitInfo{};
@@ -152,92 +189,94 @@ namespace cat
 	void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) const
 		// writes the cmd we want executed into a cmd buffer
 	{
-		// Begin recording:
-		VkCommandBufferBeginInfo beginInfo{};   // will reset it, if buffer was alr recorded once
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.flags = 0; //optional - how we will use the cmd buffer
-		beginInfo.pInheritanceInfo = nullptr; //optional - relevant for 2nd buffer = specifies which state to inherit from the calling primary command buffers
-
-		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
+		// START RENDERING
 		{
-			throw std::runtime_error("failed to begin command buffer!");
+			m_pSwapChain->GetSwapChainImage(static_cast<int>(m_pSwapChain->GetImageIndex()))->TransitionImageLayout(
+				commandBuffer,
+				VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+			);
+			m_pSwapChain->GetDepthImage(m_pSwapChain->GetImageIndex())->TransitionImageLayout(
+				commandBuffer,
+				VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+			);
+
+			// Starting a render pass:
+			std::array<VkClearValue, 2> clearValues{};
+			clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+			clearValues[1].depthStencil = { 1.0f, 0 };
+
+			VkRenderingAttachmentInfoKHR colorAttachmentInfo{};
+			colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+			colorAttachmentInfo.imageView = m_pSwapChain->GetSwapChainImageView(m_pSwapChain->GetImageIndex());
+			colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+			colorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+			colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+			colorAttachmentInfo.clearValue = clearValues[0];
+
+			VkRenderingAttachmentInfoKHR depthAttachmentInfo{};
+			depthAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+			depthAttachmentInfo.imageView = m_pSwapChain->GetDepthImage(m_pSwapChain->GetImageIndex())->GetImageView();
+			depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+			depthAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+			depthAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+			depthAttachmentInfo.clearValue = clearValues[1];
+
+			VkRenderingInfoKHR renderInfo{};
+			renderInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+			renderInfo.renderArea.offset = { 0, 0 };
+			renderInfo.renderArea.extent = m_pSwapChain->GetSwapChainExtent();
+			renderInfo.layerCount = 1;
+			renderInfo.colorAttachmentCount = 1;
+			renderInfo.pColorAttachments = &colorAttachmentInfo;
+			renderInfo.pDepthAttachment = &depthAttachmentInfo;
+			vkCmdBeginRenderingKHR(commandBuffer, &renderInfo);
 		}
 
-		m_pSwapChain->GetSwapChainImage(static_cast<int>(m_pSwapChain->GetImageIndex()))->TransitionImageLayout(
-			commandBuffer,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-		);
-		m_pSwapChain->GetDepthImage(m_pSwapChain->GetImageIndex())->TransitionImageLayout(
-			commandBuffer,
-			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-		);
-
-		// Starting a render pass:
-		std::array<VkClearValue, 2> clearValues{};
-		clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
-		clearValues[1].depthStencil = { 1.0f, 0 };
-
-		VkRenderingAttachmentInfoKHR colorAttachmentInfo{};
-		colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-		colorAttachmentInfo.imageView = m_pSwapChain->GetSwapChainImageView(m_pSwapChain->GetImageIndex());
-		colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		colorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		colorAttachmentInfo.clearValue = clearValues[0];
-
-		VkRenderingAttachmentInfoKHR depthAttachmentInfo{};
-		depthAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-		depthAttachmentInfo.imageView = m_pSwapChain->GetDepthImage(m_pSwapChain->GetImageIndex())->GetImageView();
-		depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-		depthAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		depthAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		depthAttachmentInfo.clearValue = clearValues[1];
-
-		VkRenderingInfoKHR renderInfo{};
-		renderInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
-		renderInfo.renderArea.offset = { 0, 0 };
-		renderInfo.renderArea.extent = m_pSwapChain->GetSwapChainExtent();
-		renderInfo.layerCount = 1;
-		renderInfo.colorAttachmentCount = 1;
-		renderInfo.pColorAttachments = &colorAttachmentInfo;
-		renderInfo.pDepthAttachment = &depthAttachmentInfo;
-		vkCmdBeginRenderingKHR(commandBuffer, &renderInfo);
-
-		// Basic drawing commands:
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pGraphicsPipeline->GetGraphicsPipeline());
-
-		VkViewport viewport{};
-		viewport.x = 0.0f;
-		viewport.y = 0.0f;
-		viewport.width = static_cast<float>(m_pSwapChain->GetSwapChainExtent().width);
-		viewport.height = static_cast<float>(m_pSwapChain->GetSwapChainExtent().height);
-
-		viewport.maxDepth = 1.f;
-		vkCmdSetViewport(commandBuffer, 0, 1, &viewport); // dynamic -  needs to be set in cmd buffer before issuing draw cmd
-
-		VkRect2D scissor{};
-		scissor.offset = { 0,0 };
-		scissor.extent = m_pSwapChain->GetSwapChainExtent();
-		vkCmdSetScissor(commandBuffer, 0, 1, &scissor); // dynamic -  needs to be set in cmd buffer before issuing draw cmd
-
-		m_pScene->Draw(commandBuffer, m_pGraphicsPipeline->GetPipelineLayout(), m_CurrentFrame);
-
-
-		// Finishing up:
-		vkCmdEndRenderingKHR(commandBuffer);
-
-		m_pSwapChain->GetSwapChainImage(static_cast<int>(m_pSwapChain->GetImageIndex()))->TransitionImageLayout(
-			commandBuffer, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-		);
-
-		m_pSwapChain->GetDepthImage(m_pSwapChain->GetImageIndex())->TransitionImageLayout(
-			commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-		);
-
-		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
+		// DRAWING
 		{
-			throw std::runtime_error("failed to record command buffer!");
+			m_pGraphicsPipeline->Bind(commandBuffer);
+
+			VkViewport viewport{};
+			viewport.x = 0.0f;
+			viewport.y = 0.0f;
+			viewport.width = static_cast<float>(m_pSwapChain->GetSwapChainExtent().width);
+			viewport.height = static_cast<float>(m_pSwapChain->GetSwapChainExtent().height);
+
+			viewport.maxDepth = 1.f;
+			vkCmdSetViewport(commandBuffer, 0, 1, &viewport); // dynamic -  needs to be set in cmd buffer before issuing draw cmd
+
+			VkRect2D scissor{};
+			scissor.offset = { 0,0 };
+			scissor.extent = m_pSwapChain->GetSwapChainExtent();
+			vkCmdSetScissor(commandBuffer, 0, 1, &scissor); // dynamic -  needs to be set in cmd buffer before issuing draw cmd
+
+			m_pCurrentScene->Draw(commandBuffer, m_pGraphicsPipeline->GetPipelineLayout(), m_CurrentFrame);
 		}
+
+		//END RENDERING
+		{
+			// Finishing up:
+			vkCmdEndRenderingKHR(commandBuffer);
+
+			m_pSwapChain->GetSwapChainImage(static_cast<int>(m_pSwapChain->GetImageIndex()))->TransitionImageLayout(
+				commandBuffer, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+			);
+
+			m_pSwapChain->GetDepthImage(m_pSwapChain->GetImageIndex())->TransitionImageLayout(
+				commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+			);
+		}
+	}
+
+	void Renderer::RecordPasses() const
+	{
+		m_pDepthPrepass->Record(
+			*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame),
+			m_CurrentFrame,
+			*m_pSwapChain->GetDepthImage(m_CurrentFrame),
+			m_Camera,
+			*m_pCurrentScene
+		);
 	}
 
 }

@@ -52,18 +52,21 @@ namespace cat
 			vkCmdDraw(commandBuffer, m_VertexCount, 1, 0, 0);
     }
 
-    void Mesh::Bind(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t idx)
+    void Mesh::Bind(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t idx, bool isDepthPass)
     {
-        vkCmdBindDescriptorSets(
-            commandBuffer,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipelineLayout,
-            0,
-            1,
-            m_pDescriptorSet->GetDescriptorSet(idx),
-            0,
-            nullptr
-        );
+        if (!isDepthPass)
+		{
+			vkCmdBindDescriptorSets(
+			   commandBuffer,
+			   VK_PIPELINE_BIND_POINT_GRAPHICS,
+			   pipelineLayout,
+			   0,
+			   1,
+			   m_pDescriptorSet->GetDescriptorSet(idx),
+			   0,
+			   nullptr
+		   );
+		}
 
         VkBuffer buffers[] = { m_VertexBuffer->GetBuffer() };
         VkDeviceSize offsets[] = { 0 };

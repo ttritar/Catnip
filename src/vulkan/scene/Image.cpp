@@ -1,5 +1,5 @@
 #include "Image.h"
-#include "buffers/Buffer.h"
+#include "../buffers/Buffer.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>

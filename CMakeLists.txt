@@ -16,9 +16,9 @@ add_executable(GP2_VulkanTutorial
     src/vulkan/Device.cpp src/vulkan/SwapChain.cpp src/vulkan/Descriptors.cpp
     src/vulkan/buffers/Buffer.cpp src/vulkan/buffers/UniformBuffer.cpp  src/vulkan/buffers/CommandBuffer.cpp  
     src/vulkan/Pipeline.cpp
-    src/vulkan/passes/GeometryPass.cpp 
-    src/vulkan/Scene.cpp src/vulkan/Model.cpp src/vulkan/Mesh.cpp src/vulkan/Image.cpp src/core/Camera.cpp 
-   "src/vulkan/passes/DepthPrepass.h" "src/vulkan/passes/DepthPrepass.cpp" "src/vulkan/passes/LightingPass.cpp")
+    src/vulkan/passes/GeometryPass.cpp  src/vulkan/passes/DepthPrepass.cpp src/vulkan/passes/LightingPass.cpp
+    src/vulkan/scene/Scene.cpp src/vulkan/scene/Model.cpp src/vulkan/scene/Mesh.cpp src/vulkan/scene/Image.cpp src/vulkan/scene/Camera.cpp 
+ )
 
 
 

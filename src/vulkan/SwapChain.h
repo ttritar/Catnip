@@ -12,7 +12,7 @@
 
 
 #include <vector>
-#include "Image.h"
+#include "scene/Image.h"
 
 namespace cat
 {

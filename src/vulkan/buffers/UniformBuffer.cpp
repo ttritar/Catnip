@@ -7,8 +7,8 @@
 namespace cat
 {
 
-	UniformBuffer::UniformBuffer(Device& device, SwapChain* swapChain)
-		: m_Device(device), m_SwapChain(swapChain)
+	UniformBuffer::UniformBuffer(Device& device)
+		: m_Device(device)
 	{
 		VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
