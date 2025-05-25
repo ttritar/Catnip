@@ -35,7 +35,7 @@ namespace cat
 		VkDeviceSize imageSize = texWidth * texHeight * 4;
 
 		// Create a staging buffer
-		Buffer stagingBuffer(device, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+		Buffer stagingBuffer(device, Buffer::BufferInfo{ imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY });
 
 		stagingBuffer.WriteToBuffer(pixels, imageSize);
 

@@ -8,20 +8,22 @@ namespace cat
 {
     // CTOR & DTOR
     //--------------------
-    Buffer::Buffer(Device& device, VkDeviceSize size, VkBufferUsageFlags usageFlags, VmaMemoryUsage memoryUsage, bool mappable)
+    Buffer::Buffer(Device& device, BufferInfo bufferInfo)
 		: m_Device{ device } 
     {
         VmaAllocationCreateInfo allocInfo{};
-        allocInfo.usage = memoryUsage;
+        allocInfo.usage = bufferInfo.memoryUsage;
 
-        if (mappable) {
+        if (bufferInfo.mappable)
+        {
             allocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
         }
-        else {
+        else
+        {
             allocInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
         }
         
-        m_Device.CreateBuffer(size, usageFlags, memoryUsage, mappable, m_Buffer, m_Allocation);
+        m_Device.CreateBuffer(bufferInfo.size, bufferInfo.usageFlags, bufferInfo.memoryUsage, bufferInfo.mappable, m_Buffer, m_Allocation);
     }
 
     Buffer::~Buffer()

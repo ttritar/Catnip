@@ -7,9 +7,17 @@ namespace cat
 	class Buffer final
 	{
 	public:
+		struct BufferInfo
+		{
+			VkDeviceSize size;
+			VkBufferUsageFlags usageFlags;
+			VmaMemoryUsage memoryUsage;
+			bool mappable = true;
+		};
+
 		// CTOR & DTOR
 		//--------------------
-		Buffer(Device& deviceRef, VkDeviceSize size, VkBufferUsageFlags usageFlags, VmaMemoryUsage memoryUsage, bool mappable = true);
+		Buffer(Device& device,BufferInfo bufferInfo);
 		~Buffer();
 
 

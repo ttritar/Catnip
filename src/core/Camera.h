@@ -18,7 +18,7 @@ namespace cat
 			float aspectRatio;
 
 			float nearPlane = 0.1f;
-			float farPlane = 100.0f;
+			float farPlane = 1500.0f;
 		};
 
 

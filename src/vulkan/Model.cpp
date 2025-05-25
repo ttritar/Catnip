@@ -132,7 +132,7 @@ namespace cat
 				vertex.color = { 1.0f, 1.0f, 1.0f };
 			}
 
-			// normals
+			//// normals
 			//if (mesh->HasNormals())
 			//{
 			//	vector.x = mesh->mNormals[i].x;

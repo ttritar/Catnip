@@ -84,7 +84,8 @@ namespace cat
 
         // Create staging buffer (CPU-accessible)
         auto stagingBuffer = std::make_unique<Buffer>(
-            m_Device, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY
+            m_Device, 
+            Buffer::BufferInfo{ bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY }
         );
 
         stagingBuffer->Map();
@@ -92,9 +93,8 @@ namespace cat
         stagingBuffer->Unmap();
 
         m_VertexBuffer = std::make_unique<Buffer>(
-            m_Device, bufferSize,
-            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            VMA_MEMORY_USAGE_GPU_ONLY
+            m_Device, 
+            Buffer::BufferInfo{bufferSize,VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,VMA_MEMORY_USAGE_GPU_ONLY }
         );
 
         m_Device.CopyBuffer(stagingBuffer.get(), m_VertexBuffer.get(), bufferSize);
@@ -110,18 +110,16 @@ namespace cat
         m_IndexCount = m_Indices.size();
 
         std::unique_ptr<Buffer> stagingBuffer = std::make_unique<Buffer>(
-            m_Device, m_IndexBufferSize,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VMA_MEMORY_USAGE_CPU_ONLY
+            m_Device, 
+            Buffer::BufferInfo{ m_IndexBufferSize,VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY }
         );
 
         stagingBuffer->Map();
         stagingBuffer->WriteToBuffer((void*)m_Indices.data(),m_IndexBufferSize);
 
         m_IndexBuffer = std::make_unique<Buffer>(
-            m_Device, m_IndexBufferSize,
-            VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-			VMA_MEMORY_USAGE_GPU_ONLY
+            m_Device, 
+            Buffer::BufferInfo{ m_IndexBufferSize,VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,VMA_MEMORY_USAGE_GPU_ONLY }
             );
 
         m_Device.CopyBuffer(stagingBuffer.get(), m_IndexBuffer.get(), m_IndexBufferSize);

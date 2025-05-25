@@ -19,11 +19,8 @@ namespace cat
 
 		for (size_t i = 0; i < cat::MAX_FRAMES_IN_FLIGHT; i++)
 		{
-			m_UniformBuffers[i] = std::make_unique<Buffer>(
-				m_Device, bufferSize,
-				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-				VMA_MEMORY_USAGE_CPU_TO_GPU, true
-				
+			m_UniformBuffers[i] = std::make_unique<Buffer>(m_Device, 
+				Buffer::BufferInfo{ bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,VMA_MEMORY_USAGE_CPU_TO_GPU }
 			);
 		}
 	}
@@ -46,7 +43,6 @@ namespace cat
 
 		// MODEL ROTATION
 		UniformBufferObject ubo{};
-		ubo.model = glm::mat4(1.f);
 
 		// VIEW TRANSFORMATION
 		ubo.view = view;
