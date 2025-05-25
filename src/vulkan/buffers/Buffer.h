@@ -17,7 +17,7 @@ namespace cat
 
 		// CTOR & DTOR
 		//--------------------
-		Buffer(Device& device,BufferInfo bufferInfo);
+		Buffer(Device& device,const BufferInfo& bufferInfo);
 		~Buffer();
 
 

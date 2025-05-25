@@ -53,12 +53,14 @@ namespace cat
 			->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// diffuse sampler
 			->Create();
 
+		Pipeline::PipelineInfo pipelineInfo{};
+		pipelineInfo.SetDefault();
+		pipelineInfo.CreatePipelineLayout(m_Device, { descriptorSetLayout->GetDescriptorSetLayout() });
 		m_pGraphicsPipeline = new cat::Pipeline(
 			m_Device,
-			m_pSwapChain,
-			"shaders/simple_shader.vert.spv",
-			"shaders/simple_shader.frag.spv",
-			descriptorSetLayout->GetDescriptorSetLayout()
+			"shaders/shader.vert.spv",
+			"shaders/shader.frag.spv",
+			pipelineInfo
 		);
 
 		delete descriptorSetLayout;

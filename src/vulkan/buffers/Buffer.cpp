@@ -8,7 +8,7 @@ namespace cat
 {
     // CTOR & DTOR
     //--------------------
-    Buffer::Buffer(Device& device, BufferInfo bufferInfo)
+    Buffer::Buffer(Device& device, const BufferInfo& bufferInfo)
 		: m_Device{ device } 
     {
         VmaAllocationCreateInfo allocInfo{};
