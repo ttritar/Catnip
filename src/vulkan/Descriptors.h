@@ -3,7 +3,7 @@
 #include <unordered_map>
 
 #include "Device.h"
-#include "UniformBuffer.h"
+#include "buffers/UniformBuffer.h"
 #include "Image.h"
 
 namespace cat

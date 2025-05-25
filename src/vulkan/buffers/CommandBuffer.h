@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SwapChain.h"
+#include "../SwapChain.h"
 
 namespace cat
 {

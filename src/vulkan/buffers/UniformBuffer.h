@@ -6,7 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Buffer.h"
-#include "SwapChain.h"
+#include "../SwapChain.h"
 
 namespace cat
 {

@@ -2,8 +2,8 @@
 #include "Camera.h"
 #include "../vulkan/Descriptors.h"
 #include "../vulkan/Pipeline.h"
-#include "../vulkan/UniformBuffer.h"
-#include "../vulkan/CommandBuffer.h"
+#include "../vulkan/buffers/CommandBuffer.h"
+#include "../vulkan/buffers/Buffer.h"
 #include "../vulkan/Scene.h"
 
 namespace cat

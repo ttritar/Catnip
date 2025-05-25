@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 
 #include "Device.h"
-#include "Buffer.h"
+#include "buffers/Buffer.h"
 #include "Descriptors.h"
 
 // std
