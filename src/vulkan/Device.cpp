@@ -4,6 +4,7 @@
 #include <vma/vk_mem_alloc.h>
 
 #include "buffers/Buffer.h"
+#include "DebugLabel.h"
 
 // std
 #include <iostream>
@@ -303,6 +304,7 @@ namespace cat
             throw std::runtime_error("failed to create logical device!");
         }
 
+        DebugLabel::Init(m_Device);
         vkGetDeviceQueue(m_Device, indices.graphicsFamily.value(), 0, &m_GraphicsQueue);
         vkGetDeviceQueue(m_Device, indices.graphicsFamily.value(), 0, &m_PresentQueue);
 

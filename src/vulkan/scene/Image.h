@@ -30,6 +30,7 @@ namespace cat
 		// Getters & Setters
 		VkImage GetImage()const { return m_Image; }
 		VkImageView GetImageView()const { return  m_ImageView; }
+		VkFormat GetFormat() const { return m_Format; }
 		VkSampler GetSampler()const { return  m_Sampler; }
 		VkExtent2D GetExtent() const { return m_Extent; }
 		bool HasDepth() const

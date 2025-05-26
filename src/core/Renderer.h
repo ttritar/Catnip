@@ -4,7 +4,9 @@
 #include "../vulkan/Pipeline.h"
 #include "../vulkan/buffers/CommandBuffer.h"
 #include "../vulkan/scene/Scene.h"
+
 #include "../vulkan/passes/DepthPrepass.h"
+#include "../vulkan/passes/GeometryPass.h"
 
 namespace cat
 {
@@ -55,6 +57,7 @@ namespace cat
 
 		// passes
 		std::unique_ptr<DepthPrepass> m_pDepthPrepass;
+		std::unique_ptr<GeometryPass> m_pGeometryPass;
 
 	};
 }

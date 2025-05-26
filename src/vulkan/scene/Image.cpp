@@ -12,7 +12,7 @@ namespace cat
 {
 	Image::Image(Device& device, uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage, VkFilter filter)
 		: m_Device(device), m_Image(VK_NULL_HANDLE), m_Allocation(VK_NULL_HANDLE),
-		m_ImageView(VK_NULL_HANDLE), m_Format{ format }, m_MipLevels(1)
+		m_ImageView(VK_NULL_HANDLE), m_Format( format ), m_MipLevels(1)
 	{
 		CreateImage(width, height, m_MipLevels, format, usage, memoryUsage);
 		CreateTextureImageView();
@@ -21,7 +21,7 @@ namespace cat
 	}
 
 	Image::Image(Device& device, const std::string& filename, VkFormat format, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage, VkFilter filter)
-		: m_Device(device), m_Image(VK_NULL_HANDLE), m_Allocation(VK_NULL_HANDLE), m_ImageView(VK_NULL_HANDLE), m_Format{ format }
+		: m_Device(device), m_Image(VK_NULL_HANDLE), m_Allocation(VK_NULL_HANDLE), m_ImageView(VK_NULL_HANDLE), m_Format( format )
 	{
 		int texWidth, texHeight, texChannels;
 		stbi_uc* pixels = stbi_load(filename.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);

@@ -43,7 +43,7 @@ namespace cat
 			VkPipelineDepthStencilStateCreateInfo depthStencil{};
 
 			// COLOR BLENDING
-			VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+			std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments{};
 
 			VkPipelineColorBlendStateCreateInfo colorBlending{};
 
@@ -71,8 +71,6 @@ namespace cat
 			std::vector<VkFormat> colorAttachments = { VK_FORMAT_UNDEFINED };
 			VkFormat depthAttachmentFormat = VK_FORMAT_UNDEFINED;
 			VkFormat stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
-
-
 
 
 			void SetDefault()
@@ -131,13 +129,14 @@ namespace cat
 
 
 				// COLOR BLENDING
-				colorBlendAttachment.blendEnable = VK_FALSE;
-				colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+				colorBlendAttachments.resize(1);
+				colorBlendAttachments[0].blendEnable = VK_FALSE;
+				colorBlendAttachments[0].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
 				colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 				colorBlending.logicOpEnable = VK_FALSE;
-				colorBlending.attachmentCount = 1;
-				colorBlending.pAttachments = &colorBlendAttachment;
+				colorBlending.attachmentCount = colorBlendAttachments.size();
+				colorBlending.pAttachments = colorBlendAttachments.data();
 				colorBlending.blendConstants[0] = 0.0f;
 				colorBlending.blendConstants[1] = 0.0f;
 				colorBlending.blendConstants[2] = 0.0f;

@@ -27,7 +27,9 @@ namespace cat
         CreateVertexBuffer();
         CreateIndexBuffer();
 
-    	m_Images.push_back(new Image(device, material.diffusePath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO));
+
+		m_Images.push_back(new Image(device, material.albedoPath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO));
+        m_Images.push_back(new Image(device, material.normalPath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO));
         m_pDescriptorSet = new DescriptorSet(device, *ubo, m_Images, *layout, *pool);
     } 
 

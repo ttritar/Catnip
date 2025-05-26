@@ -19,14 +19,15 @@ namespace cat
 		m_pDescriptorPool = new DescriptorPool(device);
 		m_pDescriptorPool
 					->AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<uint32_t>(m_RawMeshes.size()*2))
-					->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, static_cast<uint32_t>(m_RawMeshes.size() * 2));
+					->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, static_cast<uint32_t>(m_RawMeshes.size() * 2) * m_Material.amount);
 		m_pDescriptorPool = m_pDescriptorPool->Create(static_cast<uint32_t>(m_RawMeshes.size() * 2));
 
 		// Create descriptor set layout
 		m_pDescriptorSetLayout = new DescriptorSetLayout(device);
 		m_pDescriptorSetLayout = m_pDescriptorSetLayout
 					->AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-					->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// diffuse sampler
+					->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// albedo sampler
+					->AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// normal sampler
 			->Create();
 
 		// Create meshes
@@ -132,17 +133,31 @@ namespace cat
 				vertex.color = { 1.0f, 1.0f, 1.0f };
 			}
 
-			//// normals
-			//if (mesh->HasNormals())
-			//{
-			//	vector.x = mesh->mNormals[i].x;
-			//	vector.y = mesh->mNormals[i].y;
-			//	vector.z = mesh->mNormals[i].z;
-			//	vertex.normal = vector;
-			//}
+			// uvs
+			if (mesh->HasTextureCoords(0))
+			{
+				// uv
+				glm::vec2 vec;
+				vec.x = mesh->mTextureCoords[0][i].x;
+				vec.y = mesh->mTextureCoords[0][i].y;
+				vertex.uv = vec;
+			}
+			else
+			{
+				vertex.uv = { 0.0f, 0.0f };
+			}
 
-			// texture coordinates
-			if (mesh->mTextureCoords[0]) 
+			// normals
+			if (mesh->HasNormals())
+			{
+				vector.x = mesh->mNormals[i].x;
+				vector.y = mesh->mNormals[i].y;
+				vector.z = mesh->mNormals[i].z;
+				vertex.normal = vector;
+			}
+
+			// tangents and bitangents
+			if (mesh->HasTangentsAndBitangents())
 			{
 				// uv
 				glm::vec2 vec;
@@ -151,20 +166,16 @@ namespace cat
 				vertex.uv = vec;
 
 				// tangent
-				//vector.x = mesh->mTangents[i].x;
-				//vector.y = mesh->mTangents[i].y;
-				//vector.z = mesh->mTangents[i].z;
-				//vertex.tangent = vector;
+				vector.x = mesh->mTangents[i].x;
+				vector.y = mesh->mTangents[i].y;
+				vector.z = mesh->mTangents[i].z;
+				vertex.tangent = vector;
 
 				// bitangent
-				//vector.x = mesh->mBitangents[i].x;
-				//vector.y = mesh->mBitangents[i].y;
-				//vector.z = mesh->mBitangents[i].z;
-				//vertex.bitangent = vector;
-			}
-			else
-			{
-				vertex.uv = { 0.0f, 0.0f };
+				vector.x = mesh->mBitangents[i].x;
+				vector.y = mesh->mBitangents[i].y;
+				vector.z = mesh->mBitangents[i].z;
+				vertex.bitangent = vector;
 			}
 
 			vertices.push_back(vertex);
@@ -186,24 +197,14 @@ namespace cat
 			aiString path;
 
 			if (aiMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &path) == AI_SUCCESS)
-				material.diffusePath = m_Directory + "/" + path.C_Str() ;
+				material.albedoPath = m_Directory + "/" + path.C_Str() ;
 			else
-				material.diffusePath = "";
+				material.albedoPath = "";
 
-			//if (aiMaterial->GetTexture(aiTextureType_NORMALS, 0, &path) == AI_SUCCESS)
-			//	material.normalPath = path.C_Str();
-			//else
-			//	textureInfo.normalPath = "";
-			//
-			//if (aiMaterial->GetTexture(aiTextureType_SPECULAR, 0, &path) == AI_SUCCESS)
-			//	textureInfo.specularPath = path.C_Str();
-			//else
-			//	textureInfo.specularPath = "";
-			//
-			//if (aiMaterial->GetTexture(aiTextureType_HEIGHT, 0, &path) == AI_SUCCESS)
-			//	textureInfo.bumpPath = path.C_Str();
-			//else
-			//	textureInfo.bumpPath = "";
+			if (aiMaterial->GetTexture(aiTextureType_NORMALS, 0, &path) == AI_SUCCESS)
+				material.normalPath = m_Directory + "/" + path.C_Str();
+			else
+				material.normalPath = "";
 		}
 	
 

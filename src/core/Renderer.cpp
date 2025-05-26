@@ -57,7 +57,8 @@ namespace cat
 		DescriptorSetLayout* descriptorSetLayout = new DescriptorSetLayout(m_Device);
 		descriptorSetLayout = descriptorSetLayout
 			->AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-			->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// diffuse sampler
+			->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// albedo sampler
+			->AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// normal sampler
 			->Create();
 
 		Pipeline::PipelineInfo pipelineInfo{};
@@ -87,6 +88,7 @@ namespace cat
 		// PASSES
 		//-----------------
 		m_pDepthPrepass = std::make_unique<DepthPrepass>(m_Device, cat::MAX_FRAMES_IN_FLIGHT);
+		m_pGeometryPass = std::make_unique<GeometryPass>(m_Device, m_pSwapChain->GetSwapChainExtent(), cat::MAX_FRAMES_IN_FLIGHT);
 	}
 
 	void Renderer::DrawFrame() const
@@ -125,8 +127,12 @@ namespace cat
 				throw std::runtime_error("failed to begin command buffer!");
 			}
 
-			RecordCommandBuffer(*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame), m_pSwapChain->GetImageIndex());
+			//RecordCommandBuffer(*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame), m_pSwapChain->GetImageIndex());
 			RecordPasses();
+
+			m_pSwapChain->GetSwapChainImage(static_cast<int>(m_pSwapChain->GetImageIndex()))->TransitionImageLayout(
+				*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame), VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+			);
 
 			// End recording:
 			if (vkEndCommandBuffer(*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame)) != VK_SUCCESS)
@@ -277,6 +283,17 @@ namespace cat
 			m_Camera,
 			*m_pCurrentScene
 		);
+
+		m_pGeometryPass->Record(
+			*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame),
+			m_CurrentFrame,
+			*m_pSwapChain->GetDepthImage(m_CurrentFrame),
+			m_Camera,
+			*m_pCurrentScene
+		);
+
+		//m_LightingPass->Record();
+		//m_BlitPass->Record();
 	}
 
 }

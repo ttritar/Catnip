@@ -38,15 +38,15 @@ namespace cat
 		Device& m_Device;
 		uint32_t m_FramesInFlight;
 
-		std::unique_ptr<UniformBuffer> m_UniformBuffer;
-		DescriptorPool* m_DescriptorPool;
-		DescriptorSetLayout* m_DescriptorSetLayout;
-		DescriptorSet* m_DescriptorSet;
+		std::unique_ptr<UniformBuffer> m_pUniformBuffer;
+		DescriptorPool* m_pDescriptorPool;
+		DescriptorSetLayout* m_pDescriptorSetLayout;
+		DescriptorSet* m_pDescriptorSet;
 
 		std::string m_VertPath = "shaders/depth.vert.spv";
 		std::string m_FragPath = "";
 
-		Pipeline* m_Pipeline;
+		Pipeline* m_pPipeline;
 
 	};
 }
