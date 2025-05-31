@@ -22,7 +22,7 @@ namespace cat
 
 		// CTOR & DTOR
 		//--------------------
-		UniformBuffer(Device& device);
+		UniformBuffer(Device& device, uint32_t count = cat::MAX_FRAMES_IN_FLIGHT);
 		~UniformBuffer();
 
 		UniformBuffer(const UniformBuffer&) = delete;
@@ -46,11 +46,18 @@ namespace cat
 			return buffers;
 		}
 
+		const std::vector<VkDescriptorBufferInfo>& GetDescriptorBufferInfos() const
+		{
+			return m_BufferInfos;
+		}
+
 	private:
 		// Private Members
 		//--------------------
 		Device& m_Device;
 
 		std::vector<std::unique_ptr<Buffer>> m_UniformBuffers;
+		std::vector<VkDescriptorBufferInfo> m_BufferInfos;
+
 	};
 }

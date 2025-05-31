@@ -7,27 +7,30 @@
 namespace cat
 {
 
-	UniformBuffer::UniformBuffer(Device& device)
+	UniformBuffer::UniformBuffer(Device& device, uint32_t count)
 		: m_Device(device)
 	{
 		VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
-		m_UniformBuffers.resize(cat::MAX_FRAMES_IN_FLIGHT);
+		m_UniformBuffers.resize(count);
+		m_BufferInfos.resize(count);
 
 		VmaAllocationCreateInfo allocInfo{};
 		allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
 
-		for (size_t i = 0; i < cat::MAX_FRAMES_IN_FLIGHT; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			m_UniformBuffers[i] = std::make_unique<Buffer>(m_Device, 
 				Buffer::BufferInfo{ bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,VMA_MEMORY_USAGE_CPU_TO_GPU }
 			);
+
+			m_BufferInfos[i] = m_UniformBuffers[i]->GetDescriptorBufferInfo();
 		}
 	}
 
 	UniformBuffer::~UniformBuffer()
 	{
-		for (size_t i = 0; i < cat::MAX_FRAMES_IN_FLIGHT; i++)
+		for (size_t i = 0; i < m_UniformBuffers.size(); i++)
 		{
 			m_UniformBuffers[i]->Unmap();
 		}
@@ -41,7 +44,6 @@ namespace cat
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 
-		// MODEL ROTATION
 		UniformBufferObject ubo{};
 
 		// VIEW TRANSFORMATION
@@ -53,7 +55,7 @@ namespace cat
 
 		// Copy data to uniform buffer
 		m_UniformBuffers[currentImage]->Map();
-		m_UniformBuffers[currentImage]->WriteToBuffer(&ubo, sizeof(UniformBufferObject));
+		m_UniformBuffers[currentImage]->WriteToBuffer(&ubo);
 		m_UniformBuffers[currentImage]->Unmap();
 	}
 }

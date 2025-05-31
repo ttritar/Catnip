@@ -28,9 +28,15 @@ namespace cat
         CreateIndexBuffer();
 
 
-		m_Images.push_back(new Image(device, material.albedoPath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO));
-        m_Images.push_back(new Image(device, material.normalPath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO));
-        m_pDescriptorSet = new DescriptorSet(device, *ubo, m_Images, *layout, *pool);
+		m_Images.push_back(new Image(device, material.albedoPath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO)); // albedo texture
+		m_Images.push_back(new Image(device, material.normalPath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO)); // normal texture
+
+        m_pDescriptorSet = new DescriptorSet(device, *layout, *pool);
+        m_pDescriptorSet
+			->AddBufferWrite(0, ubo->GetDescriptorBufferInfos())
+			->AddImageWrite(1, m_Images[0]->GetImageInfo())  // albedo texture
+			->AddImageWrite(2, m_Images[1]->GetImageInfo())  // normal texture
+			->Update();
     } 
 
     Mesh::~Mesh()
@@ -94,7 +100,7 @@ namespace cat
         );
 
         stagingBuffer->Map();
-        stagingBuffer->WriteToBuffer((void*)m_Vertices.data(), bufferSize);
+        stagingBuffer->WriteToBuffer((void*)m_Vertices.data());
         stagingBuffer->Unmap();
 
         m_VertexBuffer = std::make_unique<Buffer>(
@@ -120,7 +126,7 @@ namespace cat
         );
 
         stagingBuffer->Map();
-        stagingBuffer->WriteToBuffer((void*)m_Indices.data(),m_IndexBufferSize);
+        stagingBuffer->WriteToBuffer((void*)m_Indices.data());
 
         m_IndexBuffer = std::make_unique<Buffer>(
             m_Device, 

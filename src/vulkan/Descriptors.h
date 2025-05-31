@@ -4,7 +4,6 @@
 
 #include "Device.h"
 #include "buffers/UniformBuffer.h"
-#include "scene/Image.h"
 
 namespace cat
 {
@@ -25,6 +24,15 @@ namespace cat
 		DescriptorSetLayout* AddBinding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stageFlags, uint32_t count=1);
 
 		VkDescriptorSetLayout GetDescriptorSetLayout() const { return m_DescriptorSetLayout; }
+		const VkDescriptorSetLayoutBinding& GetBinding(uint32_t binding) const
+		{
+			auto it = m_Bindings.find(binding);
+			if (it != m_Bindings.end())
+			{
+				return it->second;
+			}
+			assert(false && "Binding not found in DescriptorSetLayout");
+		}
 	private:
 		VkDescriptorSetLayout m_DescriptorSetLayout;
 		std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> m_Bindings;
@@ -60,16 +68,21 @@ namespace cat
 	class DescriptorSet final
 	{
 	public:
-		DescriptorSet(Device& device, UniformBuffer& ubo, std::vector<Image*> images, DescriptorSetLayout& setLayout, DescriptorPool& pool);
+		DescriptorSet(Device& device, DescriptorSetLayout& setLayout, DescriptorPool& pool, uint32_t count = MAX_FRAMES_IN_FLIGHT);
+
+		DescriptorSet* Update();
+		DescriptorSet* AddBufferWrite(uint32_t binding, const std::vector<VkDescriptorBufferInfo>& bufferInfos);
+		DescriptorSet* AddImageWrite(uint32_t binding, const VkDescriptorImageInfo& imageInfo);
+
+		void Bind(VkCommandBuffer commandBuffer, const VkPipelineLayout& pipelineLayout, uint16_t idx, unsigned int firstSet = 0) const;
 
 		VkDescriptorSet* GetDescriptorSet(uint16_t idx) { return &m_DescriptorSets[idx]; }
-		void Bind(VkCommandBuffer commandBuffer, const VkPipelineLayout& pipelineLayout, uint16_t idx) const
-		{
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &m_DescriptorSets[idx], 0, nullptr);
-		}
 
 	private:
+
 		std::vector<VkDescriptorSet> m_DescriptorSets;
+
+		std::vector<VkWriteDescriptorSet> m_DescriptorWrites;
 
 		Device& m_Device;
 		DescriptorSetLayout& m_DescriptorSetLayout;

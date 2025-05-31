@@ -121,7 +121,7 @@ struct SwapChainSupportDetails
 
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)const;
 
-		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
+		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout& oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
 
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 	

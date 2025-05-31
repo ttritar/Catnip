@@ -1,11 +1,14 @@
 #include "Image.h"
 #include "../buffers/Buffer.h"
+#include "../utils/DebugLabel.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+// std
 #include <iostream>
 #include <stdexcept>
+
 
 
 namespace cat
@@ -37,18 +40,20 @@ namespace cat
 		// Create a staging buffer
 		Buffer stagingBuffer(device, Buffer::BufferInfo{ imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY });
 
-		stagingBuffer.WriteToBuffer(pixels, imageSize);
+		stagingBuffer.WriteToBuffer(pixels);
 
 		stbi_image_free(pixels);
 
 		CreateImage(texWidth, texHeight, m_MipLevels, format, usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, memoryUsage);
 		CreateTextureImageView();
 
-		device.TransitionImageLayout(m_Image, format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_MipLevels);
+		device.TransitionImageLayout(m_Image, format, m_ImageLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_MipLevels);
 		device.CopyBufferToImage(stagingBuffer.GetBuffer(), m_Image, texWidth, texHeight);
 		GenerateMipmaps(format, texWidth, texHeight);
 
 		CreateTextureSampler(filter, VK_SAMPLER_ADDRESS_MODE_REPEAT);
+
+		DebugLabel::NameImage(m_Image, filename);
 	}
 
 	Image::Image(Device& device, uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage, VkImage existingImage)

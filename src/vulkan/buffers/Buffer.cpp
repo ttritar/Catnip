@@ -22,7 +22,8 @@ namespace cat
         {
             allocInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
         }
-        
+
+		m_Size = bufferInfo.size;
         m_Device.CreateBuffer(bufferInfo.size, bufferInfo.usageFlags, bufferInfo.memoryUsage, bufferInfo.mappable, m_Buffer, m_Allocation);
     }
 
@@ -35,7 +36,7 @@ namespace cat
 
 	//                             >^._.^<      <3
 
-    VkResult Buffer::Map(VkDeviceSize offset)
+    VkResult Buffer::Map()
     {
         return vmaMapMemory(m_Device.GetAllocator(), m_Allocation, &m_Mapped);
     }
@@ -49,9 +50,9 @@ namespace cat
         }
     }
 
-    void Buffer::WriteToBuffer(void* data,VkDeviceSize size) const
+    void Buffer::WriteToBuffer(void* data) const
     {
-        vmaCopyMemoryToAllocation(m_Device.GetAllocator(), data, m_Allocation, 0, size);
+        vmaCopyMemoryToAllocation(m_Device.GetAllocator(), data, m_Allocation, 0, m_Size);
     }
 
     void Buffer::Flush()

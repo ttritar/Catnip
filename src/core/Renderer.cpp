@@ -284,13 +284,13 @@ namespace cat
 			*m_pCurrentScene
 		);
 
-		m_pGeometryPass->Record(
-			*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame),
-			m_CurrentFrame,
-			*m_pSwapChain->GetDepthImage(m_CurrentFrame),
-			m_Camera,
-			*m_pCurrentScene
-		);
+		//m_pGeometryPass->Record(
+		//	*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame),
+		//	m_CurrentFrame,
+		//	*m_pSwapChain->GetDepthImage(m_CurrentFrame),
+		//	m_Camera,
+		//	*m_pCurrentScene
+		//);
 
 		//m_LightingPass->Record();
 		//m_BlitPass->Record();

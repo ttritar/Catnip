@@ -98,8 +98,8 @@ namespace cat
 
 		// CTOR & DTOR
 		//--------------------
-        Mesh(Device& device, 
-            UniformBuffer* ubo, DescriptorSetLayout* layout, DescriptorPool* pool,
+		Mesh(Device& device, UniformBuffer* ubo,
+            DescriptorSetLayout* layout, DescriptorPool* pool,
             const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const Material& material);
 		~Mesh();
 
@@ -119,6 +119,7 @@ namespace cat
 
         std::vector<Vertex> GetVertices()const { return m_Vertices; }
         std::vector<uint32_t>GetIndices()const { return  m_Indices; }
+
 
 
 	private:

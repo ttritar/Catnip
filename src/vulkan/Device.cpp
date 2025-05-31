@@ -4,7 +4,7 @@
 #include <vma/vk_mem_alloc.h>
 
 #include "buffers/Buffer.h"
-#include "DebugLabel.h"
+#include "utils/DebugLabel.h"
 
 // std
 #include <iostream>
@@ -367,7 +367,8 @@ namespace cat
         return true;
     }
 
-    void Device::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
+    void Device::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout& oldLayout, VkImageLayout newLayout, uint32_t mipLevels)
+	{
         VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -394,6 +395,7 @@ namespace cat
             1, &barrier
         );
 
+		oldLayout = newLayout;
         EndSingleTimeCommands(commandBuffer);
     }
 
@@ -460,6 +462,7 @@ namespace cat
 
 	VKAPI_ATTR VkBool32 VKAPI_CALL Device::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,VkDebugUtilsMessageTypeFlagsEXT messageType,const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,void* pUserData)
     {
+        std::cout << std::endl;
 		std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
         return VK_FALSE;    //should always return this

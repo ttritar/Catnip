@@ -23,9 +23,9 @@ namespace cat
 
 		// Methods
 		//--------------------
-		VkResult Map(VkDeviceSize offset = 0);
+		VkResult Map();
 		void Unmap();
-		void WriteToBuffer(void* data, VkDeviceSize size) const;
+		void WriteToBuffer(void* data) const;
 
 		// Getters & Setters
 		VkBuffer GetBuffer() const { return m_Buffer; }
@@ -34,6 +34,15 @@ namespace cat
 		VmaAllocation GetAllocation() const { return m_Allocation; }
 		VmaAllocationInfo GetAllocationInfo() const { return m_AllocationInfo; }
 		void* GetRawData() const { return m_Mapped; }
+
+		VkDescriptorBufferInfo GetDescriptorBufferInfo() const
+		{
+			return VkDescriptorBufferInfo{
+				.buffer = m_Buffer,
+				.offset = 0,
+				.range = m_Size
+			};
+		}
 
 	private:
 		// Private Methods
@@ -50,6 +59,9 @@ namespace cat
 		Device& m_Device;
 		VkBuffer m_Buffer;
 		void* m_Mapped = nullptr;
+
+		VkDeviceSize m_Offset = 0;
+		VkDeviceSize m_Size = VK_WHOLE_SIZE;
 
 		VmaAllocation m_Allocation = VK_NULL_HANDLE;
 		VmaAllocationInfo m_AllocationInfo{};

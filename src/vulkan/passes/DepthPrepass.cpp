@@ -105,13 +105,11 @@ void cat::DepthPrepass::CreateDescriptors()
 		->AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
 		->Create();
 
-	m_pDescriptorSet = new DescriptorSet(
-		m_Device,
-		*m_pUniformBuffer,
-		{},
-		*m_pDescriptorSetLayout,
-		*m_pDescriptorPool
-	);
+	m_pDescriptorSet = new DescriptorSet(m_Device, *m_pDescriptorSetLayout, *m_pDescriptorPool, m_FramesInFlight );
+	m_pDescriptorSet
+		->AddBufferWrite(0, m_pUniformBuffer->GetDescriptorBufferInfos())
+		->Update();
+
 }
 
 void cat::DepthPrepass::CreatePipeline()

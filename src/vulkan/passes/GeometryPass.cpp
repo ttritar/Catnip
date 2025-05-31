@@ -49,7 +49,7 @@ void cat::GeometryPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 	Camera camera, Scene& scene) const
 {
 	// BEGIN RECORDING
- {
+	{
 		m_pUniformBuffer->Update(imageIndex, camera.GetView(), camera.GetProjection());
 
 		// transitioning images
@@ -134,7 +134,7 @@ void cat::GeometryPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		scissor.extent = m_Extent;
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		m_pDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex);
+		m_pDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, 0);
 
 		// draw the scene
 		scene.Draw(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex);
@@ -183,13 +183,11 @@ void cat::GeometryPass::CreateDescriptors()
 		->AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// normal sampler
 		->Create();
 
-	m_pDescriptorSet = new DescriptorSet(
-		m_Device,
-		*m_pUniformBuffer,
-		{ m_pAlbedoImage.get(), m_pNormalImage.get() },
-		*m_pDescriptorSetLayout,
-		*m_pDescriptorPool
-	);
+
+	m_pDescriptorSet = new DescriptorSet(m_Device, *m_pDescriptorSetLayout,*m_pDescriptorPool,m_FramesInFlight);
+	m_pDescriptorSet
+		->AddBufferWrite(0, m_pUniformBuffer->GetDescriptorBufferInfos()) // uniform buffer
+		->Update();
 }
 
 void cat::GeometryPass::CreatePipeline()

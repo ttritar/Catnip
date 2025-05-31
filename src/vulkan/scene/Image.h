@@ -33,6 +33,7 @@ namespace cat
 		VkFormat GetFormat() const { return m_Format; }
 		VkSampler GetSampler()const { return  m_Sampler; }
 		VkExtent2D GetExtent() const { return m_Extent; }
+
 		bool HasDepth() const
 		{
 			switch (m_Format)
@@ -57,6 +58,15 @@ namespace cat
 			default:
 				return false;
 			}
+		}
+
+		VkDescriptorImageInfo GetImageInfo() const
+		{
+			return VkDescriptorImageInfo{
+				.sampler = m_Sampler,
+				.imageView = m_ImageView,
+				.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+			};
 		}
 
 	private:
