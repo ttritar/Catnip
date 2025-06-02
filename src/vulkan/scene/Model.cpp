@@ -8,7 +8,7 @@ namespace cat
 	//--------------------
 
 	Model::Model(Device& device,SwapChain& swapchain,
-		UniformBuffer* ubo, const std::string& path)
+		UniformBuffer<MatrixUbo>* ubo, const std::string& path)
 		: m_Device{ device }, m_SwapChain{ swapchain },
 		m_pUniformBuffer{ ubo },
 		m_Path(path), m_Directory{ path }

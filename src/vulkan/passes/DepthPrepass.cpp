@@ -25,7 +25,8 @@ void cat::DepthPrepass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 {
 	// BEGIN RECORDING
 	{
-		m_pUniformBuffer->Update(imageIndex, camera.GetView(), camera.GetProjection());
+		MatrixUbo uboData = { camera.GetView(), camera.GetProjection() };
+		m_pUniformBuffer->Update(imageIndex, uboData);
 
 		depthImage.TransitionImageLayout(
 			commandBuffer,
@@ -90,7 +91,7 @@ void cat::DepthPrepass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 
 void cat::DepthPrepass::CreateUniformBuffers()
 {
-	m_pUniformBuffer = std::make_unique<UniformBuffer>(m_Device);
+	m_pUniformBuffer = std::make_unique<UniformBuffer<MatrixUbo>>(m_Device);
 }
 
 void cat::DepthPrepass::CreateDescriptors()

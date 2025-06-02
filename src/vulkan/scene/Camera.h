@@ -41,7 +41,17 @@ namespace cat
 		const glm::vec3 GetUp() const { return m_Up; }
 		const glm::vec3 GetRight() const { return m_Right; }
 
-		const Specifications GetSpecs() const { return m_Specs; }	
+		glm::vec3 GetOrigin()
+		{
+			if (m_IsPositionDirty)
+			{
+				UpdateVectors();
+				m_IsPositionDirty = false;
+			}
+			return m_Origin;
+		}
+
+		Specifications GetSpecs() const { return m_Specs; }	
 		void SetSpecs(const Specifications& specs)
 		{
 			m_Specs = specs;

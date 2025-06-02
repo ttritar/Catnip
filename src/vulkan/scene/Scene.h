@@ -12,14 +12,15 @@ namespace cat
 	public:
 		struct Light
 		{
-			glm::vec3 position;
-			glm::vec3 color;
-			float intensity;
+			glm::vec3 direction;
+			glm::vec3 color = {0.f,0.f,0.f};
+			float intensity = 1.f;
+
 		};
 
 		// CTOR & DTOR
 		//--------------------
-		Scene(Device& device, SwapChain& swapchain, UniformBuffer* ubo);
+		Scene(Device& device, SwapChain& swapchain, UniformBuffer<MatrixUbo>* ubo);
 		~Scene();
 
 		Scene(const Scene&) = delete;
@@ -48,7 +49,7 @@ namespace cat
 		//--------------------
 		Device& m_Device;
 		SwapChain& m_SwapChain;
-		UniformBuffer* m_pUniformBuffer;
+		UniformBuffer<MatrixUbo>* m_pUniformBuffer;
 		
 		std::vector<Model*> m_pModels;
 		std::vector<Light> m_Lights;

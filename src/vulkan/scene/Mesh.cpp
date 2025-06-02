@@ -20,7 +20,7 @@ namespace cat
 {
     // CTOR & DTOR
     //--------------------
-	Mesh::Mesh(Device& device, UniformBuffer* ubo, DescriptorSetLayout* layout, DescriptorPool* pool,
+	Mesh::Mesh(Device& device, UniformBuffer<MatrixUbo>* ubo, DescriptorSetLayout* layout, DescriptorPool* pool,
         const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const Material &material)
 		: m_Device{ device }, m_Vertices{ vertices }, m_Indices{ indices }
     {

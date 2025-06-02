@@ -23,6 +23,13 @@ namespace cat
 			Image& depthImage,
 		            Camera camera, Scene& scene) const;
 
+		// Getters & Setters
+		Image& GetAlbedoBuffer() const { return *m_pAlbedoBuffer; }
+		Image& GetNormalBuffer() const { return *m_pNormalBuffer; }
+		Image& GetSpecularBuffer() const { return *m_pSpecularBuffer; }
+		Image& GetWorldBuffer() const { return *m_pWorldBuffer; }
+
+
 	private:
 		// PRIVATE METHODS
 		//-----------------
@@ -36,7 +43,8 @@ namespace cat
 		uint32_t m_FramesInFlight;
 		VkExtent2D m_Extent;
 
-		std::unique_ptr<UniformBuffer> m_pUniformBuffer;
+		
+		std::unique_ptr<UniformBuffer<MatrixUbo>> m_pUniformBuffer;
 
 		DescriptorPool* m_pDescriptorPool;
 		DescriptorSetLayout* m_pUboDescriptorSetLayout;

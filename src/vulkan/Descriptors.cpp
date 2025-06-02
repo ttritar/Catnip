@@ -110,9 +110,10 @@ namespace cat
         allocInfo.pSetLayouts = layouts.data();
 
         m_DescriptorSets.resize(cat::MAX_FRAMES_IN_FLIGHT);
-        if (vkAllocateDescriptorSets(m_Device.GetDevice(), &allocInfo, m_DescriptorSets.data()) != VK_SUCCESS)
+        const auto result = vkAllocateDescriptorSets(m_Device.GetDevice(), &allocInfo, m_DescriptorSets.data());
+        if (result == VK_ERROR_OUT_OF_POOL_MEMORY)
         {
-            throw std::runtime_error("failed to allocate descriptor sets!");
+            throw std::runtime_error("No more memory in pool! :( verry sad");
         }
 	}
 

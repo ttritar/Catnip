@@ -38,7 +38,7 @@ namespace cat
 		Device& m_Device;
 		uint32_t m_FramesInFlight;
 
-		std::unique_ptr<UniformBuffer> m_pUniformBuffer;
+		std::unique_ptr<UniformBuffer<MatrixUbo>> m_pUniformBuffer;
 		DescriptorPool* m_pDescriptorPool;
 		DescriptorSetLayout* m_pDescriptorSetLayout;
 		DescriptorSet* m_pDescriptorSet;

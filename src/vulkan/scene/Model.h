@@ -18,7 +18,7 @@ namespace cat
 		// CTOR & DTOR
 		//--------------------
 		Model(Device& device, SwapChain& swapchain, 
-			UniformBuffer* ubo, const std::string& path);
+			UniformBuffer<MatrixUbo>* ubo, const std::string& path);
 		~Model();
 
 		Model(const Model&) = delete;
@@ -53,7 +53,7 @@ namespace cat
 		//--------------------
 		Device& m_Device;
 		SwapChain& m_SwapChain;
-		UniformBuffer* m_pUniformBuffer;
+		UniformBuffer<MatrixUbo>* m_pUniformBuffer;
 		DescriptorSetLayout* m_pDescriptorSetLayout;
 		DescriptorPool* m_pDescriptorPool;
 

@@ -10,20 +10,46 @@
 
 namespace cat
 {
-	class UniformBuffer
+	struct MatrixUbo
+	{
+		alignas(16) glm::mat4 view;
+		alignas(16) glm::mat4 proj;
+	};
+
+
+
+	template<typename T>
+	class UniformBuffer final
 	{
 	public:
-		struct UniformBufferObject
-		{
-			alignas(16) glm::mat4 view;
-			alignas(16) glm::mat4 proj;
-		};
-
-
 		// CTOR & DTOR
 		//--------------------
-		UniformBuffer(Device& device, uint32_t count = cat::MAX_FRAMES_IN_FLIGHT);
-		~UniformBuffer();
+		UniformBuffer(Device& device, uint32_t count = cat::MAX_FRAMES_IN_FLIGHT)
+			: m_Device(device)
+		{
+			VkDeviceSize bufferSize = sizeof(T);
+
+			m_UniformBuffers.resize(count);
+			m_BufferInfos.resize(count);
+
+			for (uint32_t i = 0; i < count; ++i)
+			{
+				m_UniformBuffers[i] = std::make_unique<Buffer>(
+					m_Device,
+					Buffer::BufferInfo{ bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU }
+				);
+
+				m_BufferInfos[i] = m_UniformBuffers[i]->GetDescriptorBufferInfo();
+			}
+			
+		}
+		~UniformBuffer()
+		{
+			for (auto& buffer : m_UniformBuffers)
+			{
+				buffer->Unmap();
+			}
+		}
 
 		UniformBuffer(const UniformBuffer&) = delete;
 		UniformBuffer& operator=(const UniformBuffer&) = delete;
@@ -32,11 +58,16 @@ namespace cat
 
 		// Methods
 		//--------------------
-		void Update(unsigned int currentImage, glm::mat4 view, glm::mat4 proj);
+		void Update(uint32_t frameIndex, T& data)
+		{
+			m_UniformBuffers[frameIndex]->Map();
+			m_UniformBuffers[frameIndex]->WriteToBuffer(&data);
+			m_UniformBuffers[frameIndex]->Unmap();
+		}
 
 		// Getters & Setters
-		VkBuffer GetUniformBuffer(uint16_t idx)const { return m_UniformBuffers[idx]->GetBuffer(); }
-		std::vector<VkBuffer> GetUniformBuffers()const
+		VkBuffer GetBuffer(uint16_t idx)const { return m_UniformBuffers[idx]->GetBuffer(); }
+		std::vector<VkBuffer> GetBuffers()const
 		{
 			std::vector<VkBuffer> buffers;
 			for (const auto& buffer : m_UniformBuffers)

@@ -64,7 +64,7 @@ namespace cat
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-        vertexInputInfo.vertexBindingDescriptionCount = pipelineInfo.vertexBindingDescriptions.size();
+        vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t> (pipelineInfo.vertexBindingDescriptions.size());
         vertexInputInfo.pVertexBindingDescriptions = pipelineInfo.vertexBindingDescriptions.data(); //optional   -> point to array of struct that describe the aforementioned details for loading vertex data
         vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t> (pipelineInfo.vertexAttributeDescriptions.size());
         vertexInputInfo.pVertexAttributeDescriptions = pipelineInfo.vertexAttributeDescriptions.data(); //optional     -> point to array of struct that describe the aforementioned details for loading vertex data

@@ -2,6 +2,8 @@
 #include "../scene/Scene.h"
 #include "../scene/Camera.h"
 
+#include "GeometryPass.h"
+
 namespace cat
 {
 	class LightingPass final
@@ -9,7 +11,7 @@ namespace cat
 	public:
 		// CTOR & DTOR
 		//----------------
-		LightingPass(Device& device, VkExtent2D extent, uint32_t framesInFlight);
+		LightingPass(Device& device, VkExtent2D extent, uint32_t framesInFlight,const GeometryPass& geometryPass);
 		~LightingPass();
 
 		LightingPass(const LightingPass&) = delete;
@@ -20,8 +22,7 @@ namespace cat
 		// METHODS
 		//-----------------
 		void Record(VkCommandBuffer commandBuffer, uint32_t imageIndex,
-			Image& depthImage,
-			Camera camera, Scene& scene) const;
+		            Camera camera, Scene& scene) const;
 
 	private:
 		// PRIVATE METHODS
@@ -35,15 +36,26 @@ namespace cat
 		Device& m_Device;
 		uint32_t m_FramesInFlight;
 		VkExtent2D m_Extent;
+		const GeometryPass& m_GeometryPass;
 
-		std::unique_ptr<UniformBuffer> m_pUniformBuffer;
+
+		struct LightingUbo
+		{
+			alignas(16) glm::vec3 lightDirection;
+			alignas(16) glm::vec3 lightColor = { 1.f, 1.f, 1.f };
+			alignas(4) float lightIntensity;
+
+			alignas(16) glm::vec3 cameraPosition;
+		};
+		std::unique_ptr<UniformBuffer<LightingUbo>> m_pUniformBuffer;
 
 		DescriptorPool* m_pDescriptorPool;
 		DescriptorSetLayout* m_pUboDescriptorSetLayout;
 		DescriptorSetLayout* m_pSamplersDescriptorSetLayout;
-		DescriptorSet* m_pDescriptorSet;
+		DescriptorSet* m_pUboDescriptorSet;
+		DescriptorSet* m_pSamplersDescriptorSet;
 
-		std::string m_VertPath = "shaders/lighting.vert.spv";
+		std::string m_VertPath = "shaders/triangle.vert.spv";
 		std::string m_FragPath = "shaders/lighting.frag.spv";
 		Pipeline* m_pPipeline;
 

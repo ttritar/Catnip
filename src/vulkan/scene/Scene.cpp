@@ -4,7 +4,7 @@ namespace cat
 {
 	// CTOR & DTOR
 	//--------------------
-	Scene::Scene(Device& device, SwapChain& swapchain, UniformBuffer* ubo)
+	Scene::Scene(Device& device, SwapChain& swapchain, UniformBuffer<MatrixUbo>* ubo)
 		: m_Device{ device }, m_SwapChain{ swapchain }, m_pUniformBuffer(ubo)
 	{
 	}
@@ -52,7 +52,7 @@ namespace cat
 	void Scene::RemoveLight(const Light& light)
 	{
 		auto it = std::remove_if(m_Lights.begin(), m_Lights.end(),
-			[&](const Light& l) { return l.position == light.position && l.color == light.color && l.intensity == light.intensity; });
+			[&](const Light& l) { return l.direction == light.direction && l.color == light.color && l.intensity == light.intensity; });
 		if (it != m_Lights.end())
 		{
 			m_Lights.erase(it, m_Lights.end());

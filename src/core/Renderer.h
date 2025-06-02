@@ -7,6 +7,7 @@
 
 #include "../vulkan/passes/DepthPrepass.h"
 #include "../vulkan/passes/GeometryPass.h"
+#include "../vulkan/passes/LightingPass.h"
 
 namespace cat
 {
@@ -50,7 +51,7 @@ namespace cat
 		Pipeline* m_pGraphicsPipeline;
 		Scene* m_pCurrentScene;
 		std::vector<Scene*> m_pScenes;
-		UniformBuffer* m_pUniformBuffer;
+		UniformBuffer<MatrixUbo>* m_pUniformBuffer;
 		CommandBuffer* m_pCommandBuffer;
 
 		mutable uint16_t m_CurrentFrame = 0;
@@ -58,6 +59,7 @@ namespace cat
 		// passes
 		std::unique_ptr<DepthPrepass> m_pDepthPrepass;
 		std::unique_ptr<GeometryPass> m_pGeometryPass;
+		std::unique_ptr<LightingPass> m_pLightingPass;
 
 	};
 }

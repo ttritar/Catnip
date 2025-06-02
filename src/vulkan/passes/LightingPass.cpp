@@ -1,8 +1,8 @@
 #include "LightingPass.h"
 #include "../utils/DebugLabel.h"
 
-cat::LightingPass::LightingPass(Device& device, VkExtent2D extent, uint32_t framesInFlight)
-	: m_Device(device),  m_FramesInFlight(framesInFlight),m_Extent(extent)
+cat::LightingPass::LightingPass(Device& device, VkExtent2D extent, uint32_t framesInFlight,const GeometryPass& geometryPass)
+	: m_Device(device), m_FramesInFlight(framesInFlight), m_Extent(extent), m_GeometryPass(geometryPass)
 {
 	// IMAGES
 	m_pLitImage = std::make_unique<Image>(
@@ -14,7 +14,9 @@ cat::LightingPass::LightingPass(Device& device, VkExtent2D extent, uint32_t fram
 	);
 	DebugLabel::NameImage(m_pLitImage->GetImage(), "Lit buffer <3");
 
-
+	CreateUniformBuffers();
+	CreateDescriptors();
+	CreatePipeline();
 }
 
 cat::LightingPass::~LightingPass()
@@ -25,38 +27,59 @@ cat::LightingPass::~LightingPass()
 	m_pUboDescriptorSetLayout = nullptr;
 	delete m_pSamplersDescriptorSetLayout;
 	m_pSamplersDescriptorSetLayout = nullptr;
-	delete m_pDescriptorSet;
-	m_pDescriptorSet = nullptr;
+	delete m_pUboDescriptorSet;
+	m_pUboDescriptorSet = nullptr;
 
 	delete m_pPipeline;
 	m_pPipeline = nullptr;
 }
 
-void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, Image& depthImage, Camera camera,
-                               Scene& scene) const
+void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, Camera camera, Scene& scene) const
 {
 	// BEGIN RECORDING
 	{
-		m_pUniformBuffer->Update(imageIndex, camera.GetView(), camera.GetProjection());
+		if (scene.GetLights().empty()) return;
+
+		LightingUbo uboData = {
+			.lightDirection = scene.GetLights()[0].direction,
+			.lightColor = scene.GetLights()[0].color,
+			.lightIntensity = scene.GetLights()[0].intensity,
+			.cameraPosition = camera.GetOrigin()
+		};
+		m_pUniformBuffer->Update(imageIndex,uboData);
 
 		// transitioning images
 		//----------------------
-		depthImage.TransitionImageLayout(
-			commandBuffer,
-			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-		);
-
 		m_pLitImage->TransitionImageLayout(
 			commandBuffer,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		);
 
+		m_GeometryPass.GetAlbedoBuffer().TransitionImageLayout(
+			commandBuffer,
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+		);
+
+		m_GeometryPass.GetNormalBuffer().TransitionImageLayout(
+			commandBuffer,
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+		);
+
+		m_GeometryPass.GetSpecularBuffer().TransitionImageLayout(
+			commandBuffer,
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+		);
+
+		m_GeometryPass.GetWorldBuffer().TransitionImageLayout(
+			commandBuffer,
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+		);
+
 
 		// Render Attachments
 		//---------------------
-		std::array<VkClearValue, 2> clearValues{};
-		clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
-		clearValues[1].depthStencil = { 1.0f, 0 };
+		VkClearValue clearValue {};
+		clearValue.color = { 0.0f, 0.0f, 0.0f, 1.0f };
 
 		// Color Attachment
 		std::vector<VkRenderingAttachmentInfoKHR> colorAttachments;
@@ -67,16 +90,7 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		colorAttachments[0].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		colorAttachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		colorAttachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		colorAttachments[0].clearValue = clearValues[0];
-
-		// Depth Attachment
-		VkRenderingAttachmentInfoKHR depthAttachmentInfo{};
-		depthAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-		depthAttachmentInfo.imageView = depthImage.GetImageView();
-		depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-		depthAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		depthAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		depthAttachmentInfo.clearValue = clearValues[1];
+		colorAttachments[0].clearValue = clearValue;
 
 		// Render Info
 		VkRenderingInfoKHR renderInfo{};
@@ -85,7 +99,6 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		renderInfo.layerCount = 1;
 		renderInfo.colorAttachmentCount = colorAttachments.size();
 		renderInfo.pColorAttachments = colorAttachments.data();
-		renderInfo.pDepthAttachment = &depthAttachmentInfo;
 		vkCmdBeginRenderingKHR(commandBuffer, &renderInfo);
 	}
 
@@ -108,10 +121,11 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		scissor.extent = m_Extent;
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		m_pDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, 0);
+		m_pUboDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, 0);
+		m_pSamplersDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, 1);
 
-		// draw the scene
-		scene.Draw(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex);
+		vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
 	}
 
 	// END RECORDING
@@ -120,12 +134,27 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 
 		// transitioning images
 		//----------------------
-		depthImage.TransitionImageLayout(
+		m_pLitImage->TransitionImageLayout(
 			commandBuffer,
-			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		);
 
-		m_pLitImage->TransitionImageLayout(
+		m_GeometryPass.GetAlbedoBuffer().TransitionImageLayout(
+			commandBuffer,
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+		);
+
+		m_GeometryPass.GetNormalBuffer().TransitionImageLayout(
+			commandBuffer,
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+		);
+
+		m_GeometryPass.GetSpecularBuffer().TransitionImageLayout(
+			commandBuffer,
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+		);
+
+		m_GeometryPass.GetWorldBuffer().TransitionImageLayout(
 			commandBuffer,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		);
@@ -134,23 +163,29 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 
 void cat::LightingPass::CreateUniformBuffers()
 {
-	m_pUniformBuffer = std::make_unique<UniformBuffer>(m_Device);
+	m_pUniformBuffer = std::make_unique<UniformBuffer<LightingUbo>>(m_Device);
 }
 
 void cat::LightingPass::CreateDescriptors()
 {
 	m_pDescriptorPool = new DescriptorPool(m_Device);
 	m_pDescriptorPool
-		->AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2)
-		->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 8)
-		->Create(m_FramesInFlight);
+		->AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_FramesInFlight * 2 )
+		->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_FramesInFlight * 10)
+		->Create(m_FramesInFlight * 2);
 
 
 
 	m_pUboDescriptorSetLayout = new DescriptorSetLayout(m_Device);
 	m_pUboDescriptorSetLayout
-		->AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		->AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		->Create();
+
+
+	m_pUboDescriptorSet = new DescriptorSet(m_Device, *m_pUboDescriptorSetLayout, *m_pDescriptorPool, m_FramesInFlight);
+	m_pUboDescriptorSet
+		->AddBufferWrite(0, m_pUniformBuffer->GetDescriptorBufferInfos()) // uniform buffer
+		->Update();
 
 	m_pSamplersDescriptorSetLayout = new DescriptorSetLayout(m_Device);
 	m_pSamplersDescriptorSetLayout
@@ -161,9 +196,13 @@ void cat::LightingPass::CreateDescriptors()
 		->Create();
 
 
-	m_pDescriptorSet = new DescriptorSet(m_Device, *m_pUboDescriptorSetLayout, *m_pDescriptorPool, m_FramesInFlight);
-	m_pDescriptorSet
-		->AddBufferWrite(0, m_pUniformBuffer->GetDescriptorBufferInfos()) // uniform buffer
+	m_pSamplersDescriptorSet = new DescriptorSet(m_Device, *m_pSamplersDescriptorSetLayout, *m_pDescriptorPool, m_FramesInFlight);
+
+	m_pSamplersDescriptorSet
+		->AddImageWrite(0, m_GeometryPass.GetAlbedoBuffer().GetImageInfo()) // albedo
+		->AddImageWrite(1, m_GeometryPass.GetNormalBuffer().GetImageInfo()) // normal
+		->AddImageWrite(2, m_GeometryPass.GetSpecularBuffer().GetImageInfo()) // specular
+		->AddImageWrite(3, m_GeometryPass.GetWorldBuffer().GetImageInfo()) // world
 		->Update();
 }
 
@@ -184,7 +223,10 @@ void cat::LightingPass::CreatePipeline()
 	pipelineInfo.colorBlending.pAttachments = pipelineInfo.colorBlendAttachments.data();
 	pipelineInfo.colorBlending.attachmentCount = static_cast<uint32_t>(pipelineInfo.colorBlendAttachments.size());
 
-	pipelineInfo.CreatePipelineLayout(m_Device, { m_pUboDescriptorSetLayout->GetDescriptorSetLayout(),m_pSamplersDescriptorSetLayout->GetDescriptorSetLayout() });
+	pipelineInfo.vertexAttributeDescriptions = {};
+	pipelineInfo.vertexBindingDescriptions = {};
+
+	pipelineInfo.CreatePipelineLayout(m_Device, { m_pUboDescriptorSetLayout->GetDescriptorSetLayout(), m_pSamplersDescriptorSetLayout->GetDescriptorSetLayout()});
 
 	m_pPipeline = new Pipeline(
 		m_Device,

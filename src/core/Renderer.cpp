@@ -38,7 +38,8 @@ namespace cat
 
 		m_Camera.Update(deltaTime);
 		m_pCurrentScene->Update(deltaTime);
-		m_pUniformBuffer->Update(m_CurrentFrame, m_Camera.GetView(), m_Camera.GetProjection());
+		MatrixUbo uboData = { m_Camera.GetView(), m_Camera.GetProjection() };
+		m_pUniformBuffer->Update(m_CurrentFrame, uboData);
 	}
 
 	void Renderer::Render() const
@@ -50,32 +51,15 @@ namespace cat
 	{
 		m_pSwapChain = new SwapChain(m_Device, m_Window.GetWindow());
 
-		m_pUniformBuffer = new UniformBuffer(m_Device);
-
-		//rawr
-		//DescriptorSetLayout* descriptorSetLayout = new DescriptorSetLayout(m_Device);
-		//descriptorSetLayout = descriptorSetLayout
-		//	->AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-		//	->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// albedo sampler
-		//	->AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// normal sampler
-		//	->Create();
-		//
-		//Pipeline::PipelineInfo pipelineInfo{};
-		//pipelineInfo.SetDefault();
-		//pipelineInfo.CreatePipelineLayout(m_Device, { descriptorSetLayout->GetDescriptorSetLayout() });
-		//m_pGraphicsPipeline = new cat::Pipeline(
-		//	m_Device,
-		//	"shaders/shader.vert.spv",
-		//	"shaders/shader.frag.spv",
-		//	pipelineInfo
-		//);
-		//delete descriptorSetLayout;
+		m_pUniformBuffer = new UniformBuffer<MatrixUbo>(m_Device);
 
 		m_pScenes.resize(2);
 		m_pScenes[0] = new Scene(m_Device, *m_pSwapChain, m_pUniformBuffer);
 		m_pScenes[0]->AddModel("resources/FlightHelmet/FlightHelmet.gltf");
+		m_pScenes[0]->AddLight(Scene::Light{ .direction = { 0.f, -1.f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 1.f });
 		m_pScenes[1] = new Scene(m_Device, *m_pSwapChain, m_pUniformBuffer);
 		m_pScenes[1]->AddModel("resources/Sponza/Sponza.gltf");
+		m_pScenes[1]->AddLight(Scene::Light{ .direction = { 0.f, -1.f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 1.f });
 
 		m_pCurrentScene = m_pScenes[0]; // set default scene
 
@@ -88,6 +72,7 @@ namespace cat
 		//-----------------
 		m_pDepthPrepass = std::make_unique<DepthPrepass>(m_Device, cat::MAX_FRAMES_IN_FLIGHT);
 		m_pGeometryPass = std::make_unique<GeometryPass>(m_Device, m_pSwapChain->GetSwapChainExtent(), cat::MAX_FRAMES_IN_FLIGHT);
+		m_pLightingPass = std::make_unique<LightingPass>(m_Device, m_pSwapChain->GetSwapChainExtent(), cat::MAX_FRAMES_IN_FLIGHT, *m_pGeometryPass);
 	}
 
 	void Renderer::DrawFrame() const
@@ -289,6 +274,14 @@ namespace cat
 			m_Camera,
 			*m_pCurrentScene
 		);
+
+		m_pLightingPass->Record(
+			*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame),
+			m_CurrentFrame,
+			m_Camera,
+			*m_pCurrentScene
+		);
+
 
 		//m_LightingPass->Record();
 		//m_BlitPass->Record();
