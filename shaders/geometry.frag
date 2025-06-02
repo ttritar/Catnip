@@ -9,9 +9,12 @@ layout(location = 5) in vec3 inBitangent;
 
 layout(location = 0) out vec4 outAlbedo;
 layout(location = 1) out vec4 outNormal;
+layout(location = 2) out vec4 outSpecular;
+layout(location = 3) out vec4 outWorld;
 
-layout(set = 0, binding = 1) uniform sampler2D albedoSampler;
-layout(set = 0, binding = 2) uniform sampler2D normalSampler;
+layout(set = 1, binding = 0) uniform sampler2D albedoSampler;
+layout(set = 1, binding = 1) uniform sampler2D normalSampler;
+layout(set = 1, binding = 2) uniform sampler2D specularSampler;
 
 void main() 
 {
@@ -29,4 +32,12 @@ void main()
     normal = normalize(sampledNormal * tangentSpace);
 
     outNormal = vec4(normal, 1.0);
+
+    // specular
+    vec3 spec = texture(specularSampler, inUV).rgb;
+    outSpecular.b = spec.b;
+    outSpecular.g = spec.g;
+
+    // world position
+    outWorld = vec4(inPosition, 1.0);
 }

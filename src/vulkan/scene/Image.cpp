@@ -28,8 +28,9 @@ namespace cat
 	{
 		int texWidth, texHeight, texChannels;
 		stbi_uc* pixels = stbi_load(filename.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-		if (!pixels) {
-			std::cerr << "Failed to load texture image!" << std::endl;
+		if (!pixels) 
+		{
+			std::cerr << "Failed to load texture image: " << filename <<std::endl;
 			pixels = stbi_load("resources/TextureNotFound.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 		}
 		m_MipLevels = static_cast<uint32_t>(std::floor(std::log2(max(texWidth, texHeight)))) + 1;

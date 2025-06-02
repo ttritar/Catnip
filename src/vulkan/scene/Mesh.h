@@ -22,8 +22,9 @@ namespace cat
 		{
             std::string albedoPath;
 			std::string normalPath;
+			std::string specularPath;
 
-			const int amount = 2;
+			const int amount = 3;
         };
 
         struct Vertex

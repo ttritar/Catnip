@@ -10,9 +10,16 @@ namespace cat
 	class Scene final
 	{
 	public:
+		struct Light
+		{
+			glm::vec3 position;
+			glm::vec3 color;
+			float intensity;
+		};
+
 		// CTOR & DTOR
 		//--------------------
-		Scene(Device& device, SwapChain& swapchain, Pipeline* pipeline, UniformBuffer* ubo);
+		Scene(Device& device, SwapChain& swapchain, UniformBuffer* ubo);
 		~Scene();
 
 		Scene(const Scene&) = delete;
@@ -27,20 +34,23 @@ namespace cat
 		Model* AddModel(const std::string& path);
 		void RemoveModel(const std::string& path);
 
+		void AddLight(const Light& light);
+		void RemoveLight(const Light& light);
+
 		void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t frameIdx, bool isDepthPass = 0) const;
 
 		// Getters & Setters
 		const std::vector<Model*>& GetModels() const { return m_pModels; }
+		const std::vector<Light>& GetLights() const { return m_Lights; }
 
 	private:
 		// Private members
 		//--------------------
 		Device& m_Device;
 		SwapChain& m_SwapChain;
-		Pipeline* m_pGraphicsPipeline;
 		UniformBuffer* m_pUniformBuffer;
-		DescriptorPool* m_pDescriptorPool;
 		
 		std::vector<Model*> m_pModels;
+		std::vector<Light> m_Lights;
 	};
 }

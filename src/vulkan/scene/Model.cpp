@@ -25,9 +25,9 @@ namespace cat
 		// Create descriptor set layout
 		m_pDescriptorSetLayout = new DescriptorSetLayout(device);
 		m_pDescriptorSetLayout = m_pDescriptorSetLayout
-					->AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-					->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// albedo sampler
-					->AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// normal sampler
+				->AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// albedo sampler
+				->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// normal sampler
+				->AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// specular sampler
 			->Create();
 
 		// Create meshes
@@ -205,6 +205,12 @@ namespace cat
 				material.normalPath = m_Directory + "/" + path.C_Str();
 			else
 				material.normalPath = "";
+
+			if (aiMaterial->GetTexture(aiTextureType_METALNESS, 0, &path) == AI_SUCCESS ||
+				aiMaterial->GetTexture(aiTextureType_SPECULAR, 0, &path) == AI_SUCCESS)
+				material.specularPath = m_Directory + "/" + path.C_Str();
+			else
+				material.specularPath = "";
 		}
 	
 

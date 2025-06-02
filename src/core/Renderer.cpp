@@ -20,7 +20,6 @@ namespace cat
 		//  CLEANUP
 		//-----------
 		delete m_pSwapChain;
-		delete m_pGraphicsPipeline;
 		for (auto& scene : m_pScenes)
 		{
 			delete scene;
@@ -54,28 +53,28 @@ namespace cat
 		m_pUniformBuffer = new UniformBuffer(m_Device);
 
 		//rawr
-		DescriptorSetLayout* descriptorSetLayout = new DescriptorSetLayout(m_Device);
-		descriptorSetLayout = descriptorSetLayout
-			->AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-			->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// albedo sampler
-			->AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// normal sampler
-			->Create();
-
-		Pipeline::PipelineInfo pipelineInfo{};
-		pipelineInfo.SetDefault();
-		pipelineInfo.CreatePipelineLayout(m_Device, { descriptorSetLayout->GetDescriptorSetLayout() });
-		m_pGraphicsPipeline = new cat::Pipeline(
-			m_Device,
-			"shaders/shader.vert.spv",
-			"shaders/shader.frag.spv",
-			pipelineInfo
-		);
-		delete descriptorSetLayout;
+		//DescriptorSetLayout* descriptorSetLayout = new DescriptorSetLayout(m_Device);
+		//descriptorSetLayout = descriptorSetLayout
+		//	->AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		//	->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// albedo sampler
+		//	->AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// normal sampler
+		//	->Create();
+		//
+		//Pipeline::PipelineInfo pipelineInfo{};
+		//pipelineInfo.SetDefault();
+		//pipelineInfo.CreatePipelineLayout(m_Device, { descriptorSetLayout->GetDescriptorSetLayout() });
+		//m_pGraphicsPipeline = new cat::Pipeline(
+		//	m_Device,
+		//	"shaders/shader.vert.spv",
+		//	"shaders/shader.frag.spv",
+		//	pipelineInfo
+		//);
+		//delete descriptorSetLayout;
 
 		m_pScenes.resize(2);
-		m_pScenes[0] = new Scene(m_Device, *m_pSwapChain, m_pGraphicsPipeline, m_pUniformBuffer);
+		m_pScenes[0] = new Scene(m_Device, *m_pSwapChain, m_pUniformBuffer);
 		m_pScenes[0]->AddModel("resources/FlightHelmet/FlightHelmet.gltf");
-		m_pScenes[1] = new Scene(m_Device, *m_pSwapChain, m_pGraphicsPipeline, m_pUniformBuffer);
+		m_pScenes[1] = new Scene(m_Device, *m_pSwapChain, m_pUniformBuffer);
 		m_pScenes[1]->AddModel("resources/Sponza/Sponza.gltf");
 
 		m_pCurrentScene = m_pScenes[0]; // set default scene
@@ -192,8 +191,7 @@ namespace cat
 		m_CurrentFrame = (m_CurrentFrame + 1) % cat::MAX_FRAMES_IN_FLIGHT;
 	}
 
-	void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) const
-		// writes the cmd we want executed into a cmd buffer
+	void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) const// writes the cmd we want executed into a cmd buffer
 	{
 		// START RENDERING
 		{
@@ -284,13 +282,13 @@ namespace cat
 			*m_pCurrentScene
 		);
 
-		//m_pGeometryPass->Record(
-		//	*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame),
-		//	m_CurrentFrame,
-		//	*m_pSwapChain->GetDepthImage(m_CurrentFrame),
-		//	m_Camera,
-		//	*m_pCurrentScene
-		//);
+		m_pGeometryPass->Record(
+			*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame),
+			m_CurrentFrame,
+			*m_pSwapChain->GetDepthImage(m_CurrentFrame),
+			m_Camera,
+			*m_pCurrentScene
+		);
 
 		//m_LightingPass->Record();
 		//m_BlitPass->Record();

@@ -26,7 +26,6 @@ layout(location = 3) out vec3 outNormal;
 layout(location = 4) out vec3 outTangent;
 layout(location = 5) out vec3 outBitangent;
 
-
 void main() 
 {
     gl_Position = ubo.proj * ubo.view * ps.model * vec4(inPosition, 1.0);
@@ -37,5 +36,4 @@ void main()
     outNormal = normalize(mat3(ps.model) * inNormal);
     outTangent = normalize(mat3(ps.model) * inTangent);
     outBitangent = normalize(mat3(ps.model) * inBitangent);
-
 }

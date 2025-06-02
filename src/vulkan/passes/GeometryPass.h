@@ -39,7 +39,8 @@ namespace cat
 		std::unique_ptr<UniformBuffer> m_pUniformBuffer;
 
 		DescriptorPool* m_pDescriptorPool;
-		DescriptorSetLayout* m_pDescriptorSetLayout;
+		DescriptorSetLayout* m_pUboDescriptorSetLayout;
+		DescriptorSetLayout* m_pSamplersDescriptorSetLayout;
 		DescriptorSet* m_pDescriptorSet;
 
 		std::string m_VertPath = "shaders/geometry.vert.spv";
@@ -47,8 +48,10 @@ namespace cat
 
 		Pipeline* m_pPipeline;
 
-		std::unique_ptr<Image> m_pAlbedoImage;
-		std::unique_ptr<Image> m_pNormalImage;
+		std::unique_ptr<Image> m_pAlbedoBuffer;
+		std::unique_ptr<Image> m_pNormalBuffer;
+		std::unique_ptr<Image> m_pSpecularBuffer;
+		std::unique_ptr<Image> m_pWorldBuffer;
 	};
 
 }

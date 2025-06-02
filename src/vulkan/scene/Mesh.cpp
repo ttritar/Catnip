@@ -28,14 +28,15 @@ namespace cat
         CreateIndexBuffer();
 
 
-		m_Images.push_back(new Image(device, material.albedoPath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO)); // albedo texture
+		m_Images.push_back(new Image(device, material.albedoPath.c_str(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO)); // albedo texture
 		m_Images.push_back(new Image(device, material.normalPath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO)); // normal texture
+        m_Images.push_back(new Image(device, material.specularPath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO)); // normal texture
 
         m_pDescriptorSet = new DescriptorSet(device, *layout, *pool);
         m_pDescriptorSet
-			->AddBufferWrite(0, ubo->GetDescriptorBufferInfos())
-			->AddImageWrite(1, m_Images[0]->GetImageInfo())  // albedo texture
-			->AddImageWrite(2, m_Images[1]->GetImageInfo())  // normal texture
+			->AddImageWrite(0, m_Images[0]->GetImageInfo())  // albedo texture
+			->AddImageWrite(1, m_Images[1]->GetImageInfo())  // normal texture
+			->AddImageWrite(2, m_Images[2]->GetImageInfo())  // specular texture
 			->Update();
     } 
 
@@ -68,7 +69,7 @@ namespace cat
 			   commandBuffer,
 			   VK_PIPELINE_BIND_POINT_GRAPHICS,
 			   pipelineLayout,
-			   0,
+			   1,
 			   1,
 			   m_pDescriptorSet->GetDescriptorSet(idx),
 			   0,
