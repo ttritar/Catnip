@@ -16,9 +16,9 @@ add_executable(GP2_VulkanTutorial
     src/vulkan/Device.cpp src/vulkan/SwapChain.cpp src/vulkan/Descriptors.cpp
     src/vulkan/buffers/Buffer.cpp   src/vulkan/buffers/CommandBuffer.cpp  
     src/vulkan/Pipeline.cpp
-    src/vulkan/passes/GeometryPass.cpp  src/vulkan/passes/DepthPrepass.cpp src/vulkan/passes/LightingPass.cpp
+    src/vulkan/passes/GeometryPass.cpp  src/vulkan/passes/DepthPrepass.cpp src/vulkan/passes/LightingPass.cpp src/vulkan/passes/BlitPass.cpp
     src/vulkan/scene/Scene.cpp src/vulkan/scene/Model.cpp src/vulkan/scene/Mesh.cpp src/vulkan/scene/Image.cpp src/vulkan/scene/Camera.cpp 
-  "src/vulkan/passes/BlitPass.h" "src/vulkan/passes/BlitPass.cpp" "src/vulkan/utils/DebugLabel.h" "src/vulkan/utils/DebugLabel.cpp")
+    src/vulkan/utils/DebugLabel.cpp)
 
 
 
@@ -168,7 +168,7 @@ foreach(GLSL ${GLSL_SOURCE_FILES})
 
     add_custom_command(
             OUTPUT ${SPIRV}
-            COMMAND ${GLSL_VALIDATOR} -V ${GLSL} -o ${SPIRV}
+            COMMAND ${GLSL_VALIDATOR} -V -g ${GLSL} -o ${SPIRV}
             DEPENDS ${GLSL}
     )
 

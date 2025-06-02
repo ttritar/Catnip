@@ -2,8 +2,8 @@
 
 #include "LightingPass.h"
 
-cat::BlitPass::BlitPass(Device& device, VkExtent2D extent, uint32_t framesInFlight, const LightingPass& lightingPass)
-	: m_Device(device), m_FramesInFlight(framesInFlight), m_Extent(extent), m_LitImage(lightingPass.GetLitImage())
+cat::BlitPass::BlitPass(Device& device, SwapChain& swapChain, uint32_t framesInFlight, const LightingPass& lightingPass)
+	: m_Device(device), m_FramesInFlight(framesInFlight), m_SwapChain(swapChain) , m_Extent(swapChain.GetSwapChainExtent()), m_LitImage(lightingPass.GetLitImage())
 {
 	CreateDescriptors();
 	CreatePipeline();
@@ -22,13 +22,16 @@ cat::BlitPass::~BlitPass()
 	m_pPipeline = nullptr;
 }
 
-void cat::BlitPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, Image& swapchainImage) const
+void cat::BlitPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex) const
 {
+	Image& swapchainImage = *m_SwapChain.GetSwapChainImage(imageIndex);
+
 	// BEGIN RECORDING
 	{
 		// transitioning images
 		//----------------------
 		swapchainImage.TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		m_LitImage.TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 		// Render Attachments
 		//---------------------
@@ -58,7 +61,6 @@ void cat::BlitPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, I
 
 	// Drawing
 	{
-		m_pPipeline->Bind(commandBuffer);
 
 		// viewport
 		VkViewport viewport{};
@@ -74,6 +76,8 @@ void cat::BlitPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, I
 		scissor.offset = { 0, 0 };
 		scissor.extent = m_Extent;
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+		m_pPipeline->Bind(commandBuffer);
 
 		m_pDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, 0);
 
@@ -119,7 +123,7 @@ void cat::BlitPass::CreatePipeline()
 
 	// attachments
 	pipelineInfo.colorAttachments = {
-		m_LitImage.GetFormat()
+		*m_SwapChain.GetSwapChainImageFormat()
 	};
 	pipelineInfo.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
 	pipelineInfo.colorBlendAttachments.resize(pipelineInfo.colorAttachments.size(),

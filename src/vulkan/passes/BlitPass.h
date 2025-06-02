@@ -12,7 +12,7 @@ namespace cat
 	public:
 		// CTOR & DTOR
 		//----------------
-		BlitPass(Device& device, VkExtent2D extent, uint32_t framesInFlight, const LightingPass& lightingPass);
+		BlitPass(Device& device, SwapChain& swapChain, uint32_t framesInFlight, const LightingPass& lightingPass);
 		~BlitPass();
 
 		BlitPass(const BlitPass&) = delete;
@@ -22,8 +22,7 @@ namespace cat
 
 		// METHODS
 		//-----------------
-		void Record(VkCommandBuffer commandBuffer, uint32_t imageIndex,
-		            Image& swapchainImage) const;
+		void Record(VkCommandBuffer commandBuffer, uint32_t imageIndex) const;
 
 
 
@@ -37,8 +36,9 @@ namespace cat
 		// PRIVATE MEMBERS
 		//-----------------
 		Device& m_Device;
-		uint32_t m_FramesInFlight;
-		VkExtent2D m_Extent;
+		const uint32_t m_FramesInFlight;
+		SwapChain& m_SwapChain;
+		const VkExtent2D m_Extent;
 
 		std::string m_VertPath = "shaders/triangle.vert.spv";
 		std::string m_FragPath = "shaders/blit.frag.spv";
