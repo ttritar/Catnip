@@ -7,9 +7,6 @@
 // std
 #include <iostream>
 
-
-
-
 // Ctor & Dtor
 //-----------------
 cat::Camera::Camera(Window& window,glm::vec3 origin, Specifications specs)
@@ -75,16 +72,66 @@ const glm::mat4& cat::Camera::GetView()
 
 // Private Methods
 //-----------------
+void cat::Camera::UpdateVectors()
+{
+	if (!m_IsPositionDirty) return;
+
+	// rotation
+	float pitch = glm::radians(m_TotalPitch);
+	float yaw = glm::radians(m_TotalYaw);
+
+	glm::vec3 fwd;
+	fwd.x = cos(pitch) * sin(yaw);
+	fwd.y = -sin(pitch);
+	fwd.z = cos(pitch) * cos(yaw);
+
+	// recalculate vectors
+	m_Forward = glm::normalize(fwd);
+	m_Right = glm::normalize(glm::cross(m_Forward, glm::vec3(0, 1, 0)));
+	m_Up = glm::normalize(glm::cross(m_Right, m_Forward));
+
+	GetView();
+}
+
+
+#pragma region Input Handling
 void cat::Camera::HandleKeyboardInput(float deltaTime)
 {
 	auto window = m_Window.GetWindow();
 
+	// HANDLING
+	//-----------------
+	HandleMoveInput(deltaTime, window);
+	HandleSpeedInput(deltaTime, window);
+}
+
+void cat::Camera::HandleMouseInput()
+{
+	auto window = m_Window.GetWindow();
+
+	// MOUSE INPUT
+	double mouseX, mouseY;
+	glfwGetCursorPos(window, &mouseX, &mouseY);
+
+	float deltaX = static_cast<float>(mouseX - m_LastMouseX);
+	float deltaY = static_cast<float>(mouseY - m_LastMouseY);
+
+	m_LastMouseX = static_cast<float>(mouseX);
+	m_LastMouseY = static_cast<float>(mouseY);
+
+	bool rmb = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
+	bool lmb = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
 
 
-	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-		m_Speed *= 2;
+	// HANDLING
+	//-----------------
+	HandleRotationInput(lmb, rmb, glm::vec2(deltaX, deltaY));
+}
 
 
+
+void cat::Camera::HandleMoveInput(float deltaTime, GLFWwindow* window)
+{
 	// WASD
 	//-----------------
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -123,28 +170,21 @@ void cat::Camera::HandleKeyboardInput(float deltaTime)
 	}
 }
 
-void cat::Camera::HandleMouseInput()
+void cat::Camera::HandleSpeedInput(float deltaTime, GLFWwindow* window)
 {
-	auto window = m_Window.GetWindow();
+	if (glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS)
+		++m_Speed;
+	else if (glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS)
+		--m_Speed;
 
-	// MOUSE INPUT
-	double mouseX, mouseY;
-	glfwGetCursorPos(window, &mouseX, &mouseY);
+	m_Speed = max(m_Speed, 0.1f);
+}
 
-	float deltaX = static_cast<float>(mouseX - m_LastMouseX);
-	float deltaY = static_cast<float>(mouseY - m_LastMouseY);
-
-	m_LastMouseX = static_cast<float>(mouseX);
-	m_LastMouseY = static_cast<float>(mouseY);
-
-	bool rmb = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
-	bool lmb = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
-
-
-
+void cat::Camera::HandleRotationInput(bool lmb, bool rmb, glm::vec2 d)
+{
 	// ROTATION
 	//-----------------
-	if (rmb||lmb)	m_IsPositionDirty = true;
+	if (rmb || lmb)	m_IsPositionDirty = true;
 
 	if (rmb && lmb)
 	{
@@ -154,29 +194,10 @@ void cat::Camera::HandleMouseInput()
 	}
 	else if (lmb)
 	{
-		m_TotalPitch += deltaY * m_MouseSensitivity;
-		m_TotalYaw += deltaX * m_MouseSensitivity;
+		m_TotalPitch += d.y * m_MouseSensitivity;
+		m_TotalYaw += d.x * m_MouseSensitivity;
 		m_TotalPitch = std::clamp(m_TotalPitch, -89.9f, 89.9f);
 	}
 }
 
-void cat::Camera::UpdateVectors()
-{
-	if (!m_IsPositionDirty) return;
-
-	// rotation
-	float pitch = glm::radians(m_TotalPitch);
-	float yaw = glm::radians(m_TotalYaw);
-
-	glm::vec3 fwd;
-	fwd.x = cos(pitch) * sin(yaw);
-	fwd.y = -sin(pitch);
-	fwd.z = cos(pitch) * cos(yaw);
-
-	// recalculate vectors
-	m_Forward = glm::normalize(fwd);
-	m_Right = glm::normalize(glm::cross(m_Forward, glm::vec3(0, 1, 0)));
-	m_Up = glm::normalize(glm::cross(m_Right, m_Forward));
-
-	GetView();
-}
+#pragma endregion

@@ -23,6 +23,8 @@ namespace cat
 		//-----------------
 		void Record(VkCommandBuffer commandBuffer, uint32_t imageIndex,
 		            Camera camera, Scene& scene) const;
+		// Getters & Setters
+		Image& GetLitImage() const { return *m_pLitImage; }
 
 	private:
 		// PRIVATE METHODS

@@ -66,6 +66,10 @@ namespace cat
 		//-----------------
 		void HandleKeyboardInput(float deltaTime);
 		void HandleMouseInput();
+		void HandleMoveInput(float deltaTime, GLFWwindow* window);
+		void HandleSpeedInput(float deltaTime, GLFWwindow* window);
+		void HandleRotationInput(bool lmb, bool rmb, glm::vec2 d);
+
 
 		void UpdateVectors();
 
