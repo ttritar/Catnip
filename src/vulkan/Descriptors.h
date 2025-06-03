@@ -82,6 +82,14 @@ namespace cat
 		VkDescriptorSet* GetDescriptorSet(uint16_t idx) { return &m_DescriptorSets[idx]; }
 		uint32_t GetDescriptorSetCount() const { return static_cast<uint32_t>(m_DescriptorSets.size()); }
 
+		void ClearDescriptorWrites()
+		{
+			for (auto& writes : m_DescriptorWrites)
+			{
+				writes.clear();
+			}
+		}
+
 	private:
 
 		std::vector<VkDescriptorSet> m_DescriptorSets;

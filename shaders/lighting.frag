@@ -2,10 +2,10 @@
 
 layout(set = 0, binding = 0) uniform LightUBO {
     vec3 lightDir;     
-    vec3 lightColor;  
-    float lightIntensity;
+    vec3 lightColor;  // luminance
+    float lightIntensity; // lumen
 
-    vec3 cameraPos;   
+    vec3 cameraPos;  
 } ubo;
 
 layout(location = 0) in vec2 fragUV;
@@ -18,19 +18,19 @@ layout(set = 1, binding = 2) uniform sampler2D specularSampler;
 layout(set = 1, binding = 3) uniform sampler2D worldSampler;
 
 const float PI = 3.14159265358979323846264338327950288;
-const float SPECULAR_POWER = 4.0;
-const float SHININESS_MUL = 100.0;
-const float MIN_ROUGHNESS = 0.01; // NO ZERO DIV ONG
-
+const float MIN_ROUGHNESS = 0.045;
+const vec3 DIELECTRIC_F0 = vec3(0.04);
+const vec3 AMBIENT = vec3(0.03, 0.03, 0.03);
 
 
 
 // FUNCTION DECLARATIONS
-vec4 CalculateLighting(vec3 albedoSample, vec3 normalSample, vec3 specularSample, float roughness, vec3 worldPosSample,
-    vec3 lightDir, vec3 lightColor, float lightIntensity, vec3 cameraPos);
-float ObservedAreaShading(vec3 normal, vec3 lightDir);
-vec3 DiffuseShading(vec3 albedo, vec3 normal, vec3 lightDir, vec3 lightColor, float lightIntensity);
-vec3 SpecularShading(vec3 normal, vec3 worldPos, vec3 lightDir, vec3 lightColor, float lightIntensity, vec3 camPos, float specularStrength, float roughness);
+vec3 CalculatePBR(vec3 albedo, vec3 normal, float metallic, float roughness, vec3 worldPos,
+    vec3 lightDir, vec3 lightColor, float lightIntensity, vec3 cameraPos);vec3 F_Schlick(vec3 F0, float cosTheta);
+vec3 F_Schlick(vec3 F0, float cosTheta);
+float D_GGX(float NdotH, float roughness);
+float G_SchlickGGX(float NdotV, float roughness);
+float G_Smith(float NdotV, float NdotL, float roughness);
 
 
 
@@ -38,56 +38,100 @@ void main()
 {
     vec3 albedoSample = texture(albedoSampler, fragUV).rgb;
     vec3 normalSample = texture(normalSampler, fragUV).rgb;
+    normalSample = normalize(normalSample * 2.0 - 1.0);
     vec3 specularSample  = texture(specularSampler, fragUV).rgb;
-    float specularStrength = specularSample.r;
+
+    // r = metalic, g = roughness
+    float metallic = specularSample.r;
     float roughness = max(specularSample.g, MIN_ROUGHNESS);
+
     vec3 worldPosSample = texture(worldSampler, fragUV).xyz;
     
-    outLit = CalculateLighting(albedoSample, normalSample, specularSample, roughness, worldPosSample,
-        ubo.lightDir, ubo.lightColor, ubo.lightIntensity, ubo.cameraPos);
 
-    outLit.rgb = albedoSample;
-    outLit.a = 1.0; // Set alpha to 1.0 for full opacity
+    vec3 litColor = CalculatePBR(albedoSample, normalSample, metallic, roughness, worldPosSample,
+        ubo.lightDir, ubo.lightColor, ubo.lightIntensity, ubo.cameraPos);
+    litColor = vec3(1.0) - exp(-litColor);
+
+    outLit = vec4(litColor, 1.0);
+
 }
+
 
 
 // LIGHTING CALC
 //----------------
-vec4 CalculateLighting(vec3 albedoSample, vec3 normalSample, vec3 specularSample, float roughness, vec3 worldPosSample,
+
+vec3 F_Schlick(vec3 F0, float cosTheta)
+{
+    return F0 + (vec3(1.0) - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+float D_GGX(float NdotH, float roughness)
+{
+    float a = roughness * roughness;
+    float a2 = a * a;
+    float denom = (NdotH * NdotH) * (a2 - 1.0) + 1.0;
+    denom = PI * denom * denom;
+
+    return a2 / max(denom, 0.0001);
+}
+
+float G_SchlickGGX(float NdotV, float roughness)
+{
+    float r = (roughness + 1.0);
+    float k = (r * r) / 8.0;
+
+    return NdotV / (NdotV * (1.0 - k) + k);
+}
+
+float G_Smith(float NdotV, float NdotL, float roughness)
+{
+    return G_SchlickGGX(NdotV, roughness) * G_SchlickGGX(NdotL, roughness);
+}
+
+vec3 CalculatePBR(vec3 albedo, vec3 normal, float metallic, float roughness, vec3 worldPos,
     vec3 lightDir, vec3 lightColor, float lightIntensity, vec3 cameraPos)
 {
-    vec3 diffuse = DiffuseShading(albedoSample, normalSample, lightDir, lightColor, lightIntensity);
-    vec3 specularColor = SpecularShading(normalSample, worldPosSample, lightDir, lightColor, lightIntensity, cameraPos, specularSample.r, roughness);
-    vec3 finalColor = diffuse + specularColor;
+    vec3 N = normalize(normal);
+    vec3 V = normalize(cameraPos - worldPos);
+    vec3 L = normalize(-lightDir);
+    vec3 H = normalize(V + L);
 
-    return vec4(finalColor, 1.0);
-}
+    float NdotL = max(dot(N, L), 0.0001);
+    float NdotV = max(dot(N, V), 0.0001);
+    float NdotH = max(dot(N, H), 0.0001);
+    float LdotH = max(dot(L, H), 0.0001);
 
-float ObservedAreaShading(vec3 normal, vec3 lightDir)
-{
-    float lambertCos = max(dot(normal, normalize(lightDir)), 0.0);
-    return lambertCos;
-}
+    // Radiance
+    vec3 radiance = lightColor * lightIntensity;
 
-vec3 DiffuseShading(vec3 albedo, vec3 normal, vec3 lightDir, vec3 lightColor, float lightIntensity)
-{
-    float lambertsCos = ObservedAreaShading(normal, lightDir);
-    vec3 lightContribution = (lambertsCos * lightIntensity * lightColor * albedo) / PI;
-    return lightContribution;
-}
+    // Reflectance
+    vec3 F0 = mix(DIELECTRIC_F0, albedo, metallic);
 
-vec3 SpecularShading(vec3 normal, vec3 worldPos, vec3 lightDir, vec3 lightColor, float lightIntensity, vec3 camPos, float specularStrength, float roughness)
-{
-    vec3 vertexToCamera = normalize(camPos - worldPos);
-    vec3 halfVector = normalize(vertexToCamera + normalize(lightDir));
+    // Fresnel
+    vec3 F = F_Schlick(F0, LdotH);
 
-    float dotNH = max(dot(normal, halfVector), 0.0);
+    // Distribution
+    float D = D_GGX(NdotH, roughness);
 
-    float shininess = pow(1.0 - roughness, SPECULAR_POWER) * SHININESS_MUL; 
+    // Geometry
+    float G = G_Smith(NdotV, NdotL, roughness);
 
-    float specularFactor = pow(dotNH, shininess);
-    
-    vec3 specular = specularFactor * specularStrength * lightColor * lightIntensity;
 
-    return specular;
+    // Cook-Torrance BRDF
+    //--------------------
+        // Specular
+    vec3 numerator = D * F * G;
+    float denominator = 4.0 * NdotV * NdotL;
+    vec3 specular = numerator / max(denominator, 0.0001);
+
+        // Diffuse
+    vec3 kD = (vec3(1.0) - F) * (1.0 - metallic);
+    vec3 diffuse = kD * albedo / PI;
+
+        // Final color
+    vec3 Lo = (diffuse + specular) * radiance * NdotL;
+    vec3 ambient = AMBIENT * albedo;
+
+    return ambient + Lo;
 }

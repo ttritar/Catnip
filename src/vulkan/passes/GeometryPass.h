@@ -22,6 +22,7 @@ namespace cat
 		void Record(VkCommandBuffer commandBuffer, uint32_t imageIndex,
 			Image& depthImage,
 		            Camera camera, Scene& scene) const;
+		void Resize(VkExtent2D size);
 
 		// Getters & Setters
 		Image& GetAlbedoBuffer(int idx) const { return *m_pAlbedoBuffers[idx]; }

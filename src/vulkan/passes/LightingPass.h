@@ -23,6 +23,8 @@ namespace cat
 		//-----------------
 		void Record(VkCommandBuffer commandBuffer, uint32_t imageIndex,
 		            Camera camera, Scene& scene) const;
+		void Resize(VkExtent2D size);
+
 		// Getters & Setters
 		const std::vector<std::unique_ptr<Image>>& GetLitImages() const { return m_pLitImages; }
 

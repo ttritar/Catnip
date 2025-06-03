@@ -56,10 +56,10 @@ namespace cat
 		m_pScenes.resize(2);
 		m_pScenes[0] = new Scene(m_Device, *m_pSwapChain, m_pUniformBuffer);
 		m_pScenes[0]->AddModel("resources/FlightHelmet/FlightHelmet.gltf");
-		m_pScenes[0]->AddLight(Scene::Light{ .direction = { 0.f, -1.f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 1.f });
+		m_pScenes[0]->AddLight(Scene::Light{ .direction = { 0.f, -1.f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 5.f });
 		m_pScenes[1] = new Scene(m_Device, *m_pSwapChain, m_pUniformBuffer);
 		m_pScenes[1]->AddModel("resources/Sponza/Sponza.gltf");
-		m_pScenes[1]->AddLight(Scene::Light{ .direction = { 0.f, -1.f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 1.f });
+		m_pScenes[1]->AddLight(Scene::Light{ .direction = { 0.f, -1.f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 5.f });
 
 		m_pCurrentScene = m_pScenes[0]; // set default scene
 
@@ -86,6 +86,7 @@ namespace cat
 		if (result == VK_ERROR_OUT_OF_DATE_KHR)
 		{
 			m_pSwapChain->RecreateSwapChain();
+			ResizePasses();
 			return;
 		}
 		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
@@ -116,7 +117,7 @@ namespace cat
 			RecordPasses();
 
 			m_pSwapChain->GetSwapChainImage(static_cast<int>(m_pSwapChain->GetImageIndex()))->TransitionImageLayout(
-				*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame), VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+				*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame), VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,{}
 			);
 
 			// End recording:
@@ -168,6 +169,7 @@ namespace cat
 		{
 			m_pSwapChain->SetFrameBufferResized(false);
 			m_pSwapChain->RecreateSwapChain();
+			ResizePasses();
 		}
 		else if (result != VK_SUCCESS)
 		{
@@ -177,91 +179,91 @@ namespace cat
 		m_CurrentFrame = (m_CurrentFrame + 1) % cat::MAX_FRAMES_IN_FLIGHT;
 	}
 
-	void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) const// writes the cmd we want executed into a cmd buffer
-	{
-		// START RENDERING
-		{
-			m_pSwapChain->GetSwapChainImage(static_cast<int>(m_pSwapChain->GetImageIndex()))->TransitionImageLayout(
-				commandBuffer,
-				VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-			);
-			m_pSwapChain->GetDepthImage(m_pSwapChain->GetImageIndex())->TransitionImageLayout(
-				commandBuffer,
-				VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-			);
+	//void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) const// writes the cmd we want executed into a cmd buffer
+	//{
+	//	// START RENDERING
+	//	{
+	//		m_pSwapChain->GetSwapChainImage(static_cast<int>(m_pSwapChain->GetImageIndex()))->TransitionImageLayout(
+	//			commandBuffer,VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,{}
+	//		);
+	//		m_pSwapChain->GetDepthImage(m_pSwapChain->GetImageIndex())->TransitionImageLayout(
+	//			commandBuffer, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, {}
+	//		);
 
-			// Starting a render pass:
-			std::array<VkClearValue, 2> clearValues{};
-			clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
-			clearValues[1].depthStencil = { 1.0f, 0 };
+	//		// Starting a render pass:
+	//		std::array<VkClearValue, 2> clearValues{};
+	//		clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+	//		clearValues[1].depthStencil = { 1.0f, 0 };
 
-			VkRenderingAttachmentInfoKHR colorAttachmentInfo{};
-			colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-			colorAttachmentInfo.imageView = m_pSwapChain->GetSwapChainImageView(m_pSwapChain->GetImageIndex());
-			colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-			colorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-			colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-			colorAttachmentInfo.clearValue = clearValues[0];
+	//		VkRenderingAttachmentInfoKHR colorAttachmentInfo{};
+	//		colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+	//		colorAttachmentInfo.imageView = m_pSwapChain->GetSwapChainImageView(m_pSwapChain->GetImageIndex());
+	//		colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	//		colorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	//		colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	//		colorAttachmentInfo.clearValue = clearValues[0];
 
-			VkRenderingAttachmentInfoKHR depthAttachmentInfo{};
-			depthAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-			depthAttachmentInfo.imageView = m_pSwapChain->GetDepthImage(m_pSwapChain->GetImageIndex())->GetImageView();
-			depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-			depthAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-			depthAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-			depthAttachmentInfo.clearValue = clearValues[1];
+	//		VkRenderingAttachmentInfoKHR depthAttachmentInfo{};
+	//		depthAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+	//		depthAttachmentInfo.imageView = m_pSwapChain->GetDepthImage(m_pSwapChain->GetImageIndex())->GetImageView();
+	//		depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	//		depthAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	//		depthAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	//		depthAttachmentInfo.clearValue = clearValues[1];
 
-			VkRenderingInfoKHR renderInfo{};
-			renderInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
-			renderInfo.renderArea.offset = { 0, 0 };
-			renderInfo.renderArea.extent = m_pSwapChain->GetSwapChainExtent();
-			renderInfo.layerCount = 1;
-			renderInfo.colorAttachmentCount = 1;
-			renderInfo.pColorAttachments = &colorAttachmentInfo;
-			renderInfo.pDepthAttachment = &depthAttachmentInfo;
-			vkCmdBeginRenderingKHR(commandBuffer, &renderInfo);
-		}
+	//		VkRenderingInfoKHR renderInfo{};
+	//		renderInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+	//		renderInfo.renderArea.offset = { 0, 0 };
+	//		renderInfo.renderArea.extent = m_pSwapChain->GetSwapChainExtent();
+	//		renderInfo.layerCount = 1;
+	//		renderInfo.colorAttachmentCount = 1;
+	//		renderInfo.pColorAttachments = &colorAttachmentInfo;
+	//		renderInfo.pDepthAttachment = &depthAttachmentInfo;
+	//		vkCmdBeginRenderingKHR(commandBuffer, &renderInfo);
+	//	}
 
-		// DRAWING
-		{
-			m_pGraphicsPipeline->Bind(commandBuffer);
+	//	// DRAWING
+	//	{
+	//		m_pGraphicsPipeline->Bind(commandBuffer);
 
-			VkViewport viewport{};
-			viewport.x = 0.0f;
-			viewport.y = 0.0f;
-			viewport.width = static_cast<float>(m_pSwapChain->GetSwapChainExtent().width);
-			viewport.height = static_cast<float>(m_pSwapChain->GetSwapChainExtent().height);
+	//		VkViewport viewport{};
+	//		viewport.x = 0.0f;
+	//		viewport.y = 0.0f;
+	//		viewport.width = static_cast<float>(m_pSwapChain->GetSwapChainExtent().width);
+	//		viewport.height = static_cast<float>(m_pSwapChain->GetSwapChainExtent().height);
 
-			viewport.maxDepth = 1.f;
-			vkCmdSetViewport(commandBuffer, 0, 1, &viewport); // dynamic -  needs to be set in cmd buffer before issuing draw cmd
+	//		viewport.maxDepth = 1.f;
+	//		vkCmdSetViewport(commandBuffer, 0, 1, &viewport); // dynamic -  needs to be set in cmd buffer before issuing draw cmd
 
-			VkRect2D scissor{};
-			scissor.offset = { 0,0 };
-			scissor.extent = m_pSwapChain->GetSwapChainExtent();
-			vkCmdSetScissor(commandBuffer, 0, 1, &scissor); // dynamic -  needs to be set in cmd buffer before issuing draw cmd
+	//		VkRect2D scissor{};
+	//		scissor.offset = { 0,0 };
+	//		scissor.extent = m_pSwapChain->GetSwapChainExtent();
+	//		vkCmdSetScissor(commandBuffer, 0, 1, &scissor); // dynamic -  needs to be set in cmd buffer before issuing draw cmd
 
-			m_pCurrentScene->Draw(commandBuffer, m_pGraphicsPipeline->GetPipelineLayout(), m_CurrentFrame);
-		}
+	//		m_pCurrentScene->Draw(commandBuffer, m_pGraphicsPipeline->GetPipelineLayout(), m_CurrentFrame);
+	//	}
 
-		//END RENDERING
-		{
-			// Finishing up:
-			vkCmdEndRenderingKHR(commandBuffer);
+	//	//END RENDERING
+	//	{
+	//		// Finishing up:
+	//		vkCmdEndRenderingKHR(commandBuffer);
 
-			m_pSwapChain->GetSwapChainImage(static_cast<int>(m_pSwapChain->GetImageIndex()))->TransitionImageLayout(
-				commandBuffer, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-			);
+	//		m_pSwapChain->GetSwapChainImage(static_cast<int>(m_pSwapChain->GetImageIndex()))->TransitionImageLayout(
+	//			commandBuffer, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,{}
+	//		);
 
-			m_pSwapChain->GetDepthImage(m_pSwapChain->GetImageIndex())->TransitionImageLayout(
-				commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-			);
-		}
-	}
+	//		m_pSwapChain->GetDepthImage(m_pSwapChain->GetImageIndex())->TransitionImageLayout(
+	//			commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,{}
+	//		);
+	//	}
+	//}
 
 	void Renderer::RecordPasses() const
 	{
+		auto& commandBuffer = *m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame);
+
 		m_pDepthPrepass->Record(
-			*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame),
+			commandBuffer,
 			m_CurrentFrame,
 			*m_pSwapChain->GetDepthImage(m_CurrentFrame),
 			m_Camera,
@@ -269,24 +271,31 @@ namespace cat
 		);
 
 		m_pGeometryPass->Record(
-			*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame),
+			commandBuffer,
 			m_CurrentFrame,
 			*m_pSwapChain->GetDepthImage(m_CurrentFrame),
 			m_Camera,
 			*m_pCurrentScene
 		);
-
+		
 		m_pLightingPass->Record(
-			*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame),
+			commandBuffer,
 			m_CurrentFrame,
 			m_Camera,
 			*m_pCurrentScene
 		);
-
+		
 		m_pBlitPass->Record(
-			*m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame),
+			commandBuffer,
 			m_CurrentFrame
 		);
 	}
 
+	void Renderer::ResizePasses() const
+	{
+		//m_pGeometryPass->Resize(m_pSwapChain->GetSwapChainExtent());
+		//m_pLightingPass->Resize(m_pSwapChain->GetSwapChainExtent());
+		//m_pBlitPass->Resize(m_pSwapChain->GetSwapChainExtent(), *m_pLightingPass);
+	}
+	
 }

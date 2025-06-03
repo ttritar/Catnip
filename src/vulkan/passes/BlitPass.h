@@ -23,6 +23,7 @@ namespace cat
 		// METHODS
 		//-----------------
 		void Record(VkCommandBuffer commandBuffer, uint32_t imageIndex) const;
+		void Resize(VkExtent2D size, const LightingPass& lightingPass);
 
 
 

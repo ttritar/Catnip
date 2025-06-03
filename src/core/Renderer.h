@@ -42,6 +42,7 @@ namespace cat
 		void DrawFrame()const;
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) const;
 		void RecordPasses() const;
+		void ResizePasses() const;
 
 		// Private Members
 		//--------------------

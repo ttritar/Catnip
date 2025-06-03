@@ -19,6 +19,8 @@ namespace cat
 
 			float nearPlane = 0.1f;
 			float farPlane = 1500.0f;
+
+			float exposure = 1.0f;
 		};
 
 
@@ -57,6 +59,8 @@ namespace cat
 			m_Specs = specs;
 			m_IsSpecsDirty = true;
 		}
+
+		float GetExposure() const { return m_Specs.exposure; }
 
 		void SetSpeed(float speed) { m_Speed = speed; }
 		void SetMouseSensitivity(float sensitivity) { m_MouseSensitivity = sensitivity; }

@@ -26,11 +26,11 @@ void main()
     vec3 tangent = normalize(inTangent);
     vec3 bitangent = normalize(inBitangent);
     
-    vec3 biNormal = cross(normal, tangent);
-    mat3 tangentSpace = mat3(tangent, biNormal, normal);
+    mat3 tangentSpace = mat3(tangent, bitangent, normal);
     vec3 sampledNormal = texture(normalSampler, inUV).rgb * 2.0 - 1.0;
     normal = normalize(sampledNormal * tangentSpace);
 
+    normal = (normal + 1.0) / 2.0;
     outNormal = vec4(normal, 1.0);
 
     // specular

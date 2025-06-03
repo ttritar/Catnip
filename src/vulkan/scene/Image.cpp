@@ -86,7 +86,7 @@ namespace cat
 		}
 	}
 
-	void Image::TransitionImageLayout(VkCommandBuffer commandBuffer, VkImageLayout newLayout)
+	void Image::TransitionImageLayout(VkCommandBuffer commandBuffer,const VkImageLayout& newLayout, const BarrierInfo& barrierInfo)
 	{
 		VkImageMemoryBarrier barrier{};
 		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -107,11 +107,13 @@ namespace cat
 		barrier.subresourceRange.levelCount = m_MipLevels;
 		barrier.subresourceRange.baseArrayLayer = 0;
 		barrier.subresourceRange.layerCount = 1;
+		barrier.srcAccessMask = barrierInfo.srcAccessMask;
+		barrier.dstAccessMask = barrierInfo.dstAccessMask;
 
 		vkCmdPipelineBarrier(
 			commandBuffer,
-			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			barrierInfo.srcStageMask,
+			barrierInfo.dstStageMask,
 			0,
 			0, nullptr,
 			0, nullptr,
@@ -174,7 +176,8 @@ namespace cat
 		}
 	}
 
-	void Image::CreateTextureImageView() {
+	void Image::CreateTextureImageView()
+	{
 		VkImageViewCreateInfo viewInfo{};
 		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		viewInfo.image = m_Image;

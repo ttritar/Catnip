@@ -55,30 +55,13 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 
 		// transitioning images
 		//----------------------
-		m_pLitImage.TransitionImageLayout(
-			commandBuffer,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-		);
-
-		m_GeometryPass.GetAlbedoBuffer(imageIndex).TransitionImageLayout(
-			commandBuffer,
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-		);
-
-		m_GeometryPass.GetNormalBuffer(imageIndex).TransitionImageLayout(
-			commandBuffer,
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-		);
-
-		m_GeometryPass.GetSpecularBuffer(imageIndex).TransitionImageLayout(
-			commandBuffer,
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-		);
-
-		m_GeometryPass.GetWorldBuffer(imageIndex).TransitionImageLayout(
-			commandBuffer,
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-		);
+		m_pLitImage.TransitionImageLayout(commandBuffer,VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+			{
+			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+				VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			VK_ACCESS_NONE,
+			VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+			});
 
 
 		// Render Attachments
@@ -105,6 +88,8 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		renderInfo.colorAttachmentCount = colorAttachments.size();
 		renderInfo.pColorAttachments = colorAttachments.data();
 		vkCmdBeginRenderingKHR(commandBuffer, &renderInfo);
+
+		DebugLabel::BeginCmdLabel(commandBuffer, "Lighting Pass", glm::vec4(0.1f, 0.3f, 0.05f, 1));
 	}
 
 	// Drawing
@@ -136,33 +121,17 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 	// END RECORDING
 	{
 		vkCmdEndRenderingKHR(commandBuffer);
+		DebugLabel::EndCmdLabel(commandBuffer);
 
 		// transitioning images
 		//----------------------
-		m_pLitImage.TransitionImageLayout(
-			commandBuffer,
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-		);
-
-		m_GeometryPass.GetAlbedoBuffer(imageIndex).TransitionImageLayout(
-			commandBuffer,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-		);
-
-		m_GeometryPass.GetNormalBuffer(imageIndex).TransitionImageLayout(
-			commandBuffer,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-		);
-
-		m_GeometryPass.GetSpecularBuffer(imageIndex).TransitionImageLayout(
-			commandBuffer,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-		);
-
-		m_GeometryPass.GetWorldBuffer(imageIndex).TransitionImageLayout(
-			commandBuffer,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-		);
+		m_pLitImage.TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			Image::BarrierInfo{
+			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+				VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+				VK_ACCESS_SHADER_READ_BIT
+			});
 	}
 }
 
@@ -243,4 +212,27 @@ void cat::LightingPass::CreatePipeline()
 		m_FragPath,
 		pipelineInfo
 	);
+}
+
+
+void cat::LightingPass::Resize(VkExtent2D size)
+{
+	m_Extent = size;
+
+	VkFormat litFormat = m_pLitImages[0]->GetFormat();
+
+	m_pLitImages.clear();
+	m_pLitImages.resize(m_FramesInFlight);
+
+	for (uint32_t i = 0 ; i < m_FramesInFlight; ++i)
+	{
+		m_pLitImages[i] = std::make_unique<Image>(
+			m_Device,
+			m_Extent.width, m_Extent.height,
+			litFormat,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VMA_MEMORY_USAGE_AUTO
+		);
+		DebugLabel::NameImage(m_pLitImages[i]->GetImage(), std::string("Lit buffer <3.") + std::to_string(i));
+	}	
 }

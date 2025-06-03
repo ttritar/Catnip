@@ -1,5 +1,7 @@
 #include "DepthPrepass.h"
 
+#include "../utils/DebugLabel.h"
+
 cat::DepthPrepass::DepthPrepass(Device& device, uint32_t framesInFlight)
 	: m_Device(device), m_FramesInFlight(framesInFlight)
 {
@@ -28,10 +30,13 @@ void cat::DepthPrepass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		MatrixUbo uboData = { camera.GetView(), camera.GetProjection() };
 		m_pUniformBuffer->Update(imageIndex, uboData);
 
-		depthImage.TransitionImageLayout(
-			commandBuffer,
-			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-		);
+		depthImage.TransitionImageLayout(commandBuffer,VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+			Image::BarrierInfo{
+				VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+	VK_ACCESS_NONE,
+	VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
+			});
 
 		// Render Attachments
 		VkRenderingAttachmentInfoKHR depthAttachmentInfo{};
@@ -51,6 +56,7 @@ void cat::DepthPrepass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		renderInfo.pColorAttachments = nullptr;
 		renderInfo.pDepthAttachment = &depthAttachmentInfo;
 		vkCmdBeginRenderingKHR(commandBuffer, &renderInfo);
+		DebugLabel::BeginCmdLabel(commandBuffer, "Depth Prepass", glm::vec4(0.3f, 0.5f, 1.f, 1));
 	}
 
 	// Drawing
@@ -81,10 +87,14 @@ void cat::DepthPrepass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 	// END RECORDING
 	{
 		vkCmdEndRenderingKHR(commandBuffer);
-		depthImage.TransitionImageLayout(
-			commandBuffer,
-			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-		);
+		DebugLabel::EndCmdLabel(commandBuffer);
+		depthImage.TransitionImageLayout( commandBuffer, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+			Image::BarrierInfo{
+				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+				VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+				VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
+			});
 	}
 }
 

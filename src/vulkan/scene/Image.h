@@ -9,6 +9,15 @@ namespace cat
 	class Image final
 	{
 	public:
+		struct BarrierInfo
+		{
+			VkPipelineStageFlagBits srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+			VkPipelineStageFlagBits dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+			VkAccessFlagBits srcAccessMask = VK_ACCESS_NONE;
+			VkAccessFlagBits dstAccessMask = VK_ACCESS_NONE;
+		};
+
 		// CTOR & DTOR
 		//--------------------
 		explicit Image(Device& device, uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage, VkFilter filter = VK_FILTER_LINEAR);
@@ -25,7 +34,7 @@ namespace cat
 
 		// Methods
 		//--------------------
-		void TransitionImageLayout(VkCommandBuffer commandBuffer, VkImageLayout newLayout);
+		void TransitionImageLayout(VkCommandBuffer commandBuffer, const VkImageLayout& newLayout, const BarrierInfo& barrierInfo);
 
 		// Getters & Setters
 		VkImage GetImage()const { return m_Image; }
