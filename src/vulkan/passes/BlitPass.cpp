@@ -2,8 +2,8 @@
 
 #include "LightingPass.h"
 
-cat::BlitPass::BlitPass(Device& device, SwapChain& swapChain, uint32_t framesInFlight, const LightingPass& lightingPass)
-	: m_Device(device), m_FramesInFlight(framesInFlight), m_SwapChain(swapChain) , m_Extent(swapChain.GetSwapChainExtent()), m_LitImage(lightingPass.GetLitImage())
+cat::BlitPass::BlitPass(Device& device, SwapChain& swapChain, uint32_t framesInFlight, LightingPass& lightingPass)
+	: m_Device(device), m_FramesInFlight(framesInFlight), m_SwapChain(swapChain) , m_Extent(swapChain.GetSwapChainExtent()), m_LightingPass(lightingPass)
 {
 	CreateDescriptors();
 	CreatePipeline();
@@ -31,16 +31,18 @@ void cat::BlitPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex) c
 		// transitioning images
 		//----------------------
 		swapchainImage.TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-		m_LitImage.TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		m_LightingPass.GetLitImages()[imageIndex]->TransitionImageLayout(
+			commandBuffer,
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+		);
 
 		// Render Attachments
 		//---------------------
 		VkClearValue clearValue{};
-		clearValue.color = { 0.0f, 0.0f, 0.0f, 1.0f };
+		clearValue.color = { 0.0f, 1.0f, 0.0f, 1.0f };
 
 		// Color Attachment
-		std::vector<VkRenderingAttachmentInfoKHR> colorAttachments;
-		colorAttachments.resize(1);
+		std::vector<VkRenderingAttachmentInfoKHR> colorAttachments(1);
 
 		colorAttachments[0].sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
 		colorAttachments[0].imageView = swapchainImage.GetImageView();
@@ -54,7 +56,7 @@ void cat::BlitPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex) c
 		renderInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
 		renderInfo.renderArea = { {0, 0}, m_Extent };
 		renderInfo.layerCount = 1;
-		renderInfo.colorAttachmentCount = colorAttachments.size();
+		renderInfo.colorAttachmentCount = static_cast<uint32_t>(colorAttachments.size());
 		renderInfo.pColorAttachments = colorAttachments.data();
 		vkCmdBeginRenderingKHR(commandBuffer, &renderInfo);
 	}
@@ -95,6 +97,16 @@ void cat::BlitPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex) c
 			commandBuffer,
 			VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 		);
+
+		m_SwapChain.GetDepthImage(imageIndex)->TransitionImageLayout(
+			commandBuffer,
+			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+		);
+
+		m_LightingPass.GetLitImages()[imageIndex]->TransitionImageLayout(
+			commandBuffer,
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+		);
 	}
 }
 
@@ -111,9 +123,12 @@ void cat::BlitPass::CreateDescriptors()
 		->Create();
 
 	m_pDescriptorSet = new DescriptorSet(m_Device, *m_pDescriptorSetLayout, *m_pDescriptorPool, m_FramesInFlight);
-	m_pDescriptorSet
-		->AddImageWrite(0, m_LitImage.GetImageInfo()) // lit image
-		->Update();
+	for (int i{}; i< m_pDescriptorSet->GetDescriptorSetCount();i++)
+	{
+		m_pDescriptorSet
+			->AddImageWrite(0, m_LightingPass.GetLitImages()[i]->GetImageInfo(), i) //Lit image
+			->UpdateByIdx(i);
+	}
 }
 
 void cat::BlitPass::CreatePipeline()
@@ -140,3 +155,21 @@ void cat::BlitPass::CreatePipeline()
 	m_pPipeline = new Pipeline(m_Device, m_VertPath, m_FragPath, pipelineInfo);
 }
 
+//void cat::BlitPass::Resize(VkExtent2D newSize, const LightingPass& lightingPass) {
+//	for (size_t i{ 0 }; i < m_FramesInFlight; i++) 
+//	{
+//		VkDescriptorImageInfo imageInfo{};
+//		imageInfo.sampler = lightingPass.GetLitImage().GetSampler();
+//		imageInfo.imageView = lightingPass.GetLitImage().GetImageView();
+//		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+//
+//		auto bufferInfo = m_exposureBuffers[i]->descriptorInfo();
+//
+//		m_pDescriptorSet = 
+//
+//		DescriptorWriter(*m_descriptorSetLayout, *m_descriptorPool)
+//			.writeBuffer(0, &bufferInfo)
+//			.writeImage(1, &imageInfo)
+//			.overwrite(m_descriptorSets[i]);
+//	}
+//}

@@ -12,7 +12,7 @@ namespace cat
 	public:
 		// CTOR & DTOR
 		//----------------
-		BlitPass(Device& device, SwapChain& swapChain, uint32_t framesInFlight, const LightingPass& lightingPass);
+		BlitPass(Device& device, SwapChain& swapChain, uint32_t framesInFlight, LightingPass& lightingPass);
 		~BlitPass();
 
 		BlitPass(const BlitPass&) = delete;
@@ -47,6 +47,6 @@ namespace cat
 		DescriptorSetLayout* m_pDescriptorSetLayout;
 		DescriptorPool* m_pDescriptorPool;
 		DescriptorSet* m_pDescriptorSet;
-		Image& m_LitImage;
+		LightingPass& m_LightingPass;
 	};
 }

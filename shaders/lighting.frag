@@ -46,7 +46,8 @@ void main()
     outLit = CalculateLighting(albedoSample, normalSample, specularSample, roughness, worldPosSample,
         ubo.lightDir, ubo.lightColor, ubo.lightIntensity, ubo.cameraPos);
 
-    outLit.rgb = albedoSample.rgb;
+    outLit.rgb = albedoSample;
+    outLit.a = 1.0; // Set alpha to 1.0 for full opacity
 }
 
 

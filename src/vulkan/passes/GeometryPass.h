@@ -24,10 +24,10 @@ namespace cat
 		            Camera camera, Scene& scene) const;
 
 		// Getters & Setters
-		Image& GetAlbedoBuffer() const { return *m_pAlbedoBuffer; }
-		Image& GetNormalBuffer() const { return *m_pNormalBuffer; }
-		Image& GetSpecularBuffer() const { return *m_pSpecularBuffer; }
-		Image& GetWorldBuffer() const { return *m_pWorldBuffer; }
+		Image& GetAlbedoBuffer(int idx) const { return *m_pAlbedoBuffers[idx]; }
+		Image& GetNormalBuffer(int idx) const { return *m_pNormalBuffers[idx]; }
+		Image& GetSpecularBuffer(int idx) const { return *m_pSpecularBuffers[idx]; }
+		Image& GetWorldBuffer(int idx) const { return *m_pWorldBuffers[idx]; }
 
 
 	private:
@@ -56,10 +56,10 @@ namespace cat
 
 		Pipeline* m_pPipeline;
 
-		std::unique_ptr<Image> m_pAlbedoBuffer;
-		std::unique_ptr<Image> m_pNormalBuffer;
-		std::unique_ptr<Image> m_pSpecularBuffer;
-		std::unique_ptr<Image> m_pWorldBuffer;
+		std::vector<std::unique_ptr<Image>> m_pAlbedoBuffers;
+		std::vector<std::unique_ptr<Image>> m_pNormalBuffers;
+		std::vector<std::unique_ptr<Image>> m_pSpecularBuffers;
+		std::vector<std::unique_ptr<Image>> m_pWorldBuffers;
 	};
 
 }

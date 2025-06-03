@@ -1,47 +1,53 @@
 #include "GeometryPass.h"
 
+#include <iostream>
+
 #include "../utils/DebugLabel.h"
 
 cat::GeometryPass::GeometryPass(Device& device, VkExtent2D extent, uint32_t framesInFlight)
-	: m_Device(device), m_Extent(extent), m_FramesInFlight(framesInFlight)
+	: m_Device(device), m_FramesInFlight(framesInFlight), m_Extent(extent)
 {
 	// IMAGES
-	m_pAlbedoBuffer = std::make_unique<Image>(
-		m_Device,
-		extent.width, extent.height,
-		VK_FORMAT_R8G8B8A8_UNORM,
-		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VMA_MEMORY_USAGE_AUTO
-	);
-	DebugLabel::NameImage(m_pAlbedoBuffer->GetImage(), "Albedo buffer <3");
+	for (int i = 0; i < m_FramesInFlight;i++)
+	{
+		m_pAlbedoBuffers.emplace_back(std::make_unique<Image>(
+			m_Device,
+			extent.width, extent.height,
+			VK_FORMAT_R8G8B8A8_UNORM,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VMA_MEMORY_USAGE_AUTO
+		));
+		DebugLabel::NameImage(m_pAlbedoBuffers[i]->GetImage(), "Albedo buffer <3." + std::to_string(i));
 
-	m_pNormalBuffer = std::make_unique<Image>(
-		m_Device,
-		extent.width, extent.height,
-		VK_FORMAT_R16G16B16A16_SFLOAT,
-		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VMA_MEMORY_USAGE_AUTO
-	);
-	DebugLabel::NameImage(m_pNormalBuffer->GetImage(), "Normal buffer <3");
+		m_pNormalBuffers.emplace_back(std::make_unique<Image>(
+			m_Device,
+			extent.width, extent.height,
+			VK_FORMAT_R16G16B16A16_SFLOAT,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VMA_MEMORY_USAGE_AUTO
+		));
+		DebugLabel::NameImage(m_pNormalBuffers[i]->GetImage(), "Normal buffer <3."+ std::to_string(i));
 
-	m_pSpecularBuffer = std::make_unique<Image>(
-		m_Device,
-		extent.width, extent.height,
-		VK_FORMAT_R16G16B16A16_SFLOAT,
-		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VMA_MEMORY_USAGE_AUTO
-	);
-	DebugLabel::NameImage(m_pSpecularBuffer->GetImage(), "Specular buffer <3");
+		m_pSpecularBuffers.emplace_back( std::make_unique<Image>(
+			m_Device,
+			extent.width, extent.height,
+			VK_FORMAT_R16G16B16A16_SFLOAT,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VMA_MEMORY_USAGE_AUTO
+		));
+		DebugLabel::NameImage(m_pSpecularBuffers[i]->GetImage(), "Specular buffer <3."+ std::to_string(i));
 
-	m_pWorldBuffer = std::make_unique<Image>(
-		m_Device,
-		extent.width, extent.height,
-		VK_FORMAT_R16G16B16A16_SFLOAT,
-		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VMA_MEMORY_USAGE_AUTO
-	);
-	DebugLabel::NameImage(m_pWorldBuffer->GetImage(), "World buffer <3");
+		m_pWorldBuffers.emplace_back( std::make_unique<Image>(
+			m_Device,
+			extent.width, extent.height,
+			VK_FORMAT_R16G16B16A16_SFLOAT,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VMA_MEMORY_USAGE_AUTO
+		));
+		DebugLabel::NameImage(m_pWorldBuffers[i]->GetImage(), "World buffer <3." + std::to_string(i));
 
+	}
+	
 	// CREATE
 	CreateUniformBuffers();
 	CreateDescriptors();
@@ -79,27 +85,25 @@ void cat::GeometryPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 		);
 
-		m_pAlbedoBuffer->TransitionImageLayout(
+		m_pAlbedoBuffers[imageIndex]->TransitionImageLayout(
 			commandBuffer,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		);
 
-		m_pNormalBuffer->TransitionImageLayout(
+		m_pNormalBuffers[imageIndex]->TransitionImageLayout(
 			commandBuffer,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		);
 
-		m_pSpecularBuffer->TransitionImageLayout(
+		m_pSpecularBuffers[imageIndex]->TransitionImageLayout(
 			commandBuffer,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		);
 
-		m_pWorldBuffer->TransitionImageLayout(
+		m_pWorldBuffers[imageIndex]->TransitionImageLayout(
 			commandBuffer,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		);
-
-
 
 		// Render Attachments
 		//---------------------
@@ -112,28 +116,28 @@ void cat::GeometryPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		colorAttachments.resize(4);
 
 		colorAttachments[0].sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-		colorAttachments[0].imageView = m_pAlbedoBuffer->GetImageView();
+		colorAttachments[0].imageView = m_pAlbedoBuffers[imageIndex]->GetImageView();
 		colorAttachments[0].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		colorAttachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		colorAttachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		colorAttachments[0].clearValue = clearValues[0];
 
 		colorAttachments[1].sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-		colorAttachments[1].imageView = m_pNormalBuffer->GetImageView();
+		colorAttachments[1].imageView = m_pNormalBuffers[imageIndex]->GetImageView();
 		colorAttachments[1].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		colorAttachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		colorAttachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		colorAttachments[1].clearValue = clearValues[0];
 
 		colorAttachments[2].sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-		colorAttachments[2].imageView = m_pSpecularBuffer->GetImageView();
+		colorAttachments[2].imageView = m_pSpecularBuffers[imageIndex]->GetImageView();
 		colorAttachments[2].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		colorAttachments[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		colorAttachments[2].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		colorAttachments[2].clearValue = clearValues[0];
 
 		colorAttachments[3].sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-		colorAttachments[3].imageView = m_pWorldBuffer->GetImageView();
+		colorAttachments[3].imageView = m_pWorldBuffers[imageIndex]->GetImageView();
 		colorAttachments[3].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		colorAttachments[3].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		colorAttachments[3].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -195,25 +199,12 @@ void cat::GeometryPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 		);
 
-		m_pAlbedoBuffer->TransitionImageLayout(
-			commandBuffer,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-		);
+		VkImageLayout targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-		m_pNormalBuffer->TransitionImageLayout(
-			commandBuffer,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-		);
-
-		m_pSpecularBuffer->TransitionImageLayout(
-			commandBuffer,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-		);
-
-		m_pWorldBuffer->TransitionImageLayout(
-			commandBuffer,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-		);
+		m_pAlbedoBuffers[imageIndex]->TransitionImageLayout(commandBuffer, targetLayout);
+		m_pNormalBuffers[imageIndex]->TransitionImageLayout(commandBuffer, targetLayout);
+		m_pSpecularBuffers[imageIndex]->TransitionImageLayout(commandBuffer, targetLayout);
+		m_pWorldBuffers[imageIndex]->TransitionImageLayout(commandBuffer, targetLayout);
 	}
 }
 
@@ -248,7 +239,7 @@ void cat::GeometryPass::CreateDescriptors()
 	m_pDescriptorSet = new DescriptorSet(m_Device, *m_pUboDescriptorSetLayout, *m_pDescriptorPool, m_FramesInFlight);
 	m_pDescriptorSet
 		->AddBufferWrite(0, m_pUniformBuffer->GetDescriptorBufferInfos()) // uniform buffer
-		->Update();
+		->UpdateAll();
 }
 
 void cat::GeometryPass::CreatePipeline()
@@ -258,10 +249,10 @@ void cat::GeometryPass::CreatePipeline()
 
 	// attachments
 	pipelineInfo.colorAttachments = {
-		m_pAlbedoBuffer->GetFormat(),
-		m_pNormalBuffer->GetFormat(),
-		m_pSpecularBuffer->GetFormat(),
-		m_pWorldBuffer->GetFormat()
+		m_pAlbedoBuffers[0]->GetFormat(),
+		m_pNormalBuffers[0]->GetFormat(),
+		m_pSpecularBuffers[0]->GetFormat(),
+		m_pWorldBuffers[0]->GetFormat()
 	};
 	pipelineInfo.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
 

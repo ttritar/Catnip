@@ -109,7 +109,9 @@ namespace cat
         allocInfo.descriptorSetCount = count;
         allocInfo.pSetLayouts = layouts.data();
 
-        m_DescriptorSets.resize(cat::MAX_FRAMES_IN_FLIGHT);
+        m_DescriptorSets.resize(count);
+		m_DescriptorWrites.resize(count);
+
         const auto result = vkAllocateDescriptorSets(m_Device.GetDevice(), &allocInfo, m_DescriptorSets.data());
         if (result == VK_ERROR_OUT_OF_POOL_MEMORY)
         {
@@ -131,8 +133,24 @@ namespace cat
             descriptorWrite.descriptorCount = 1;
             descriptorWrite.pBufferInfo = &bufferInfos[i];
 
-            m_DescriptorWrites.emplace_back(descriptorWrite);
+            m_DescriptorWrites[i].emplace_back(descriptorWrite);
         }
+        return this;
+    }
+    DescriptorSet* DescriptorSet::AddBufferWrite(uint32_t binding, const std::vector<VkDescriptorBufferInfo>& bufferInfos, uint32_t idx)
+    {
+        const auto& bindingDesc = m_DescriptorSetLayout.GetBinding(binding);
+
+        VkWriteDescriptorSet descriptorWrite{};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = m_DescriptorSets[idx];
+        descriptorWrite.dstBinding = binding;
+        descriptorWrite.descriptorType = bindingDesc.descriptorType;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pBufferInfo = &bufferInfos[idx];
+
+        m_DescriptorWrites[idx].emplace_back(descriptorWrite);
+
         return this;
     }
 
@@ -151,9 +169,26 @@ namespace cat
             descriptorWrite.descriptorCount = 1;
             descriptorWrite.pImageInfo = &imageInfo;
 
-            m_DescriptorWrites.emplace_back(descriptorWrite);
+            m_DescriptorWrites[i].emplace_back(descriptorWrite);
         }
 		return this;
+    }
+    DescriptorSet* DescriptorSet::AddImageWrite(uint32_t binding, const VkDescriptorImageInfo& imageInfo, uint32_t idx)
+    {
+        const auto& bindingDesc = m_DescriptorSetLayout.GetBinding(binding);
+
+        VkWriteDescriptorSet descriptorWrite{};
+        descriptorWrite = {};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = m_DescriptorSets[idx];
+        descriptorWrite.dstBinding = binding;
+        descriptorWrite.descriptorType = bindingDesc.descriptorType;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pImageInfo = &imageInfo;
+
+        m_DescriptorWrites[idx].emplace_back(descriptorWrite);
+       
+        return this;
     }
 
     void DescriptorSet::Bind(VkCommandBuffer commandBuffer, const VkPipelineLayout& pipelineLayout, uint16_t idx, unsigned int firstSet) const
@@ -161,9 +196,18 @@ namespace cat
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, firstSet, 1, &m_DescriptorSets[idx], 0, nullptr);
     }
 
-    DescriptorSet* DescriptorSet::Update()
+    DescriptorSet* DescriptorSet::UpdateAll()
     {
-        vkUpdateDescriptorSets(m_Device.GetDevice(), static_cast<uint32_t>(m_DescriptorWrites.size()), m_DescriptorWrites.data(), 0, nullptr);
+		for (uint32_t i = 0; i < m_DescriptorSets.size(); ++i)
+		{
+			UpdateByIdx(i);
+		}
+
 		return this;
+    }
+    DescriptorSet* DescriptorSet::UpdateByIdx(uint32_t idx)
+    {
+        vkUpdateDescriptorSets(m_Device.GetDevice(), static_cast<uint32_t>(m_DescriptorWrites[idx].size()), m_DescriptorWrites[idx].data(), 0, nullptr);
+        return this;
     }
 }

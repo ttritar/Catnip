@@ -109,7 +109,7 @@ void cat::DepthPrepass::CreateDescriptors()
 	m_pDescriptorSet = new DescriptorSet(m_Device, *m_pDescriptorSetLayout, *m_pDescriptorPool, m_FramesInFlight );
 	m_pDescriptorSet
 		->AddBufferWrite(0, m_pUniformBuffer->GetDescriptorBufferInfos())
-		->Update();
+		->UpdateAll();
 
 }
 

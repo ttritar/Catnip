@@ -70,19 +70,23 @@ namespace cat
 	public:
 		DescriptorSet(Device& device, DescriptorSetLayout& setLayout, DescriptorPool& pool, uint32_t count = MAX_FRAMES_IN_FLIGHT);
 
-		DescriptorSet* Update();
+		DescriptorSet* UpdateAll();
+		DescriptorSet* UpdateByIdx(uint32_t idx);
 		DescriptorSet* AddBufferWrite(uint32_t binding, const std::vector<VkDescriptorBufferInfo>& bufferInfos);
+		DescriptorSet* AddBufferWrite(uint32_t binding, const std::vector<VkDescriptorBufferInfo>& bufferInfos, uint32_t idx);
 		DescriptorSet* AddImageWrite(uint32_t binding, const VkDescriptorImageInfo& imageInfo);
+		DescriptorSet* AddImageWrite(uint32_t binding, const VkDescriptorImageInfo& imageInfo, uint32_t idx);
 
 		void Bind(VkCommandBuffer commandBuffer, const VkPipelineLayout& pipelineLayout, uint16_t idx, unsigned int firstSet = 0) const;
 
 		VkDescriptorSet* GetDescriptorSet(uint16_t idx) { return &m_DescriptorSets[idx]; }
+		uint32_t GetDescriptorSetCount() const { return static_cast<uint32_t>(m_DescriptorSets.size()); }
 
 	private:
 
 		std::vector<VkDescriptorSet> m_DescriptorSets;
 
-		std::vector<VkWriteDescriptorSet> m_DescriptorWrites;
+		std::vector<std::vector<VkWriteDescriptorSet>> m_DescriptorWrites;
 
 		Device& m_Device;
 		DescriptorSetLayout& m_DescriptorSetLayout;

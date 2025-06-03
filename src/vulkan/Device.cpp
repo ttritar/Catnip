@@ -140,7 +140,7 @@ namespace cat
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.pEngineName = "No Engine";
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.apiVersion = VK_API_VERSION_1_0;
+        appInfo.apiVersion = VK_API_VERSION_1_3;
 
 
         // 2. Create createInfo struct
@@ -269,9 +269,6 @@ namespace cat
         VkPhysicalDeviceFeatures deviceFeatures{};
         deviceFeatures.samplerAnisotropy = VK_TRUE;
 
-        VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeatures{};
-        dynamicRenderingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
-        dynamicRenderingFeatures.dynamicRendering = VK_TRUE;
 
 
         // 3. Creating the logical device
@@ -286,7 +283,13 @@ namespace cat
         createInfo.enabledExtensionCount = static_cast<uint32_t>(DEVICE_EXTENSIONS.size());
         createInfo.ppEnabledExtensionNames = DEVICE_EXTENSIONS.data();
 
-        createInfo.pNext = &dynamicRenderingFeatures;
+        VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeatures{
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
+			.dynamicRendering = VK_TRUE
+        };
+
+		createInfo.pNext = &dynamicRenderingFeatures;
+
 
         // Validation layers
         if (ENABLE_VALIDATION_LAYERS)

@@ -37,7 +37,7 @@ namespace cat
 			->AddImageWrite(0, m_Images[0]->GetImageInfo())  // albedo texture
 			->AddImageWrite(1, m_Images[1]->GetImageInfo())  // normal texture
 			->AddImageWrite(2, m_Images[2]->GetImageInfo())  // specular texture
-			->Update();
+			->UpdateAll();
     } 
 
     Mesh::~Mesh()

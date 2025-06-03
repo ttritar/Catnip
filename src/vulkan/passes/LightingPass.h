@@ -24,7 +24,7 @@ namespace cat
 		void Record(VkCommandBuffer commandBuffer, uint32_t imageIndex,
 		            Camera camera, Scene& scene) const;
 		// Getters & Setters
-		Image& GetLitImage() const { return *m_pLitImage; }
+		const std::vector<std::unique_ptr<Image>>& GetLitImages() const { return m_pLitImages; }
 
 	private:
 		// PRIVATE METHODS
@@ -61,7 +61,7 @@ namespace cat
 		std::string m_FragPath = "shaders/lighting.frag.spv";
 		Pipeline* m_pPipeline;
 
-		std::unique_ptr<Image> m_pLitImage;
+		std::vector<std::unique_ptr<Image>> m_pLitImages;
 
 	};
 }
