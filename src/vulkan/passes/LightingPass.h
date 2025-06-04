@@ -2,6 +2,8 @@
 #include "../scene/Scene.h"
 #include "../scene/Camera.h"
 
+#include "../buffers/StorageBuffer.h"
+
 #include "GeometryPass.h"
 
 namespace cat
@@ -9,6 +11,8 @@ namespace cat
 	class LightingPass final
 	{
 	public:
+		static constexpr size_t MAX_POINT_LIGHTS = 16;
+
 		// CTOR & DTOR
 		//----------------
 		LightingPass(Device& device, VkExtent2D extent, uint32_t framesInFlight,const GeometryPass& geometryPass);
@@ -31,7 +35,7 @@ namespace cat
 	private:
 		// PRIVATE METHODS
 		//-----------------
-		void CreateUniformBuffers();
+		void CreateBuffers();
 		void CreateDescriptors();
 		void CreatePipeline();
 
@@ -52,13 +56,15 @@ namespace cat
 
 			glm::vec3 cameraPosition;
 
-
+			uint32_t pointLightCount;
 		};
 		std::unique_ptr<UniformBuffer<LightingUbo>> m_pUniformBuffer;
+		std::unique_ptr<StorageBuffer<Scene::PointLight, MAX_POINT_LIGHTS>> m_pPointLightingStorageBuffer;
 
 		DescriptorPool* m_pDescriptorPool;
 		DescriptorSetLayout* m_pUboDescriptorSetLayout;
 		DescriptorSetLayout* m_pSamplersDescriptorSetLayout;
+
 		DescriptorSet* m_pUboDescriptorSet;
 		DescriptorSet* m_pSamplersDescriptorSet;
 

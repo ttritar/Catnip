@@ -17,7 +17,7 @@ cat::LightingPass::LightingPass(Device& device, VkExtent2D extent, uint32_t fram
 		DebugLabel::NameImage(m_pLitImages[index]->GetImage(), std::string("Lit buffer <3.") + std::to_string(index));
 	}
 
-	CreateUniformBuffers();
+	CreateBuffers();
 	CreateDescriptors();
 	CreatePipeline();
 }
@@ -43,15 +43,25 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 	Image& m_pLitImage = *m_pLitImages[imageIndex];
 	// BEGIN RECORDING
 	{
-		if (scene.GetLights().empty()) return;
-
 		LightingUbo uboData = {
-			.lightDirection = scene.GetLights()[0].direction,
-			.lightColor = scene.GetLights()[0].color,
-			.lightIntensity = scene.GetLights()[0].intensity,
-			.cameraPosition = camera.GetOrigin()
+			.lightDirection = scene.GetDirectionalLight().direction,
+			.lightColor = scene.GetDirectionalLight().color,
+			.lightIntensity = scene.GetDirectionalLight().intensity,
+
+			.cameraPosition = camera.GetOrigin(),
+
+			.pointLightCount = static_cast<uint32_t>(scene.GetPointLights().size())
 		};
 		m_pUniformBuffer->Update(imageIndex,uboData);
+
+		std::array<Scene::PointLight, LightingPass::MAX_POINT_LIGHTS> pointLights{};
+		const auto& sceneLights = scene.GetPointLights();
+		for (size_t i = 0; i < sceneLights.size() && i < LightingPass::MAX_POINT_LIGHTS; ++i) {
+			pointLights[i] = sceneLights[i];
+		}
+		m_pPointLightingStorageBuffer->Update(imageIndex, pointLights);
+
+
 
 		// transitioning images
 		//----------------------
@@ -135,9 +145,10 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 	}
 }
 
-void cat::LightingPass::CreateUniformBuffers()
+void cat::LightingPass::CreateBuffers()
 {
 	m_pUniformBuffer = std::make_unique<UniformBuffer<LightingUbo>>(m_Device);
+	m_pPointLightingStorageBuffer = std::make_unique<StorageBuffer<Scene::PointLight, MAX_POINT_LIGHTS>>(m_Device);
 }
 
 void cat::LightingPass::CreateDescriptors()
@@ -145,7 +156,7 @@ void cat::LightingPass::CreateDescriptors()
 	m_pDescriptorPool = new DescriptorPool(m_Device);
 	m_pDescriptorPool
 		->AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_FramesInFlight * 2 )
-		->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_FramesInFlight * 10)
+		->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_FramesInFlight * 8)
 		->Create(m_FramesInFlight * 2);
 
 
@@ -153,12 +164,14 @@ void cat::LightingPass::CreateDescriptors()
 	m_pUboDescriptorSetLayout = new DescriptorSetLayout(m_Device);
 	m_pUboDescriptorSetLayout
 		->AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		->AddBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		->Create();
 
 
 	m_pUboDescriptorSet = new DescriptorSet(m_Device, *m_pUboDescriptorSetLayout, *m_pDescriptorPool, m_FramesInFlight);
 	m_pUboDescriptorSet
-		->AddBufferWrite(0, m_pUniformBuffer->GetDescriptorBufferInfos()) // uniform buffer
+		->AddBufferWrite(0, m_pUniformBuffer->GetDescriptorBufferInfos())
+		->AddBufferWrite(1, m_pPointLightingStorageBuffer->GetDescriptorBufferInfos())
 		->UpdateAll();
 
 	m_pSamplersDescriptorSetLayout = new DescriptorSetLayout(m_Device);
@@ -181,7 +194,7 @@ void cat::LightingPass::CreateDescriptors()
 			->AddImageWrite(3, m_GeometryPass.GetWorldBuffer(i).GetImageInfo(), i) // world
 			->UpdateByIdx(i);
 	}
-	//m_pSamplersDescriptorSet->UpdateAll();
+
 }
 
 void cat::LightingPass::CreatePipeline()

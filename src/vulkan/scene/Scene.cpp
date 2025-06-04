@@ -5,7 +5,7 @@ namespace cat
 	// CTOR & DTOR
 	//--------------------
 	Scene::Scene(Device& device, SwapChain& swapchain, UniformBuffer<MatrixUbo>* ubo)
-		: m_Device{ device }, m_SwapChain{ swapchain }, m_pUniformBuffer(ubo)
+		: m_Device{ device }, m_SwapChain{ swapchain }, m_pUniformBuffer(ubo), m_DirectionalLight({})
 	{
 	}
 
@@ -44,18 +44,18 @@ namespace cat
 		}
 	}
 
-	void Scene::AddLight(const Light& light)
+	void Scene::AddPointLight(const PointLight& light)
 	{
-		m_Lights.push_back(light);
+		m_PointLights.push_back(light);
 	}
 
-	void Scene::RemoveLight(const Light& light)
+	void Scene::RemovePointLight(const PointLight& light)
 	{
-		auto it = std::remove_if(m_Lights.begin(), m_Lights.end(),
-			[&](const Light& l) { return l.direction == light.direction && l.color == light.color && l.intensity == light.intensity; });
-		if (it != m_Lights.end())
+		auto it = std::remove_if(m_PointLights.begin(), m_PointLights.end(),
+			[&](const PointLight& l) { return l.position == light.position; });
+		if (it != m_PointLights.end())
 		{
-			m_Lights.erase(it, m_Lights.end());
+			m_PointLights.erase(it, m_PointLights.end());
 		}
 	}
 

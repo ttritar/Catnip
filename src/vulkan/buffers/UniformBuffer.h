@@ -16,8 +16,6 @@ namespace cat
 		alignas(16) glm::mat4 proj;
 	};
 
-
-
 	template<typename T>
 	class UniformBuffer final
 	{

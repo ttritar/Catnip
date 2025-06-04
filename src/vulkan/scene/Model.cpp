@@ -108,6 +108,15 @@ namespace cat
 		std::vector<uint32_t> indices;
 		Mesh::Material material;
 
+		// convert assimp matrix
+		glm::mat4 mat = {
+			scene->mRootNode->mTransformation.a1, scene->mRootNode->mTransformation.b1, scene->mRootNode->mTransformation.c1, scene->mRootNode->mTransformation.d1,
+			scene->mRootNode->mTransformation.a2, scene->mRootNode->mTransformation.b2, scene->mRootNode->mTransformation.c2, scene->mRootNode->mTransformation.d2,
+			scene->mRootNode->mTransformation.a3, scene->mRootNode->mTransformation.b3, scene->mRootNode->mTransformation.c3, scene->mRootNode->mTransformation.d3,
+			scene->mRootNode->mTransformation.a4, scene->mRootNode->mTransformation.b4, scene->mRootNode->mTransformation.c4, scene->mRootNode->mTransformation.d4
+		};
+
+
 		// process vertices
 		for (unsigned int i = 0; i< mesh->mNumVertices ; i++)
 		{
@@ -115,10 +124,11 @@ namespace cat
 			glm::vec3 vector;
 
 			// positions
-			vector.x = mesh->mVertices[i].x;
+			vector.x = mesh->mVertices[i].x ;
 			vector.y = mesh->mVertices[i].y;
 			vector.z = mesh->mVertices[i].z;
-			vertex.pos = vector;
+			glm::vec4 transformedPos = mat * glm::vec4(vector, 1.0f);
+			vertex.pos = glm::vec3(transformedPos.x, transformedPos.y, transformedPos.z);
 
 			// colors
 			if (mesh->HasVertexColors(i))

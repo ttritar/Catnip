@@ -10,12 +10,20 @@ namespace cat
 	class Scene final
 	{
 	public:
-		struct Light
+		struct alignas(16) PointLight
 		{
-			glm::vec3 direction;
-			glm::vec3 color = {0.f,0.f,0.f};
-			float intensity = 1.f;
+			glm::vec4 position {0.f };
 
+			glm::vec4 color { 1.f };
+			float intensity = 1.f;
+			float radius = 10.f;
+		};
+
+		struct DirectionalLight
+		{
+			glm::vec3 direction = { 0.f,-1.f,0.f };
+			glm::vec3 color {1.0f};
+			float intensity = 5.f;
 		};
 
 		// CTOR & DTOR
@@ -35,14 +43,16 @@ namespace cat
 		Model* AddModel(const std::string& path);
 		void RemoveModel(const std::string& path);
 
-		void AddLight(const Light& light);
-		void RemoveLight(const Light& light);
+		void SetDirectionalLight(const DirectionalLight& light) { m_DirectionalLight = light; }
+		void AddPointLight(const PointLight& light);
+		void RemovePointLight(const PointLight& light);
 
 		void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t frameIdx, bool isDepthPass = 0) const;
 
 		// Getters & Setters
 		const std::vector<Model*>& GetModels() const { return m_pModels; }
-		const std::vector<Light>& GetLights() const { return m_Lights; }
+		const DirectionalLight& GetDirectionalLight() const { return m_DirectionalLight; }
+		const std::vector<PointLight>& GetPointLights() const { return m_PointLights; }
 
 	private:
 		// Private members
@@ -52,6 +62,7 @@ namespace cat
 		UniformBuffer<MatrixUbo>* m_pUniformBuffer;
 		
 		std::vector<Model*> m_pModels;
-		std::vector<Light> m_Lights;
+		DirectionalLight m_DirectionalLight{};
+		std::vector<PointLight> m_PointLights;
 	};
 }

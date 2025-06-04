@@ -3,8 +3,8 @@
 namespace cat
 {
 	Pipeline::Pipeline(Device& device, const std::string& vertPath, const std::string& fragPath, const PipelineInfo& pipelineInfo)
-		:   m_VertPath(vertPath), m_FragPath(fragPath),
-		m_Device(device), m_PipelineLayout(pipelineInfo.pipelineLayout)
+		:   m_PipelineLayout(pipelineInfo.pipelineLayout), m_VertPath(vertPath),
+		m_FragPath(fragPath), m_Device(device)
 	{
 		CreateGraphicsPipeline(pipelineInfo);
 	}
