@@ -22,16 +22,15 @@ void main()
     outAlbedo = texture(albedoSampler, inUV);
 
     // normal
-    vec3 normal = normalize(inNormal);
-    vec3 tangent = normalize(inTangent);
-    vec3 bitangent = normalize(inBitangent);
-    
-    mat3 tangentSpace = mat3(tangent, bitangent, normal);
+    mat3 tangentSpace = mat3(
+        normalize(inTangent),
+        normalize(inBitangent),
+        normalize(inNormal)
+    );
     vec3 sampledNormal = texture(normalSampler, inUV).rgb * 2.0 - 1.0;
-    normal = normalize(sampledNormal * tangentSpace);
-
-    normal = (normal + 1.0) / 2.0;
-    outNormal = vec4(normal, 1.0);
+    vec3 normal = normalize(tangentSpace * sampledNormal);
+    
+    outNormal = vec4(normal * 0.5 + 0.5, 1.0);
 
     // specular
     vec3 spec = texture(specularSampler, inUV).rgb;

@@ -34,7 +34,8 @@ void main()
     outPosition = (ps.model * vec4(inPosition, 1.0)).rgb;
     outColor = inColor;
     outUV = inUV;
-    outNormal = normalize(mat3(ps.model) * inNormal);
+    mat3 normalMatrix = transpose(inverse(mat3(ps.model)));
+    outNormal = normalize(normalMatrix * inNormal);
     outTangent = normalize(mat3(ps.model) * inTangent);
     outBitangent = normalize(mat3(ps.model) * inBitangent);
 

@@ -46,11 +46,13 @@ namespace cat
 		struct alignas(16) LightingUbo
 		{
 			glm::vec3 lightDirection;
-			float padding;
+			const float padding{};
 			glm::vec3 lightColor = { 1.f, 1.f, 1.f };
 			float lightIntensity;
 
 			glm::vec3 cameraPosition;
+
+
 		};
 		std::unique_ptr<UniformBuffer<LightingUbo>> m_pUniformBuffer;
 
