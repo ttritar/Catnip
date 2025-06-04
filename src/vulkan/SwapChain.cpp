@@ -105,7 +105,7 @@ namespace cat
         VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities);
 
 
-        m_ImageCount = swapChainSupport.capabilities.minImageCount + 1;
+        m_ImageCount = swapChainSupport.capabilities.minImageCount;
 
         if (swapChainSupport.capabilities.maxImageCount > 0 && m_ImageCount > swapChainSupport.capabilities.maxImageCount)
         {

@@ -43,13 +43,14 @@ namespace cat
 		const GeometryPass& m_GeometryPass;
 
 
-		struct LightingUbo
+		struct alignas(16) LightingUbo
 		{
-			alignas(16) glm::vec3 lightDirection;
-			alignas(16) glm::vec3 lightColor = { 1.f, 1.f, 1.f };
-			alignas(4) float lightIntensity;
+			glm::vec3 lightDirection;
+			float padding;
+			glm::vec3 lightColor = { 1.f, 1.f, 1.f };
+			float lightIntensity;
 
-			alignas(16) glm::vec3 cameraPosition;
+			glm::vec3 cameraPosition;
 		};
 		std::unique_ptr<UniformBuffer<LightingUbo>> m_pUniformBuffer;
 
