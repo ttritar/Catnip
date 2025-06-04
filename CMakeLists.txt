@@ -81,11 +81,11 @@ FetchContent_MakeAvailable(assimp)
 # models
 #-----------
 FetchContent_Declare(
-    model
-    GIT_REPOSITORY https://github.com/ttritar/GP2_Models.git
+    rsrc
+    GIT_REPOSITORY https://github.com/ttritar/GP2_Resources.git
     GIT_TAG main 
 )
-FetchContent_MakeAvailable(model)
+FetchContent_MakeAvailable(rsrc)
 
 
 # vma
@@ -205,10 +205,10 @@ add_custom_target(CopyResources ALL
         COMMENT "Copying resources folder to build directory"
 )
 
-# Copy downloaded models to resources/models
+# Copy downloaded rsrc to resources
 add_custom_target(CopyModels ALL
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${model_SOURCE_DIR} ${RESOURCE_DST_DIR}
-    COMMENT "Copying models from GP2_Models repo to resources/models"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${rsrc_SOURCE_DIR} ${RESOURCE_DST_DIR}
+    COMMENT "Copying rsrc from GP2_Resource repo to resources"
 )
 
 add_dependencies(${PROJECT_NAME} CopyModels)

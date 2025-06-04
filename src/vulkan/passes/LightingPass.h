@@ -73,6 +73,7 @@ namespace cat
 		Pipeline* m_pPipeline;
 
 		std::vector<std::unique_ptr<Image>> m_pLitImages;
+		std::unique_ptr<Image> m_pIrradianceMap;
 
 	};
 }

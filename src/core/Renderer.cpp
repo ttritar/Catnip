@@ -59,12 +59,12 @@ namespace cat
 		m_pScenes.resize(2);
 
 		m_pScenes[0] = new Scene(m_Device, *m_pSwapChain, m_pUniformBuffer);
-		m_pScenes[0]->AddModel("resources/FlightHelmet/FlightHelmet.gltf");
+		m_pScenes[0]->AddModel("resources/Models/FlightHelmet/FlightHelmet.gltf");
 		m_pScenes[0]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.f, -1.f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 5.f });
 		m_pScenes[0]->AddPointLight(Scene::PointLight{ .position = { 0.f, 1.f, 0.f ,0.f}, .color = { 1.f, 0.f, 0.f ,0.f}, .intensity = 5.f, .radius = 100.f });
 
 		m_pScenes[1] = new Scene(m_Device, *m_pSwapChain, m_pUniformBuffer);
-		m_pScenes[1]->AddModel("resources/Sponza/Sponza.gltf");
+		m_pScenes[1]->AddModel("resources/Models/Sponza/Sponza.gltf");
 		m_pScenes[1]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.f, -1.f, 0.f }, .color = { 0.f, 0.f, 0.f }, .intensity = 5.f });
 		m_pScenes[1]->AddPointLight(Scene::PointLight{ .position = { 0.f, 1.f, 0.f ,0.f}, .color = { 1.f, 0.f, 0.f ,0.f}, .intensity = 5.f , .radius = 100.f});
 
