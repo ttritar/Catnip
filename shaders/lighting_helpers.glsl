@@ -152,3 +152,14 @@ vec3 GetWorldPositionFromDepth(in float depth, in vec2 uv, in vec2 res, in mat4 
     vec4 worldPos = invView * viewPos;
     return worldPos.xyz;
 }
+
+vec3 CalculateDiffuseIrradiance( samplerCube irradianceMap,
+    vec3 albedo, vec3 normal)
+{
+    vec3 N = normalize(normal);
+    vec3 irradiance = texture(irradianceMap, N).rgb;
+
+    vec3 diffuse = irradiance * albedo / PI;
+
+    return diffuse;
+}

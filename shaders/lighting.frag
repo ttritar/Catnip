@@ -67,7 +67,7 @@ void main()
         vec2 fragCoord = vec2(gl_FragCoord.xy);
         vec3 viewDir = normalize(GetWorldPositionFromDepth(depthSample, fragCoord, ubo.viewportSize, inverse(ubo.proj), inverse(ubo.view)));
         outLit = vec4(texture(environmentMap, viewDir).rgb, 1.0);
-//        outLit = vec4(normalize(viewDir), 1.0);
+        //outLit = vec4(normalize(viewDir), 1.0);
         return;
     }
 
@@ -98,8 +98,10 @@ void main()
 
 
     // 3. IBL
+    vec3 iblColor = CalculateDiffuseIrradiance( irradianceMap ,albedoSample, normalSample);
+    litColor += iblColor;
+
 
     outLit = vec4(litColor, 1.0);
-
 }
 
