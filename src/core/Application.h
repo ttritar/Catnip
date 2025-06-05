@@ -11,7 +11,7 @@ class Application final
 public:
 	void Run()
 	{
-		cat::Window window{ 800,500,"cati" };
+		cat::Window window{ 1920,1080,"Vulkan Renderer - Thalia Tritar" };
 		cat::Renderer renderer{ window };
 
 		using clock = std::chrono::high_resolution_clock;
