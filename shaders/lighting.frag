@@ -8,7 +8,10 @@ layout(set = 0, binding = 0) uniform LightUBO {
     vec3 lightColor;  // luminance
     float lightIntensity; // lumen
 
-    vec3 cameraPos;  
+    vec4 cameraPos;  
+    mat4 proj;
+    mat4 view;
+    vec2 viewportSize;
 
     uint pointLightCount; 
 } ubo;
@@ -33,6 +36,7 @@ layout(set = 1, binding = 0) uniform sampler2D albedoSampler;
 layout(set = 1, binding = 1) uniform sampler2D normalSampler;
 layout(set = 1, binding = 2) uniform sampler2D specularSampler;
 layout(set = 1, binding = 3) uniform sampler2D worldSampler;
+layout(set = 1, binding = 4) uniform sampler2D depthSampler;
 
 layout(set = 2, binding = 0) uniform samplerCube environmentMap;
 layout(set = 2, binding = 1) uniform samplerCube irradianceMap;
@@ -53,18 +57,26 @@ void main()
     float roughness = max(specularSample.g, MIN_ROUGHNESS);
 
     vec3 worldPosSample = texture(worldSampler, fragUV).xyz;
+    float depthSample = texture(depthSampler, fragUV).r;
+
+
     
-    
-    vec3 N = normalize(normalSample);   // ye sorry im recalculatoin
-    vec3 V = normalize(ubo.cameraPos - worldPosSample);
-    vec3 R = reflect(-V, N);
-    vec3 F0 = mix(DIELECTRIC_F0, albedoSample, metallic);
+    // 0. Depth check for skybox
+    if (depthSample >= 1.0)  // if theres nothing in front, render the skybox
+    {
+        vec2 fragCoord = vec2(gl_FragCoord.xy);
+        vec3 viewDir = normalize(GetWorldPositionFromDepth(depthSample, fragCoord, ubo.viewportSize, inverse(ubo.proj), inverse(ubo.view)));
+        outLit = vec4(texture(environmentMap, viewDir).rgb, 1.0);
+//        outLit = vec4(normalize(viewDir), 1.0);
+        return;
+    }
+
 
     vec3 litColor = vec3(0.0);
 
     // 1. Directional Light
     litColor += CalculatePBR_Directional(albedoSample, normalSample, metallic, roughness, worldPosSample,
-    ubo.lightDir, ubo.lightColor, ubo.lightIntensity, ubo.cameraPos);
+    ubo.lightDir, ubo.lightColor, ubo.lightIntensity, ubo.cameraPos.xyz);
 
     // 2. Point Lights
     uint pointLightCount = ubo.pointLightCount;
@@ -80,29 +92,12 @@ void main()
             float attenuation = 1.0 / (distance * distance + 0.0001);
 
             litColor += CalculatePBR_Point(albedoSample, normalSample, metallic, roughness, worldPosSample,
-                pl.position.xyz, pl.color.rgb, pl.intensity * attenuation, ubo.cameraPos );
+                pl.position.xyz, pl.color.rgb, pl.intensity * attenuation, ubo.cameraPos.xyz );
         }
     }
 
 
-    // 3. Environment Lighting
-
-    // Sample ambient diffuse from irradiance map
-    vec3 irradiance = texture(irradianceMap, N).rgb;
-    vec3 kS = F_Schlick(F0, max(dot(N, V), 0.0)); // Fresnel specular reflectance
-    vec3 kD = (1.0 - kS) * (1.0 - metallic);       // Only non-metallic surfaces have diffuse
-    
-    vec3 diffuseIBL = irradiance * albedoSample;
-
-    // Sample specular reflection from environment map (perfect reflection direction)
-    vec3 prefilteredColor = textureLod(environmentMap, R, roughness * 4.0).rgb; // rougher = blurrier
-    vec3 specularIBL = prefilteredColor * kS;
-
-    // Combine IBL contribution
-    vec3 ambient = (kD * diffuseIBL + specularIBL);
-
-    // Final color add
-    litColor += ambient;
+    // 3. IBL
 
     outLit = vec4(litColor, 1.0);
 

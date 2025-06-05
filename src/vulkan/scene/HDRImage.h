@@ -105,7 +105,7 @@ namespace cat
 			glm::lookAt(m_EYE, m_EYE + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)), // +Z
 			glm::lookAt(m_EYE, m_EYE + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)) // -Z
 		};
-		const glm::mat4 m_CAPTURE_PROJECTION;
+		glm::mat4 m_CAPTURE_PROJECTION;
 
 		const std::string m_CubeVertPath = "shaders/cube.vert.spv";
 		const std::string m_SkyFragPath = "shaders/sky.frag.spv";

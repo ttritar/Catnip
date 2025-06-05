@@ -1,8 +1,8 @@
 #include "LightingPass.h"
 #include "../utils/DebugLabel.h"
 
-cat::LightingPass::LightingPass(Device& device, VkExtent2D extent, uint32_t framesInFlight, const GeometryPass& geometryPass, HDRImage* pSkyBoxImage)
-	: m_Device(device), m_FramesInFlight(framesInFlight), m_Extent(extent), m_GeometryPass(geometryPass), m_pSkyBoxImage(pSkyBoxImage)
+cat::LightingPass::LightingPass(Device& device, VkExtent2D extent, uint32_t framesInFlight, const GeometryPass& geometryPass, HDRImage* pSkyBoxImage, SwapChain& swapchain)
+	: m_Device(device), m_FramesInFlight(framesInFlight), m_Extent(extent), m_GeometryPass(geometryPass), m_pSkyBoxImage(pSkyBoxImage), m_SwapChain(swapchain)
 {
 	// IMAGES
 	m_pLitImages.resize(m_FramesInFlight);
@@ -10,7 +10,7 @@ cat::LightingPass::LightingPass(Device& device, VkExtent2D extent, uint32_t fram
 		m_pLitImages[index] = std::make_unique<Image>(
 			m_Device,
 			extent.width, extent.height,
-			VK_FORMAT_R8G8B8A8_UNORM,
+			VK_FORMAT_R32G32B32A32_SFLOAT,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VMA_MEMORY_USAGE_AUTO
 		);
@@ -39,7 +39,10 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 			.lightColor = scene.GetDirectionalLight().color,
 			.lightIntensity = scene.GetDirectionalLight().intensity,
 
-			.cameraPosition = camera.GetOrigin(),
+			.cameraPosition = glm::vec4(camera.GetOrigin(),1.0),
+			.proj = camera.GetProjection(),
+			.view = camera.GetView(),
+			.viewportSize = { static_cast<float>(m_Extent.width), static_cast<float>(m_Extent.height) },
 
 			.pointLightCount = static_cast<uint32_t>(scene.GetPointLights().size())
 		};
@@ -56,6 +59,14 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 
 		// transitioning images
 		//----------------------
+		m_SwapChain.GetDepthImage(imageIndex)->TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			Image::BarrierInfo{
+			VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+			VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+			VK_ACCESS_SHADER_READ_BIT
+			});
+
 		m_pLitImage.TransitionImageLayout(commandBuffer,VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			{
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -127,6 +138,14 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 
 		// transitioning images
 		//----------------------
+		m_SwapChain.GetDepthImage(imageIndex)->TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+			Image::BarrierInfo{
+			VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+			VK_ACCESS_SHADER_READ_BIT,
+				VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
+			});
+
 		m_pLitImage.TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			Image::BarrierInfo{
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -186,12 +205,13 @@ void cat::LightingPass::CreateDescriptors()
 
 		for (int i = 0; i < m_pSamplersDescriptorSet->GetDescriptorSetCount(); ++i)
 		{
+
 			m_pSamplersDescriptorSet
 				->AddImageWrite(0, m_GeometryPass.GetAlbedoBuffer(i).GetImageInfo(), i) // albedo
 				->AddImageWrite(1, m_GeometryPass.GetNormalBuffer(i).GetImageInfo(), i) // normal
 				->AddImageWrite(2, m_GeometryPass.GetSpecularBuffer(i).GetImageInfo(), i) // specular
 				->AddImageWrite(3, m_GeometryPass.GetWorldBuffer(i).GetImageInfo(), i) // world
-				->AddImageWrite(4, m_GeometryPass.GetDepthBuffer(i).GetImageInfo(), i) // depth
+				->AddImageWrite(4, m_SwapChain.GetDepthImage(i)->GetImageInfo(), i) // depth
 				->UpdateByIdx(i);
 		}
 	}
@@ -292,6 +312,7 @@ void cat::LightingPass::Resize(VkExtent2D size, const GeometryPass& geometryPass
 			->AddImageWrite(1, geometryPass.GetNormalBuffer(i).GetImageInfo(), i) // normal
 			->AddImageWrite(2, geometryPass.GetSpecularBuffer(i).GetImageInfo(), i) // specular
 			->AddImageWrite(3, geometryPass.GetWorldBuffer(i).GetImageInfo(), i) // world
+			->AddImageWrite(4, m_SwapChain.GetDepthImage(i)->GetImageInfo(), i) // depth()
 			->UpdateByIdx(i);
 	}
 }

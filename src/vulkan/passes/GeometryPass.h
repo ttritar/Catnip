@@ -29,7 +29,6 @@ namespace cat
 		Image& GetNormalBuffer(int idx) const { return *m_pNormalBuffers[idx]; }
 		Image& GetSpecularBuffer(int idx) const { return *m_pSpecularBuffers[idx]; }
 		Image& GetWorldBuffer(int idx) const { return *m_pWorldBuffers[idx]; }
-		Image& GetDepthBuffer(int idx) const { return *m_pDepthBuffers[idx]; }
 
 
 	private:
@@ -62,8 +61,6 @@ namespace cat
 		std::vector<std::unique_ptr<Image>> m_pNormalBuffers;
 		std::vector<std::unique_ptr<Image>> m_pSpecularBuffers;
 		std::vector<std::unique_ptr<Image>> m_pWorldBuffers;
-
-		std::vector<std::unique_ptr<Image>> m_pDepthBuffers;
 	};
 
 }

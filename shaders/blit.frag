@@ -23,5 +23,5 @@ void main()
     vec3 toneMappedColor = Reinhard(exposedColor);
     vec3 finalColor = pow(toneMappedColor, vec3(1.0 / tmParams.gamma));
 
-    outColor = vec4(finalColor, 1.0);
+    outColor = vec4(litColor, 1.0);
 }

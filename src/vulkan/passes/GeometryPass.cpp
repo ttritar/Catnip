@@ -46,15 +46,6 @@ cat::GeometryPass::GeometryPass(Device& device, VkExtent2D extent, uint32_t fram
 		));
 		DebugLabel::NameImage(m_pWorldBuffers[i]->GetImage(), "World buffer <3." + std::to_string(i));
 
-
-		m_pDepthBuffers.emplace_back(std::make_unique<Image>(
-			m_Device,
-			extent.width, extent.height,
-			VK_FORMAT_D32_SFLOAT,
-			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VMA_MEMORY_USAGE_AUTO
-		));
-		DebugLabel::NameImage(m_pDepthBuffers[i]->GetImage(), "Depth buffer <3." + std::to_string(i));
 	}
 	
 	// CREATE
@@ -155,9 +146,9 @@ void cat::GeometryPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		// Depth Attachment
 		VkRenderingAttachmentInfoKHR depthAttachmentInfo{};
 		depthAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-		depthAttachmentInfo.imageView = m_pDepthBuffers[imageIndex]->GetImageView();
+		depthAttachmentInfo.imageView = depthImage.GetImageView();
 		depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-		depthAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		depthAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 		depthAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		depthAttachmentInfo.clearValue.depthStencil = { 1.0f, 0 };
 
@@ -316,8 +307,6 @@ void cat::GeometryPass::Resize(VkExtent2D size)
 	m_pSpecularBuffers.resize(m_FramesInFlight);
 	m_pWorldBuffers.clear();
 	m_pWorldBuffers.resize(m_FramesInFlight);
-	m_pDepthBuffers.clear();
-	m_pDepthBuffers.resize(m_FramesInFlight);
 
 	for (int i = 0; i < m_FramesInFlight; ++i)
 	{
@@ -357,13 +346,6 @@ void cat::GeometryPass::Resize(VkExtent2D size)
 		);
 		DebugLabel::NameImage(m_pWorldBuffers[i]->GetImage(), "World buffer <3." + std::to_string(i));
 
-		m_pDepthBuffers[i] = std::make_unique<Image>(
-			m_Device,
-			size.width, size.height,
-			VK_FORMAT_D32_SFLOAT,
-			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VMA_MEMORY_USAGE_AUTO
-		);
-		DebugLabel::NameImage(m_pDepthBuffers[i]->GetImage(), "Depth buffer <3." + std::to_string(i));
+		
 	}
 }

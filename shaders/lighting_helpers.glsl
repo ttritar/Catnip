@@ -137,3 +137,18 @@ vec3 CalculatePBR_Point(vec3 albedo, vec3 normal, float metallic, float roughnes
 
 // IBL (Image Based Lighting)
 //----------------
+vec3 GetWorldPositionFromDepth(in float depth, in vec2 uv, in vec2 res, in mat4 invProj, in mat4 invView) 
+{
+    vec2 ndc = vec2(
+        (uv.x / res.x) * 2.0 - 1.0,
+        (uv.y / res.y) * 2.0 - 1.0
+    );
+
+    const vec4 clipPos = vec4(ndc, depth, 1.0);
+
+    vec4 viewPos = invProj * clipPos;
+    viewPos /= viewPos.w;
+
+    vec4 worldPos = invView * viewPos;
+    return worldPos.xyz;
+}

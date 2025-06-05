@@ -20,6 +20,8 @@
 cat::HDRImage::HDRImage(Device& device, const std::string& filename)
 	: m_Device(device), m_CAPTURE_PROJECTION(glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f))
 {
+	m_CAPTURE_PROJECTION[1][1] *= -1.0f; 
+
 
 	// LOADING
 	//----------

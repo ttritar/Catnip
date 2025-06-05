@@ -16,7 +16,7 @@ namespace cat
 		// CTOR & DTOR
 		//----------------
 		LightingPass(Device& device, VkExtent2D extent, uint32_t framesInFlight, const GeometryPass& geometryPass,
-		 	HDRImage* pSkyBoxImage);
+		 	HDRImage* pSkyBoxImage, SwapChain& swapchain);
 		~LightingPass();
 
 		LightingPass(const LightingPass&) = delete;
@@ -43,6 +43,7 @@ namespace cat
 		// PRIVATE MEMBERS
 		//-----------------
 		Device& m_Device;
+		SwapChain& m_SwapChain;
 		uint32_t m_FramesInFlight;
 		VkExtent2D m_Extent;
 		const GeometryPass& m_GeometryPass;
@@ -55,7 +56,10 @@ namespace cat
 			glm::vec3 lightColor = { 1.f, 1.f, 1.f };
 			float lightIntensity;
 
-			glm::vec3 cameraPosition;
+			glm::vec4 cameraPosition;
+			glm::mat4 proj;
+			glm::mat4 view;
+			glm::vec2 viewportSize;
 
 			uint32_t pointLightCount;
 		};

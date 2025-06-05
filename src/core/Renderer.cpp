@@ -82,7 +82,7 @@ namespace cat
 		m_pLightingPass = std::make_unique<LightingPass>(
 			m_Device, m_pSwapChain->GetSwapChainExtent(), cat::MAX_FRAMES_IN_FLIGHT, 
 			*m_pGeometryPass, 
-			m_pHDRImage);
+			m_pHDRImage, *m_pSwapChain);
 		m_pBlitPass = std::make_unique<BlitPass>(m_Device, *m_pSwapChain, cat::MAX_FRAMES_IN_FLIGHT, *m_pLightingPass);
 	}
 
@@ -209,6 +209,7 @@ namespace cat
 			m_Camera,
 			*m_pCurrentScene
 		);
+
 		
 		m_pLightingPass->Record(
 			commandBuffer,
