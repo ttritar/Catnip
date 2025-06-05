@@ -5,7 +5,7 @@ namespace cat
 	// CTOR & DTOR
 	//--------------------
 	Scene::Scene(Device& device, SwapChain& swapchain, UniformBuffer<MatrixUbo>* ubo)
-		: m_Device{ device }, m_SwapChain{ swapchain }, m_pUniformBuffer(ubo), m_DirectionalLight({})
+		: m_Device{ device }, m_pUniformBuffer(ubo), m_DirectionalLight({})
 	{
 	}
 
@@ -28,7 +28,7 @@ namespace cat
 
 	Model* Scene::AddModel(const std::string& path)
 	{
-		Model* model = new Model(m_Device, m_SwapChain,m_pUniformBuffer,path);
+		Model* model = new Model(m_Device,m_pUniformBuffer,path);
 		m_pModels.push_back(model);
 		return model;
 	}

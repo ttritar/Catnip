@@ -17,8 +17,7 @@ namespace cat
 
 		// CTOR & DTOR
 		//--------------------
-		Model(Device& device, SwapChain& swapchain, 
-			UniformBuffer<MatrixUbo>* ubo, const std::string& path);
+		Model(Device& device, UniformBuffer<MatrixUbo>* ubo, const std::string& path);
 		~Model();
 
 		Model(const Model&) = delete;
@@ -52,7 +51,6 @@ namespace cat
 		// Private Datamembers
 		//--------------------
 		Device& m_Device;
-		SwapChain& m_SwapChain;
 		UniformBuffer<MatrixUbo>* m_pUniformBuffer;
 		DescriptorSetLayout* m_pDescriptorSetLayout;
 		DescriptorPool* m_pDescriptorPool;

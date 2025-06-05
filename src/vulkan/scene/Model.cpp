@@ -7,35 +7,38 @@ namespace cat
 	// CTOR & DTOR
 	//--------------------
 
-	Model::Model(Device& device,SwapChain& swapchain,
-		UniformBuffer<MatrixUbo>* ubo, const std::string& path)
-		: m_Device{ device }, m_SwapChain{ swapchain },
-		m_pUniformBuffer{ ubo },
-		m_Path(path), m_Directory{ path }
+	Model::Model(Device& device,UniformBuffer<MatrixUbo>* ubo, const std::string& path)
+		: m_Device{device},
+		  m_pUniformBuffer{ubo},
+		  m_Path(path), m_Directory{path}
 	{
 		LoadModel(path);
 
 		// Create descriptor pool
 		m_pDescriptorPool = new DescriptorPool(device);
 		m_pDescriptorPool
-					->AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<uint32_t>(m_RawMeshes.size()*2))
-					->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, static_cast<uint32_t>(m_RawMeshes.size() * 2) * m_Material.amount);
+			->AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<uint32_t>(m_RawMeshes.size() * 2))
+			->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			              static_cast<uint32_t>(m_RawMeshes.size() * 2) * m_Material.amount);
 		m_pDescriptorPool = m_pDescriptorPool->Create(static_cast<uint32_t>(m_RawMeshes.size() * 2));
 
 		// Create descriptor set layout
 		m_pDescriptorSetLayout = new DescriptorSetLayout(device);
 		m_pDescriptorSetLayout = m_pDescriptorSetLayout
-				->AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// albedo sampler
-				->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// normal sampler
-				->AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)	// specular sampler
-			->Create();
+		                         ->AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		                                      VK_SHADER_STAGE_FRAGMENT_BIT) // albedo sampler
+		                         ->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		                                      VK_SHADER_STAGE_FRAGMENT_BIT) // normal sampler
+		                         ->AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		                                      VK_SHADER_STAGE_FRAGMENT_BIT) // specular sampler
+		                         ->Create();
 
 		// Create meshes
 		for (auto& data : m_RawMeshes)
 		{
 			m_Meshes.push_back(new Mesh(m_Device, ubo,
-				m_pDescriptorSetLayout, m_pDescriptorPool,
-				data.vertices, data.indices, data.material));
+			                            m_pDescriptorSetLayout, m_pDescriptorPool,
+			                            data.vertices, data.indices, data.material));
 		}
 
 		m_RawMeshes.clear();

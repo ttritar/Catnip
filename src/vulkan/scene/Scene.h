@@ -29,7 +29,7 @@ namespace cat
 
 		// CTOR & DTOR
 		//--------------------
-		Scene(Device& device, SwapChain& swapchain, UniformBuffer<MatrixUbo>* ubo);
+		Scene(Device& device, UniformBuffer<MatrixUbo>* ubo);
 		~Scene();
 
 		Scene(const Scene&) = delete;
@@ -60,7 +60,6 @@ namespace cat
 		// Private members
 		//--------------------
 		Device& m_Device;
-		SwapChain& m_SwapChain;
 		UniformBuffer<MatrixUbo>* m_pUniformBuffer;
 		
 		std::vector<Model*> m_pModels;
