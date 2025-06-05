@@ -21,6 +21,7 @@ namespace cat
 		//--------------------
 		Renderer(Window& window);
 		~Renderer();
+		void OutputKeybinds();
 
 		Renderer(const Renderer&) = delete;
 		Renderer& operator=(const Renderer&) = delete;
@@ -43,6 +44,8 @@ namespace cat
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) const;
 		void RecordPasses() const;
 		void ResizePasses() const;
+
+		void OutputKeybinds()const;
 
 		// Private Members
 		//--------------------

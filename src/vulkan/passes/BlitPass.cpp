@@ -30,8 +30,9 @@ void cat::BlitPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, c
 	// BEGIN RECORDING
 	{
 		ToneMappingUbo uboData = {
-			.exposure = camera.GetSpecs().exposure,
-			.gamma = camera.GetSpecs().gamma
+			.aperture = camera.GetAperture(),
+			.shutterSpeed = camera.GetShutterSpeed(),
+			.iso = camera.GetIso()
 		};
 		m_pUniformBuffer->Update(imageIndex, uboData);
 

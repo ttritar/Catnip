@@ -42,9 +42,9 @@ namespace cat
 		VkExtent2D m_Extent;
 
 		struct alignas(16) ToneMappingUbo{
-			float exposure = 1.0f;
-			float gamma = 2.2f;
-			float _pad0[2] = { 0.0f, 0.0f };
+			float aperture;
+			float shutterSpeed;
+			float iso;
 		};
 		std::unique_ptr<UniformBuffer<ToneMappingUbo>> m_pUniformBuffer;
 

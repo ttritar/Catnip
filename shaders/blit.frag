@@ -5,13 +5,17 @@
 layout(set = 0, binding = 0) uniform sampler2D litSampler;
 
 layout(set = 0, binding = 1) uniform ToneMappingUniforms {
-    float exposure;         
-    float gamma;            
-} tmParams;
+    float aperture;
+    float shutterSpeed;
+    float iso;
+} tmUbo;
 
 layout(location = 0) in vec2 fragUV;
 
 layout(location = 0) out vec4 outColor;
+
+
+
 
 void main() 
 {
@@ -19,9 +23,19 @@ void main()
 
     // TONE MAPPING
     //---------------
-    vec3 exposedColor = litColor * tmParams.exposure;
-    vec3 toneMappedColor = Reinhard(exposedColor);
-    vec3 finalColor = pow(toneMappedColor, vec3(1.0 / tmParams.gamma));
 
-    outColor = vec4(litColor, 1.0);
+    // Calculate EV100
+    float ev100 = CalculateEV100FromPhysicalCamera(tmUbo.aperture, tmUbo.shutterSpeed,tmUbo.iso);
+
+    // Calculate exposure
+    float exposure = ConvertEV100ToExposure(ev100);
+
+    // Reinhard
+    vec3 mapped = Reinhard(litColor * exposure);
+
+    // Gamma Correction
+    mapped = pow(mapped, vec3(1.0 / GAMMA));
+
+
+    outColor = vec4(mapped, 1.0);
 }

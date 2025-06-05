@@ -1,4 +1,7 @@
 #include "Renderer.h"
+
+#include <iostream>
+
 #include "Window.h"
 #include "../vulkan/Device.h"
 
@@ -9,7 +12,9 @@ namespace cat
 		: m_Window(window), m_Device(m_Window.GetWindow()),
 		m_Camera(m_Window, { 0.f,0.f,-1.f })
 	{
+		m_Camera.SetSpecs({ .fovy = glm::radians(90.f), .nearPlane = 0.1f, .farPlane = 1500.f, .aperture = 1.4f, .shutterSpeed = 1.0f / 60.0f, .iso = 1600.f });
 		InitializeVulkan();
+		OutputKeybinds();
 	}
 
 	Renderer::~Renderer()
@@ -29,6 +34,17 @@ namespace cat
 		delete m_pCommandBuffer;
 
 		glfwTerminate();
+	}
+
+	void Renderer::OutputKeybinds()
+	{
+		m_Camera.OutputKeybinds();
+
+
+		// SCENE SWITCHING
+		std::cout << COLOR_GREEN	<< "SCENE SWITCHING: " << COLOR_RESET << std::endl;
+		std::cout << COLOR_YELLOW	<< "\t Press 0 to switch to Scene 0 (Flight Helmet)" << COLOR_RESET << std::endl;
+		std::cout << COLOR_YELLOW	<< "\t Press 1 to switch to Scene 1 (Sponza)" << COLOR_RESET << std::endl;
 	}
 
 	void Renderer::Update(float deltaTime)
@@ -231,5 +247,5 @@ namespace cat
 		m_pLightingPass->Resize(m_pSwapChain->GetSwapChainExtent(), *m_pGeometryPass);
 		m_pBlitPass->Resize(m_pSwapChain->GetSwapChainExtent(), *m_pLightingPass);
 	}
-	
+
 }

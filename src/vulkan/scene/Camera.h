@@ -6,6 +6,16 @@
 
 #include "../../core/Window.h"
 
+#define COLOR_RESET   "\033[0m"
+#define COLOR_RED     "\033[31m"
+#define COLOR_GREEN   "\033[32m"
+#define COLOR_YELLOW  "\033[33m"
+#define COLOR_BLUE    "\033[34m"
+#define COLOR_MAGENTA "\033[35m"
+#define COLOR_CYAN    "\033[36m"
+#define COLOR_WHITE   "\033[37m"
+#define COLOR_GREY    "\033[90m"
+
 namespace cat
 {
 	class Camera
@@ -20,8 +30,9 @@ namespace cat
 			float nearPlane = 0.1f;
 			float farPlane = 1500.0f;
 
-			float exposure = 1.0f;
-			float gamma = 2.2f; 
+			float aperture = 1.4f;
+			float shutterSpeed = 1.0f / 60.0f; // 60 FPS
+			float iso = 1600.0f; 
 		};
 
 
@@ -32,6 +43,8 @@ namespace cat
 
 		// Methods
 		//-----------------
+		void OutputKeybinds();
+
 		void Update(float deltaTime);
 		void UpdateAspectRatio();
 
@@ -61,8 +74,9 @@ namespace cat
 			m_IsSpecsDirty = true;
 		}
 
-		float GetExposure() const { return m_Specs.exposure; }
-		float GetGamma() const { return m_Specs.gamma; }
+		float GetAperture() const { return m_Specs.aperture; }
+		float GetShutterSpeed() const { return m_Specs.shutterSpeed; }
+		float GetIso() const { return m_Specs.iso; }
 
 		void SetSpeed(float speed) { m_Speed = speed; }
 		void SetMouseSensitivity(float sensitivity) { m_MouseSensitivity = sensitivity; }

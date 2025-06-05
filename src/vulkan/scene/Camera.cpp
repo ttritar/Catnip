@@ -95,6 +95,27 @@ void cat::Camera::UpdateVectors()
 
 
 #pragma region Input Handling
+void cat::Camera::OutputKeybinds()
+{
+	std::cout << COLOR_GREEN << "CAMERA CONTROLS: " << COLOR_GREY << std::endl;
+	std::cout << COLOR_YELLOW << "\tWASD" << COLOR_GREY << " - Move Forward/Backward/Left/Right" << std::endl;
+	std::cout << COLOR_YELLOW << "\tQE" << COLOR_GREY << " - Move Up/Down" << std::endl;
+	std::cout << COLOR_YELLOW << "\tMouse Right Click" << COLOR_GREY << " - Rotate Camera" << std::endl;
+	std::cout << COLOR_YELLOW << "\tMouse Left Click" << COLOR_GREY << " - Rotate Camera (Yaw only)" << std::endl;
+	std::cout << COLOR_YELLOW << "\tMouse Wheel" << COLOR_GREY << " - Zoom In/Out (Aperture Control)" << std::endl;
+	std::cout << COLOR_YELLOW << "\tEqual Sign ( = )" << COLOR_GREY << " - Increase Speed" << std::endl;
+	std::cout << COLOR_YELLOW << "\tMinus Sign ( - )" << COLOR_GREY << " - Decrease Speed" << std::endl;
+	std::cout << std::endl;		 
+	std::cout << COLOR_YELLOW << "\tLeft Bracket ( [ )" << COLOR_GREY << " - Decrease Aperture" << std::endl;
+	std::cout << COLOR_YELLOW << "\tRight Bracket ( ] )" << COLOR_GREY << " - Increase Aperture" << std::endl;
+	std::cout << COLOR_YELLOW << "\tSemicolon ( ; )" << COLOR_GREY << " - Decrease Shutter Speed" << std::endl;
+	std::cout << COLOR_YELLOW << "\tApostrophe ( ' )" << COLOR_GREY << " - Increase Shutter Speed" << std::endl;
+	std::cout << COLOR_YELLOW << "\tPeriod ( . )" << COLOR_GREY << " - Decrease ISO" << std::endl;
+	std::cout << COLOR_YELLOW << "\tSlash ( / )" << COLOR_GREY << " - Increase ISO" << std::endl;
+
+	std::cout << COLOR_RESET << std::endl;
+}
+
 void cat::Camera::HandleKeyboardInput(float deltaTime)
 {
 	auto window = m_Window.GetWindow();
@@ -183,24 +204,39 @@ void cat::Camera::HandleSpeedInput(float deltaTime, GLFWwindow* window)
 
 void cat::Camera::HandleToneMappingControlInput(float deltaTime, GLFWwindow* window)
 {
-	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+	// APERTURE
+	if (glfwGetKey(window, GLFW_KEY_LEFT_BRACKET) == GLFW_PRESS)
 	{
-		m_Specs.exposure += 1.f * deltaTime;
+		m_Specs.aperture -= 1.f * deltaTime;
 		m_IsSpecsDirty = true;
 	}
-	else if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+	else if (glfwGetKey(window, GLFW_KEY_RIGHT_BRACKET) == GLFW_PRESS)
 	{
-		m_Specs.exposure -= 1.f * deltaTime;
+		m_Specs.aperture += 1.f * deltaTime;
 		m_IsSpecsDirty = true;
 	}
-	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+
+	// SHUTTER SPEED
+	if (glfwGetKey(window, GLFW_KEY_SEMICOLON) == GLFW_PRESS)
 	{
-		m_Specs.gamma += 1.f * deltaTime;
+		m_Specs.shutterSpeed -= 0.1f * deltaTime;
 		m_IsSpecsDirty = true;
 	}
-	else if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+	else if (glfwGetKey(window, GLFW_KEY_APOSTROPHE) == GLFW_PRESS)
 	{
-		m_Specs.gamma -= 1.f * deltaTime;
+		m_Specs.shutterSpeed += 0.1f * deltaTime;
+		m_IsSpecsDirty = true;
+	}
+
+	// ISO
+	if (glfwGetKey(window, GLFW_KEY_PERIOD) == GLFW_PRESS)
+	{
+		m_Specs.iso -= 1000.0f * deltaTime;
+		m_IsSpecsDirty = true;
+	}
+	else if (glfwGetKey(window, GLFW_KEY_SLASH) == GLFW_PRESS)
+	{
+		m_Specs.iso += 1000.0f * deltaTime;
 		m_IsSpecsDirty = true;
 	}
 }
