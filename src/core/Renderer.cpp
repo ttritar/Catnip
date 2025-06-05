@@ -52,7 +52,6 @@ namespace cat
 		if (glfwGetKey(m_Window.GetWindow(), GLFW_KEY_0)) m_pCurrentScene = m_pScenes[0];
 		if (glfwGetKey(m_Window.GetWindow(), GLFW_KEY_1)) m_pCurrentScene = m_pScenes[1];
 
-
 		m_Camera.Update(deltaTime);
 		m_pCurrentScene->Update(deltaTime);
 		MatrixUbo uboData = { m_Camera.GetView(), m_Camera.GetProjection() };

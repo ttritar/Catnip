@@ -160,6 +160,7 @@ void cat::Camera::HandleMoveInput(float deltaTime, GLFWwindow* window)
 	{
 		m_Origin += m_Forward * m_Speed * deltaTime;
 		m_IsPositionDirty = true;
+		char* StatsString = nullptr;
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 	{

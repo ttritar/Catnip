@@ -4,7 +4,7 @@ namespace cat
 {
 	// CTOR & DTOR
 	//--------------------
-	Scene::Scene(Device& device, SwapChain& swapchain, UniformBuffer<MatrixUbo>* ubo)
+	Scene::Scene(Device& device, UniformBuffer<MatrixUbo>* ubo)
 		: m_Device{ device }, m_pUniformBuffer(ubo), m_DirectionalLight({})
 	{
 	}
