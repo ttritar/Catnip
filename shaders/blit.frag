@@ -31,7 +31,7 @@ void main()
     float exposure = ConvertEV100ToExposure(ev100);
 
     // Reinhard
-    vec3 mapped = Reinhard(litColor * exposure);
+    vec3 mapped = Uncharted2ToneMapping(litColor * exposure);
 
     // Gamma Correction
     mapped = pow(mapped, vec3(1.0 / GAMMA));
