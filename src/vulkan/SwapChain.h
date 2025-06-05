@@ -49,8 +49,16 @@ namespace cat
 		uint32_t& GetImageIndex() { return m_ImageIndex; }
 		VkFormat* GetSwapChainImageFormat() { return &m_SwapChainImageFormat; }
 		VkExtent2D GetSwapChainExtent() const { return m_SwapChainExtent; }
-		std::vector<Image*> GetSwapChainImages() const { return m_pSwapChainImages; }
-		Image* GetSwapChainImage(size_t i) const { return m_pSwapChainImages[i]; }
+		std::vector<Image*> GetSwapChainImages() const {
+			// tis could be better
+			std::vector<Image*> images;
+			images.reserve(m_pSwapChainImages.size());
+			for (const auto& image : m_pSwapChainImages) {
+				images.push_back(image.get());
+			}
+			return images;
+		}
+		Image* GetSwapChainImage(size_t i) const { return m_pSwapChainImages[i].get(); }
 		Image* GetDepthImage(int frameIndex) const { return m_pDepthImages[frameIndex]; }
 		VkImageView GetSwapChainImageView(size_t i) const { return m_pSwapChainImages[i]->GetImageView(); }
 
@@ -87,7 +95,7 @@ namespace cat
 		uint32_t m_ImageCount ;
 		uint32_t m_ImageIndex;
 
-		std::vector<Image*> m_pSwapChainImages;
+		std::vector<std::unique_ptr<Image>> m_pSwapChainImages;
 		VkFormat m_SwapChainImageFormat;
 		VkExtent2D m_SwapChainExtent;
 		std::vector < VkSemaphore> m_ImageAvailableSemaphores;

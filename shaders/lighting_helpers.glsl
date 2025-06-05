@@ -1,7 +1,6 @@
 // CONSTANTS
 const float PI = 3.14159265358979323846264338327950288;
 const vec3 DIELECTRIC_F0 = vec3(0.04);
-const vec3 AMBIENT = vec3(0.03, 0.03, 0.03);
 
 
 // LIGHTING CALC
@@ -36,6 +35,8 @@ float G_Smith(float NdotV, float NdotL, float roughness)
 
 
 
+// LIGHTS
+//-----------------
 vec3 CalculatePBR_Directional(vec3 albedo, vec3 normal, float metallic, float roughness, vec3 worldPos,
     vec3 lightDir, vec3 lightColor, float lightIntensity, vec3 cameraPos)
 {
@@ -78,9 +79,8 @@ vec3 CalculatePBR_Directional(vec3 albedo, vec3 normal, float metallic, float ro
 
         // Final color
     vec3 Lo = (diffuse + specular) * radiance * NdotL;
-    vec3 ambient = AMBIENT * albedo;
 
-    return ambient + Lo;
+    return Lo;
 }
 
 
@@ -129,7 +129,11 @@ vec3 CalculatePBR_Point(vec3 albedo, vec3 normal, float metallic, float roughnes
 
         // Final color
     vec3 Lo = (diffuse + specular) * radiance * NdotL;
-    vec3 ambient = AMBIENT * albedo;
 
-    return ambient + Lo;
+    return Lo;
 }
+
+
+
+// IBL (Image Based Lighting)
+//----------------

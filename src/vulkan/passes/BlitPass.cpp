@@ -23,12 +23,19 @@ cat::BlitPass::~BlitPass()
 	m_pPipeline = nullptr;
 }
 
-void cat::BlitPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex) const
+void cat::BlitPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, const Camera& camera) const
 {
 	Image& swapchainImage = *m_SwapChain.GetSwapChainImage(imageIndex);
 
 	// BEGIN RECORDING
 	{
+		ToneMappingUbo uboData = {
+			.exposure = camera.GetSpecs().exposure,
+			.gamma = camera.GetSpecs().gamma
+		};
+		m_pUniformBuffer->Update(imageIndex, uboData);
+
+
 		// transitioning images
 		//----------------------
 		swapchainImage.TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -119,21 +126,27 @@ void cat::BlitPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex) c
 
 void cat::BlitPass::CreateDescriptors()
 {
+	m_pUniformBuffer = std::make_unique<UniformBuffer<ToneMappingUbo>>(m_Device, m_FramesInFlight);
+
+
 	m_pDescriptorPool = new DescriptorPool(m_Device);
 	m_pDescriptorPool
 		->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_FramesInFlight )
+		->AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_FramesInFlight)
 		->Create(m_FramesInFlight);
 
 	m_pDescriptorSetLayout = new DescriptorSetLayout(m_Device);
 	m_pDescriptorSetLayout
 		->AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		->AddBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		->Create();
 
 	m_pDescriptorSet = new DescriptorSet(m_Device, *m_pDescriptorSetLayout, *m_pDescriptorPool, m_FramesInFlight);
-	for (int i{}; i< m_pDescriptorSet->GetDescriptorSetCount();i++)
+	for (int i{}; i < m_pDescriptorSet->GetDescriptorSetCount();i++)
 	{
 		m_pDescriptorSet
 			->AddImageWrite(0, m_LightingPass.GetLitImages()[i]->GetImageInfo(), i) //Lit image
+			->AddBufferWrite(1, m_pUniformBuffer->GetDescriptorBufferInfos(), i)
 			->UpdateByIdx(i);
 	}
 }
@@ -164,6 +177,7 @@ void cat::BlitPass::CreatePipeline()
 
 void cat::BlitPass::Resize(VkExtent2D size, const LightingPass& lightingPass)
 {
+	m_Extent = size;
 	for (size_t i{ 0 }; i < m_FramesInFlight; i++) 
 	{
 		VkDescriptorImageInfo imageInfo = lightingPass.GetLitImages()[i]->GetImageInfo();

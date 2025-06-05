@@ -22,7 +22,7 @@ namespace cat
 
 		// METHODS
 		//-----------------
-		void Record(VkCommandBuffer commandBuffer, uint32_t imageIndex) const;
+		void Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, const Camera& camera) const;
 		void Resize(VkExtent2D size, const LightingPass& lightingPass);
 
 
@@ -39,7 +39,14 @@ namespace cat
 		Device& m_Device;
 		const uint32_t m_FramesInFlight;
 		SwapChain& m_SwapChain;
-		const VkExtent2D m_Extent;
+		VkExtent2D m_Extent;
+
+		struct alignas(16) ToneMappingUbo{
+			float exposure = 1.0f;
+			float gamma = 2.2f;
+			float _pad0[2] = { 0.0f, 0.0f };
+		};
+		std::unique_ptr<UniformBuffer<ToneMappingUbo>> m_pUniformBuffer;
 
 		std::string m_VertPath = "shaders/triangle.vert.spv";
 		std::string m_FragPath = "shaders/blit.frag.spv";

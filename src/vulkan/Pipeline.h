@@ -48,7 +48,7 @@ namespace cat
 			VkPipelineColorBlendStateCreateInfo colorBlending{};
 
 			// PUSH CONSTANTS
-			VkPushConstantRange pushConstantRange{};
+			VkPushConstantRange pushConstantRanges{};
 
 
 			// PIPELINE LAYOUT
@@ -60,7 +60,7 @@ namespace cat
 				pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
 				pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
 				pipelineLayoutInfo.pushConstantRangeCount = 1;
-				pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+				pipelineLayoutInfo.pPushConstantRanges = &pushConstantRanges;
 				if (vkCreatePipelineLayout(device.GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
 				{
 					throw std::runtime_error("failed to create pipeline layout!");
@@ -144,7 +144,7 @@ namespace cat
 
 
 				// PUSH CONSTANTS
-				pushConstantRange = VkPushConstantRange{
+				pushConstantRanges = VkPushConstantRange{
 					.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
 					.offset = 0,
 					.size = sizeof(glm::mat4)

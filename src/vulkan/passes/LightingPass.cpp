@@ -1,8 +1,8 @@
 #include "LightingPass.h"
 #include "../utils/DebugLabel.h"
 
-cat::LightingPass::LightingPass(Device& device, VkExtent2D extent, uint32_t framesInFlight,const GeometryPass& geometryPass)
-	: m_Device(device), m_FramesInFlight(framesInFlight), m_Extent(extent), m_GeometryPass(geometryPass)
+cat::LightingPass::LightingPass(Device& device, VkExtent2D extent, uint32_t framesInFlight, const GeometryPass& geometryPass, HDRImage* pSkyBoxImage)
+	: m_Device(device), m_FramesInFlight(framesInFlight), m_Extent(extent), m_GeometryPass(geometryPass), m_pSkyBoxImage(pSkyBoxImage)
 {
 	// IMAGES
 	m_pLitImages.resize(m_FramesInFlight);
@@ -24,15 +24,6 @@ cat::LightingPass::LightingPass(Device& device, VkExtent2D extent, uint32_t fram
 
 cat::LightingPass::~LightingPass()
 {
-	delete m_pDescriptorPool;
-	m_pDescriptorPool = nullptr;
-	delete m_pUboDescriptorSetLayout;
-	m_pUboDescriptorSetLayout = nullptr;
-	delete m_pSamplersDescriptorSetLayout;
-	m_pSamplersDescriptorSetLayout = nullptr;
-	delete m_pUboDescriptorSet;
-	m_pUboDescriptorSet = nullptr;
-
 	delete m_pPipeline;
 	m_pPipeline = nullptr;
 }
@@ -97,9 +88,8 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		renderInfo.layerCount = 1;
 		renderInfo.colorAttachmentCount = colorAttachments.size();
 		renderInfo.pColorAttachments = colorAttachments.data();
-		vkCmdBeginRenderingKHR(commandBuffer, &renderInfo);
-
 		DebugLabel::BeginCmdLabel(commandBuffer, "Lighting Pass", glm::vec4(0.1f, 0.3f, 0.05f, 1));
+		vkCmdBeginRenderingKHR(commandBuffer, &renderInfo);
 	}
 
 	// Drawing
@@ -123,6 +113,7 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 
 		m_pUboDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, 0);
 		m_pSamplersDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, 1);
+		m_pHDRISamplersDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, 2);
 
 		vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
@@ -153,48 +144,83 @@ void cat::LightingPass::CreateBuffers()
 
 void cat::LightingPass::CreateDescriptors()
 {
-	m_pDescriptorPool = new DescriptorPool(m_Device);
+	m_pDescriptorPool = std::make_unique<DescriptorPool>(m_Device);
 	m_pDescriptorPool
-		->AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_FramesInFlight * 2 )
+		->AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_FramesInFlight * 2)
 		->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_FramesInFlight * 8)
-		->Create(m_FramesInFlight * 2);
 
+		->AddPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, m_FramesInFlight)
 
+		->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_FramesInFlight * 2)
+		->Create(m_FramesInFlight * 3);
 
-	m_pUboDescriptorSetLayout = new DescriptorSetLayout(m_Device);
-	m_pUboDescriptorSetLayout
-		->AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		->AddBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		->Create();
-
-
-	m_pUboDescriptorSet = new DescriptorSet(m_Device, *m_pUboDescriptorSetLayout, *m_pDescriptorPool, m_FramesInFlight);
-	m_pUboDescriptorSet
-		->AddBufferWrite(0, m_pUniformBuffer->GetDescriptorBufferInfos())
-		->AddBufferWrite(1, m_pPointLightingStorageBuffer->GetDescriptorBufferInfos())
-		->UpdateAll();
-
-	m_pSamplersDescriptorSetLayout = new DescriptorSetLayout(m_Device);
-	m_pSamplersDescriptorSetLayout
-		->AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		->AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		->AddBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		->Create();
-
-
-	m_pSamplersDescriptorSet = new DescriptorSet(m_Device, *m_pSamplersDescriptorSetLayout, *m_pDescriptorPool, m_FramesInFlight);
-
-	for (int i = 0; i < m_pSamplersDescriptorSet->GetDescriptorSetCount(); ++i)
+	// UBO 
 	{
-		m_pSamplersDescriptorSet
-			->AddImageWrite(0, m_GeometryPass.GetAlbedoBuffer(i).GetImageInfo(), i) // albedo
-			->AddImageWrite(1, m_GeometryPass.GetNormalBuffer(i).GetImageInfo(), i) // normal
-			->AddImageWrite(2, m_GeometryPass.GetSpecularBuffer(i).GetImageInfo(), i) // specular
-			->AddImageWrite(3, m_GeometryPass.GetWorldBuffer(i).GetImageInfo(), i) // world
-			->UpdateByIdx(i);
+		m_pUboDescriptorSetLayout = std::make_unique<DescriptorSetLayout>(m_Device);
+		m_pUboDescriptorSetLayout
+			->AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+			->AddBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+			->Create();
+
+
+		m_pUboDescriptorSet = std::make_unique<DescriptorSet>(m_Device, *m_pUboDescriptorSetLayout, *m_pDescriptorPool, m_FramesInFlight);
+		m_pUboDescriptorSet
+			->AddBufferWrite(0, m_pUniformBuffer->GetDescriptorBufferInfos())
+			->AddBufferWrite(1, m_pPointLightingStorageBuffer->GetDescriptorBufferInfos())
+			->UpdateAll();
 	}
 
+	// SAMPLERS
+	{
+		m_pSamplersDescriptorSetLayout = std::make_unique<DescriptorSetLayout>(m_Device);
+		m_pSamplersDescriptorSetLayout
+			->AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+			->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+			->AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+			->AddBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+			->Create();
+
+		m_pSamplersDescriptorSet = std::make_unique<DescriptorSet>(m_Device, *m_pSamplersDescriptorSetLayout, *m_pDescriptorPool, m_FramesInFlight);
+
+		for (int i = 0; i < m_pSamplersDescriptorSet->GetDescriptorSetCount(); ++i)
+		{
+			m_pSamplersDescriptorSet
+				->AddImageWrite(0, m_GeometryPass.GetAlbedoBuffer(i).GetImageInfo(), i) // albedo
+				->AddImageWrite(1, m_GeometryPass.GetNormalBuffer(i).GetImageInfo(), i) // normal
+				->AddImageWrite(2, m_GeometryPass.GetSpecularBuffer(i).GetImageInfo(), i) // specular
+				->AddImageWrite(3, m_GeometryPass.GetWorldBuffer(i).GetImageInfo(), i) // world
+				->UpdateByIdx(i);
+		}
+	}
+
+	// HDRI 
+	{
+		m_pHDRISamplersDescriptorSetLayout = std::make_unique<DescriptorSetLayout>(m_Device);
+		m_pHDRISamplersDescriptorSetLayout
+			->AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+			->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+			->Create();
+
+
+		VkDescriptorImageInfo cubemapInfo{};
+		cubemapInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		cubemapInfo.imageView = m_pSkyBoxImage->GetCubeMapImageView();
+		cubemapInfo.sampler = m_pSkyBoxImage->GetCubeMapSampler(); 
+
+		VkDescriptorImageInfo irradianceInfo{};
+		irradianceInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		irradianceInfo.imageView = m_pSkyBoxImage->GetIrradianceMapImageView();
+		irradianceInfo.sampler = m_pSkyBoxImage->GetIrradianceMapSampler(); 
+
+		m_pHDRISamplersDescriptorSet = std::make_unique<DescriptorSet>(m_Device, *m_pHDRISamplersDescriptorSetLayout, *m_pDescriptorPool, m_FramesInFlight);
+		for (int i = 0; i < m_pHDRISamplersDescriptorSet->GetDescriptorSetCount(); ++i)
+		{
+			m_pHDRISamplersDescriptorSet
+				->AddImageWrite(0, cubemapInfo, i) // skybox 
+				->AddImageWrite(1, irradianceInfo, i) // irradiance 
+				->UpdateByIdx(i);
+		}
+	}
 }
 
 void cat::LightingPass::CreatePipeline()
@@ -217,7 +243,11 @@ void cat::LightingPass::CreatePipeline()
 	pipelineInfo.vertexAttributeDescriptions = {};
 	pipelineInfo.vertexBindingDescriptions = {};
 
-	pipelineInfo.CreatePipelineLayout(m_Device, { m_pUboDescriptorSetLayout->GetDescriptorSetLayout(), m_pSamplersDescriptorSetLayout->GetDescriptorSetLayout()});
+	pipelineInfo.CreatePipelineLayout(m_Device, { 
+		m_pUboDescriptorSetLayout->GetDescriptorSetLayout(),
+		m_pSamplersDescriptorSetLayout->GetDescriptorSetLayout(),
+		m_pHDRISamplersDescriptorSetLayout->GetDescriptorSetLayout()
+	});
 
 	m_pPipeline = new Pipeline(
 		m_Device,
@@ -228,7 +258,7 @@ void cat::LightingPass::CreatePipeline()
 }
 
 
-void cat::LightingPass::Resize(VkExtent2D size)
+void cat::LightingPass::Resize(VkExtent2D size, const GeometryPass& geometryPass)
 {
 	m_Extent = size;
 
@@ -237,7 +267,7 @@ void cat::LightingPass::Resize(VkExtent2D size)
 	m_pLitImages.clear();
 	m_pLitImages.resize(m_FramesInFlight);
 
-	for (uint32_t i = 0 ; i < m_FramesInFlight; ++i)
+	for (uint32_t i = 0; i < m_FramesInFlight; ++i)
 	{
 		m_pLitImages[i] = std::make_unique<Image>(
 			m_Device,
@@ -247,5 +277,18 @@ void cat::LightingPass::Resize(VkExtent2D size)
 			VMA_MEMORY_USAGE_AUTO
 		);
 		DebugLabel::NameImage(m_pLitImages[i]->GetImage(), std::string("Lit buffer <3.") + std::to_string(i));
-	}	
+	}
+
+	for (size_t i{ 0 }; i < m_FramesInFlight; i++)
+	{
+		VkDescriptorImageInfo imageInfo = geometryPass.GetAlbedoBuffer(i).GetImageInfo();
+
+		m_pSamplersDescriptorSet->ClearDescriptorWrites();
+		m_pSamplersDescriptorSet
+			->AddImageWrite(0, geometryPass.GetAlbedoBuffer(i).GetImageInfo(), i) // albedo
+			->AddImageWrite(1, geometryPass.GetNormalBuffer(i).GetImageInfo(), i) // normal
+			->AddImageWrite(2, geometryPass.GetSpecularBuffer(i).GetImageInfo(), i) // specular
+			->AddImageWrite(3, geometryPass.GetWorldBuffer(i).GetImageInfo(), i) // world
+			->UpdateByIdx(i);
+	}
 }

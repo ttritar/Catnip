@@ -34,6 +34,8 @@ layout(set = 1, binding = 1) uniform sampler2D normalSampler;
 layout(set = 1, binding = 2) uniform sampler2D specularSampler;
 layout(set = 1, binding = 3) uniform sampler2D worldSampler;
 
+layout(set = 2, binding = 0) uniform samplerCube environmentMap;
+layout(set = 2, binding = 1) uniform samplerCube irradianceMap;
 
 // CONSTANTS
 const float MIN_ROUGHNESS = 0.045;
@@ -52,6 +54,11 @@ void main()
 
     vec3 worldPosSample = texture(worldSampler, fragUV).xyz;
     
+    
+    vec3 N = normalize(normalSample);   // ye sorry im recalculatoin
+    vec3 V = normalize(ubo.cameraPos - worldPosSample);
+    vec3 R = reflect(-V, N);
+    vec3 F0 = mix(DIELECTRIC_F0, albedoSample, metallic);
 
     vec3 litColor = vec3(0.0);
 
@@ -76,6 +83,26 @@ void main()
                 pl.position.xyz, pl.color.rgb, pl.intensity * attenuation, ubo.cameraPos );
         }
     }
+
+
+    // 3. Environment Lighting
+
+    // Sample ambient diffuse from irradiance map
+    vec3 irradiance = texture(irradianceMap, N).rgb;
+    vec3 kS = F_Schlick(F0, max(dot(N, V), 0.0)); // Fresnel specular reflectance
+    vec3 kD = (1.0 - kS) * (1.0 - metallic);       // Only non-metallic surfaces have diffuse
+    
+    vec3 diffuseIBL = irradiance * albedoSample;
+
+    // Sample specular reflection from environment map (perfect reflection direction)
+    vec3 prefilteredColor = textureLod(environmentMap, R, roughness * 4.0).rgb; // rougher = blurrier
+    vec3 specularIBL = prefilteredColor * kS;
+
+    // Combine IBL contribution
+    vec3 ambient = (kD * diffuseIBL + specularIBL);
+
+    // Final color add
+    litColor += ambient;
 
     outLit = vec4(litColor, 1.0);
 

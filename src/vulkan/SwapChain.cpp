@@ -54,6 +54,7 @@ namespace cat
         VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
         VkImage& image, VkDeviceMemory& imageMemory) const
     {
+        throw std::runtime_error("PLS DONT CALL PLSPLSPLSPLSPLS T-T");
         //STAGING BUFFER
         VkImageCreateInfo imageInfo{};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -163,12 +164,13 @@ namespace cat
 		std::vector<VkImage> swapChainImages(m_ImageCount);
         vkGetSwapchainImagesKHR(m_Device.GetDevice(), m_SwapChain, &m_ImageCount, swapChainImages.data());
 
+        m_SwapChainExtent = extent;
         m_pSwapChainImages.clear();
 		m_pSwapChainImages.resize(m_ImageCount);
 
         for (int i{}; i < m_ImageCount;i++)
         {
-            auto myImg = new Image(
+            auto myImg = std::make_unique< Image>(
                 m_Device,
                 m_SwapChainExtent.width,
                 m_SwapChainExtent.height,
@@ -181,16 +183,10 @@ namespace cat
         }
 
         m_SwapChainImageFormat = surfaceFormat.format;
-        m_SwapChainExtent = extent;
     }
 
     void SwapChain::CleanupSwapChain()
     {
-		for (size_t i = 0; i < m_pSwapChainImages.size(); i++)
-		{
-			delete m_pSwapChainImages[i];
-			m_pSwapChainImages[i] = nullptr;
-		}
 		m_pSwapChainImages.clear();
 
 		for (size_t i = 0; i < m_pDepthImages.size(); i++)

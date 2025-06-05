@@ -15,7 +15,8 @@ namespace cat
 
 		// CTOR & DTOR
 		//----------------
-		LightingPass(Device& device, VkExtent2D extent, uint32_t framesInFlight,const GeometryPass& geometryPass);
+		LightingPass(Device& device, VkExtent2D extent, uint32_t framesInFlight, const GeometryPass& geometryPass,
+		 	HDRImage* pSkyBoxImage);
 		~LightingPass();
 
 		LightingPass(const LightingPass&) = delete;
@@ -27,7 +28,7 @@ namespace cat
 		//-----------------
 		void Record(VkCommandBuffer commandBuffer, uint32_t imageIndex,
 		            Camera camera, Scene& scene) const;
-		void Resize(VkExtent2D size);
+		void Resize(VkExtent2D size, const GeometryPass& geometryPass);
 
 		// Getters & Setters
 		const std::vector<std::unique_ptr<Image>>& GetLitImages() const { return m_pLitImages; }
@@ -61,19 +62,21 @@ namespace cat
 		std::unique_ptr<UniformBuffer<LightingUbo>> m_pUniformBuffer;
 		std::unique_ptr<StorageBuffer<Scene::PointLight, MAX_POINT_LIGHTS>> m_pPointLightingStorageBuffer;
 
-		DescriptorPool* m_pDescriptorPool;
-		DescriptorSetLayout* m_pUboDescriptorSetLayout;
-		DescriptorSetLayout* m_pSamplersDescriptorSetLayout;
+		std::unique_ptr<DescriptorPool> m_pDescriptorPool;
+		std::unique_ptr<DescriptorSetLayout> m_pUboDescriptorSetLayout;
+		std::unique_ptr<DescriptorSetLayout> m_pSamplersDescriptorSetLayout;
+		std::unique_ptr<DescriptorSetLayout> m_pHDRISamplersDescriptorSetLayout;
 
-		DescriptorSet* m_pUboDescriptorSet;
-		DescriptorSet* m_pSamplersDescriptorSet;
+		std::unique_ptr<DescriptorSet> m_pUboDescriptorSet;
+		std::unique_ptr<DescriptorSet> m_pSamplersDescriptorSet;
+		std::unique_ptr<DescriptorSet> m_pHDRISamplersDescriptorSet;
 
 		std::string m_VertPath = "shaders/triangle.vert.spv";
 		std::string m_FragPath = "shaders/lighting.frag.spv";
 		Pipeline* m_pPipeline;
 
 		std::vector<std::unique_ptr<Image>> m_pLitImages;
-		std::unique_ptr<Image> m_pIrradianceMap;
+		std::unique_ptr<HDRImage> m_pSkyBoxImage;
 
 	};
 }

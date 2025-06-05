@@ -54,7 +54,7 @@ namespace cat
 
 		CreateTextureSampler(filter, VK_SAMPLER_ADDRESS_MODE_REPEAT);
 
-		DebugLabel::NameImage(m_Image, filename);
+		DebugLabel::NameImage(m_Image,"TEXTURE: " + filename);
 	}
 
 	Image::Image(Device& device, uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage, VkImage existingImage)
@@ -218,7 +218,7 @@ namespace cat
 
 		if (!(properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) 
 		{
-			throw std::runtime_error("Texture image format does not support linear blitting!");
+			throw std::runtime_error("Format does not support linear blitting!");
 		}
 
 		VkCommandBuffer commandBuffer = m_Device.BeginSingleTimeCommands();
@@ -228,7 +228,7 @@ namespace cat
 
 		for (uint32_t i = 1; i < m_MipLevels; i++) 
 		{
-			// Transition previous mip level to SRC_OPTIMAL
+			// transition previous
 			VkImageMemoryBarrier barrier{};
 			barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 			barrier.image = m_Image;
@@ -249,7 +249,7 @@ namespace cat
 				VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
 				0, 0, nullptr, 0, nullptr, 1, &barrier);
 
-			// Transition next mip level to DST_OPTIMAL
+			// transition next
 			barrier.subresourceRange.baseMipLevel = i;
 			barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 			barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -260,7 +260,7 @@ namespace cat
 				VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
 				0, 0, nullptr, 0, nullptr, 1, &barrier);
 
-			// Blit
+			// blitting
 			VkImageBlit blit{};
 			blit.srcOffsets[0] = { 0, 0, 0 };
 			blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
@@ -289,7 +289,7 @@ namespace cat
 				1, &blit,
 				VK_FILTER_LINEAR);
 
-			// Transition previous level to SHADER_READ_ONLY_OPTIMAL
+			// transition previous
 			barrier.subresourceRange.baseMipLevel = i - 1;
 			barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 			barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -303,8 +303,10 @@ namespace cat
 			mipWidth = max(mipWidth / 2, 1);
 			mipHeight = max(mipHeight / 2, 1);
 		}
-		//
-		// // Transition last mip level to SHADER_READ_ONLY_OPTIMAL
+		
+			
+		
+		// transition last mip level
 		VkImageMemoryBarrier lastBarrier{};
 		lastBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 		lastBarrier.image = m_Image;
@@ -325,7 +327,6 @@ namespace cat
 			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
 			0, 0, nullptr, 0, nullptr, 1, &lastBarrier);
 
-		// m_device.TransitionImageLayout(m_image, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_mipLevels);
 		m_Device.EndSingleTimeCommands(commandBuffer);
 	}
 }

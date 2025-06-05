@@ -21,6 +21,7 @@ namespace cat
 			float farPlane = 1500.0f;
 
 			float exposure = 1.0f;
+			float gamma = 2.2f; 
 		};
 
 
@@ -61,6 +62,7 @@ namespace cat
 		}
 
 		float GetExposure() const { return m_Specs.exposure; }
+		float GetGamma() const { return m_Specs.gamma; }
 
 		void SetSpeed(float speed) { m_Speed = speed; }
 		void SetMouseSensitivity(float sensitivity) { m_MouseSensitivity = sensitivity; }
@@ -72,6 +74,7 @@ namespace cat
 		void HandleMouseInput();
 		void HandleMoveInput(float deltaTime, GLFWwindow* window);
 		void HandleSpeedInput(float deltaTime, GLFWwindow* window);
+		void HandleToneMappingControlInput(float deltaTime, GLFWwindow* window);
 		void HandleRotationInput(bool lmb, bool rmb, glm::vec2 d);
 
 
