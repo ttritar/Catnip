@@ -51,17 +51,11 @@ namespace cat
 		void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t frameIdx, bool isDepthPass = 0) const;
 
 
-		void CreateSkyBox(const std::string path)
-		{
-			m_pSkyBoxImage = std::make_unique<HDRImage>(m_Device, path);
-		}
-
 		// Getters & Setters
 		const std::vector<Model*>& GetModels() const { return m_pModels; }
 		const DirectionalLight& GetDirectionalLight() const { return m_DirectionalLight; }
 		const std::vector<PointLight>& GetPointLights() const { return m_PointLights; }
-		HDRImage* GetSkyBoxImage() const { return m_pSkyBoxImage.get(); }
-
+		
 	private:
 		// Private members
 		//--------------------
@@ -72,7 +66,5 @@ namespace cat
 		std::vector<Model*> m_pModels;
 		DirectionalLight m_DirectionalLight{};
 		std::vector<PointLight> m_PointLights;
-
-		std::unique_ptr<HDRImage> m_pSkyBoxImage;
 	};
 }

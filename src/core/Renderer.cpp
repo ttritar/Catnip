@@ -20,6 +20,7 @@ namespace cat
 		//  CLEANUP
 		//-----------
 		delete m_pSwapChain;
+		delete m_pHDRImage;
 		for (auto& scene : m_pScenes)
 		{
 			delete scene;
@@ -62,16 +63,15 @@ namespace cat
 		m_pScenes[0]->AddModel("resources/Models/FlightHelmet/FlightHelmet.gltf");
 		m_pScenes[0]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.f, -1.f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 5.f });
 		m_pScenes[0]->AddPointLight(Scene::PointLight{ .position = { 0.f, 1.f, 0.f ,0.f}, .color = { 1.f, 0.f, 0.f ,0.f}, .intensity = 5.f, .radius = 100.f });
-		m_pScenes[0]->CreateSkyBox("resources/HDRIs/CircusArena.hdr");
 
 		m_pScenes[1] = new Scene(m_Device, *m_pSwapChain, m_pUniformBuffer);
 		m_pScenes[1]->AddModel("resources/Models/Sponza/Sponza.gltf");
-		m_pScenes[1]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.f, -1.f, 0.f }, .color = { 0.f, 0.f, 0.f }, .intensity = 5.f });
+		m_pScenes[1]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.f, -1.f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 5.f });
 		m_pScenes[1]->AddPointLight(Scene::PointLight{ .position = { 0.f, 1.f, 0.f ,0.f}, .color = { 1.f, 0.f, 0.f ,0.f}, .intensity = 5.f , .radius = 100.f});
-		m_pScenes[1]->CreateSkyBox("resources/HDRIs/CircusArena.hdr");
 
 		m_pCurrentScene = m_pScenes[0]; // set default scene
 
+		m_pHDRImage = new HDRImage(m_Device, "resources/HDRIs/CircusArena.hdr");
 
 		m_pCommandBuffer = new CommandBuffer(m_Device);
 
@@ -82,7 +82,7 @@ namespace cat
 		m_pLightingPass = std::make_unique<LightingPass>(
 			m_Device, m_pSwapChain->GetSwapChainExtent(), cat::MAX_FRAMES_IN_FLIGHT, 
 			*m_pGeometryPass, 
-			m_pCurrentScene->GetSkyBoxImage());
+			m_pHDRImage);
 		m_pBlitPass = std::make_unique<BlitPass>(m_Device, *m_pSwapChain, cat::MAX_FRAMES_IN_FLIGHT, *m_pLightingPass);
 	}
 

@@ -31,11 +31,12 @@ cat::HDRImage::HDRImage(Device& device, const std::string& filename)
 	}
 
 	int texWidth, texHeight, texChannels;
-	float* pixels = stbi_loadf(filename.c_str(), &texWidth, &texHeight, &texChannels, 4);
+	float* pixels = stbi_loadf(filename.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 	if (!pixels) {
 		throw std::runtime_error("Failed to load HDR image: " + filename + " -> (" + stbi_failure_reason() + ")");
 	}
 	m_EquirectMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+	m_EquirectMipLevels = 1;
 	m_EquirectExtent = VkExtent2D{ static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight) };
 
 
@@ -51,15 +52,16 @@ cat::HDRImage::HDRImage(Device& device, const std::string& filename)
 	// CREATING
 	//----------
 	CreateEquirectImage(texWidth, texHeight, m_EquirectMipLevels, m_EquirectFormat, 
-		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT , VMA_MEMORY_USAGE_GPU_ONLY);
 	CreateEquirectTextureImageView();
 
 	m_Device.TransitionImageLayout(m_EquirectImage, m_EquirectFormat,m_EquirectImageLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,m_EquirectMipLevels);
 	device.CopyBufferToImage(stagingBuffer.GetBuffer(), m_EquirectImage, texWidth, texHeight);
-	m_Device.TransitionImageLayout(m_EquirectImage, m_EquirectFormat, m_EquirectImageLayout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_EquirectMipLevels);
-
+	
 	CreateEquirectTextureSampler(VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
 	DebugLabel::NameImage(m_EquirectImage,"HDRI: " + filename);
+
+	m_Device.TransitionImageLayout(m_EquirectImage, m_EquirectFormat, m_EquirectImageLayout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_EquirectMipLevels);
 
 	CreateCubeMap();
 	CreateIrradianceMap();
@@ -67,10 +69,45 @@ cat::HDRImage::HDRImage(Device& device, const std::string& filename)
 
 cat::HDRImage::~HDRImage()
 {
+	// Destroy samplers
+	if (m_EquirectSampler != VK_NULL_HANDLE) {
+		vkDestroySampler(m_Device.GetDevice(), m_EquirectSampler, nullptr);
+	}
+	if (m_CubeMapSampler != VK_NULL_HANDLE) {
+		vkDestroySampler(m_Device.GetDevice(), m_CubeMapSampler, nullptr);
+	}
+	if (m_IrradianceMapSampler != VK_NULL_HANDLE) {
+		vkDestroySampler(m_Device.GetDevice(), m_IrradianceMapSampler, nullptr);
+	}
+
+	// Destroy image views
+	if (m_EquirectImageView != VK_NULL_HANDLE) {
+		vkDestroyImageView(m_Device.GetDevice(), m_EquirectImageView, nullptr);
+	}
+	if (m_CubeMapImageView != VK_NULL_HANDLE) {
+		vkDestroyImageView(m_Device.GetDevice(), m_CubeMapImageView, nullptr);
+	}
+	if (m_IrradianceMapImageView != VK_NULL_HANDLE) {
+		vkDestroyImageView(m_Device.GetDevice(), m_IrradianceMapImageView, nullptr);
+	}
+
+	// Destroy cube map face views
+	for (auto& faceViews : m_CubeMapFaceViews) {
+		for (auto& view : faceViews) {
+			vkDestroyImageView(m_Device.GetDevice(), view, nullptr);
+		}
+	}
+
+	// Destroy irradiance map face views
+	for (auto& view : m_IrradianceMapFaceViews) {
+		if (view != VK_NULL_HANDLE) {
+			vkDestroyImageView(m_Device.GetDevice(), view, nullptr);
+		}
+	}
+
+	// Destroy images and allocations
 	vmaDestroyImage(m_Device.GetAllocator(), m_EquirectImage, m_EquirectAllocation);
 	vmaDestroyImage(m_Device.GetAllocator(), m_CubeMapImage, m_CubeMapAllocation);
-	vkDestroyImageView(m_Device.GetDevice(), m_CubeMapImageView, nullptr);
-	vkDestroyImageView(m_Device.GetDevice(), m_IrradianceMapImageView, nullptr);
 	vmaDestroyImage(m_Device.GetAllocator(), m_IrradianceMapImage, m_IrradianceMapAllocation);
 }
 
@@ -93,7 +130,7 @@ void cat::HDRImage::CreateEquirectImage(uint32_t width, uint32_t height, uint32_
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	imageInfo.usage = usage;
 	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;\
+	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	imageInfo.arrayLayers = 1;
 
 	VmaAllocationCreateInfo allocInfo{};
@@ -168,6 +205,8 @@ void cat::HDRImage::GenerateMipmaps(VkImage image, VkFormat format, uint32_t wid
 		VkImageMemoryBarrier initialBarrier{};
 		initialBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 		initialBarrier.image = image;
+		initialBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		initialBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		initialBarrier.subresourceRange = {
 			aspect,
 			0, mipLevels,  
@@ -320,6 +359,7 @@ VkImageAspectFlags cat::HDRImage::GetImageAspect(VkFormat format)
 void cat::HDRImage::CreateCubeMap()
 {
 	uint32_t cubeMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(m_CubeMapExtent.width, m_CubeMapExtent.height)))) + 1;
+	cubeMipLevels = 1;
 
 	// 1. Image
 	VkImageCreateInfo imageInfo{};
@@ -357,7 +397,7 @@ void cat::HDRImage::CreateCubeMap()
 	viewInfo.format = m_EquirectFormat;
 	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	viewInfo.subresourceRange.baseMipLevel = 0;
-	viewInfo.subresourceRange.levelCount = cubeMipLevels;
+	viewInfo.subresourceRange.levelCount = 1;
 	viewInfo.subresourceRange.baseArrayLayer = 0;
 	viewInfo.subresourceRange.layerCount = m_FACE_COUNT;
 
@@ -376,8 +416,8 @@ void cat::HDRImage::CreateCubeMap()
 		faceViewInfo.format = m_EquirectFormat;
 		faceViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		faceViewInfo.subresourceRange.baseMipLevel = 0;
-		faceViewInfo.subresourceRange.levelCount = cubeMipLevels;
-		faceViewInfo.subresourceRange.baseArrayLayer = 0;
+		faceViewInfo.subresourceRange.levelCount = 1;
+		faceViewInfo.subresourceRange.baseArrayLayer = face;
 		faceViewInfo.subresourceRange.layerCount = 1;
 
 		VkImageView view;
@@ -414,7 +454,7 @@ void cat::HDRImage::CreateCubeMap()
 	RenderToCubeMap(m_CubeMapExtent, cubeMipLevels, m_CubeVertPath, m_SkyFragPath, 
 		m_EquirectImage,m_EquirectImageView,
 		m_EquirectSampler, m_CubeMapImage, m_CubeMapFaceViews);
-	GenerateMipmaps(m_CubeMapImage, m_EquirectFormat, m_CubeMapExtent.width, m_CubeMapExtent.height, cubeMipLevels , m_FACE_COUNT);
+	//GenerateMipmaps(m_CubeMapImage, m_EquirectFormat, m_CubeMapExtent.width, m_CubeMapExtent.height, cubeMipLevels , m_FACE_COUNT);
 	DebugLabel::NameImage(m_CubeMapImage, "HDRI CubeMap: " + std::to_string(m_CubeMapExtent.width) + "x" + std::to_string(m_CubeMapExtent.height));
 }
 
@@ -424,8 +464,34 @@ void cat::HDRImage::RenderToCubeMap(const VkExtent2D& extent,uint32_t mipLevels,
 	VkImage& outputCubeMapImage, std::array<std::vector<VkImageView>, m_FACE_COUNT>& outputCubeMapImageViews)
 {
 	if (m_EquirectImageLayout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-		m_Device.TransitionImageLayout(inputImage, m_EquirectFormat, m_EquirectImageLayout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels);
+		m_Device.TransitionImageLayout(inputImage, m_EquirectFormat, 
+			m_EquirectImageLayout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_EquirectMipLevels);
+	VkCommandBuffer commandBuffer = m_Device.BeginSingleTimeCommands();
 
+	VkImageMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = outputCubeMapImage;
+	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = 1;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = m_FACE_COUNT;
+	barrier.srcAccessMask = 0;
+	barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+	vkCmdPipelineBarrier(
+		commandBuffer,
+		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+		0,
+		0, nullptr,
+		0, nullptr,
+		1, &barrier
+	);
 	// 1. Descriptor Set Layout
 	std::unique_ptr<DescriptorSetLayout> pDescriptorLayout = std::make_unique<DescriptorSetLayout>(m_Device);
 	pDescriptorLayout
@@ -455,6 +521,7 @@ void cat::HDRImage::RenderToCubeMap(const VkExtent2D& extent,uint32_t mipLevels,
 	pipelineInfo.vertexBindingDescriptions = {};
 	pipelineInfo.vertexAttributeDescriptions = {};
 	pipelineInfo.pushConstantRanges = pushRange;
+	pipelineInfo.rasterizer.cullMode = VK_CULL_MODE_NONE;
 	pipelineInfo.CreatePipelineLayout(m_Device, { pDescriptorLayout->GetDescriptorSetLayout() });
 	std::unique_ptr<Pipeline> pPipeline = std::make_unique<Pipeline>(
 		m_Device,
@@ -467,7 +534,6 @@ void cat::HDRImage::RenderToCubeMap(const VkExtent2D& extent,uint32_t mipLevels,
 	// 5. RENDER
 	//-----------------
 
-	VkCommandBuffer commandBuffer = m_Device.BeginSingleTimeCommands();
 	for (uint32_t face = 0; face < m_FACE_COUNT; ++face)
 	{
 		VkImageView imageView = outputCubeMapImageViews[face][0];
@@ -581,7 +647,7 @@ void cat::HDRImage::RenderToCubeMap(const VkExtent2D& extent,uint32_t mipLevels,
 void cat::HDRImage::CreateIrradianceMap()
 {
 	uint32_t irradianceMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(m_IrradianceMapExtent.width, m_IrradianceMapExtent.height)))) + 1;
-
+	irradianceMipLevels = 1;
 
 	// 1. Create image
 	{
@@ -596,7 +662,9 @@ void cat::HDRImage::CreateIrradianceMap()
 		imageInfo.format = m_EquirectFormat;
 		imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+		imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+		| VK_IMAGE_USAGE_SAMPLED_BIT
+		| VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
@@ -681,6 +749,11 @@ void cat::HDRImage::CreateIrradianceMap()
 		                m_CubeVertPath, m_IBLFragPath, m_CubeMapImage,
 		                m_CubeMapImageView, m_EquirectSampler, m_IrradianceMapImage, faceViews
 		);
+
+		//GenerateMipmaps(m_IrradianceMapImage, m_EquirectFormat,
+		//	m_IrradianceMapExtent.width, m_IrradianceMapExtent.height,
+		//	irradianceMipLevels, m_FACE_COUNT);
+
 		DebugLabel::NameImage(m_IrradianceMapImage, "HDRI Irradiance Map: " + std::to_string(m_IrradianceMapExtent.width) + "x" + std::to_string(m_IrradianceMapExtent.height));
 	}
 }

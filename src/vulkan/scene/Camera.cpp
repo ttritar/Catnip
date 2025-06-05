@@ -185,22 +185,22 @@ void cat::Camera::HandleToneMappingControlInput(float deltaTime, GLFWwindow* win
 {
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
 	{
-		m_Specs.exposure += 10.f * deltaTime;
+		m_Specs.exposure += 1.f * deltaTime;
 		m_IsSpecsDirty = true;
 	}
 	else if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
 	{
-		m_Specs.exposure -= 10.f * deltaTime;
+		m_Specs.exposure -= 1.f * deltaTime;
 		m_IsSpecsDirty = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
 	{
-		m_Specs.gamma += 10.f * deltaTime;
+		m_Specs.gamma += 1.f * deltaTime;
 		m_IsSpecsDirty = true;
 	}
 	else if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
 	{
-		m_Specs.gamma -= 10.f * deltaTime;
+		m_Specs.gamma -= 1.f * deltaTime;
 		m_IsSpecsDirty = true;
 	}
 }

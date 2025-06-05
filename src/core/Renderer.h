@@ -64,5 +64,6 @@ namespace cat
 		std::unique_ptr<LightingPass> m_pLightingPass;
 		std::unique_ptr<BlitPass> m_pBlitPass;
 
+		HDRImage* m_pHDRImage;
 	};
 }

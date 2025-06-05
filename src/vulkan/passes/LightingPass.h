@@ -76,7 +76,7 @@ namespace cat
 		Pipeline* m_pPipeline;
 
 		std::vector<std::unique_ptr<Image>> m_pLitImages;
-		std::unique_ptr<HDRImage> m_pSkyBoxImage;
+		HDRImage* m_pSkyBoxImage;
 
 	};
 }

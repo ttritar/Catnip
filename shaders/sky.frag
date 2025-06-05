@@ -5,12 +5,12 @@ layout(location = 0) out vec4 outFragColor;
 
 layout(set = 0, binding = 0) uniform sampler2D equirectangularSampler;
 
-const vec2 INV_ATAN = vec2(0.1591, 0.3183);
+const float PI = 3.14159265359;
 
 vec2 SampleSphericalMap(vec3 v) 
 {
     vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
-    uv *= INV_ATAN;
+    uv /= vec2(2.0 * PI, PI);
     uv += 0.5;
     return uv;
 }

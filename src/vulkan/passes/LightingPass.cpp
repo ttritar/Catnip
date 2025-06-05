@@ -65,6 +65,7 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 			});
 
 
+
 		// Render Attachments
 		//---------------------
 		VkClearValue clearValue {};
@@ -178,6 +179,7 @@ void cat::LightingPass::CreateDescriptors()
 			->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 			->AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 			->AddBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+			->AddBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 			->Create();
 
 		m_pSamplersDescriptorSet = std::make_unique<DescriptorSet>(m_Device, *m_pSamplersDescriptorSetLayout, *m_pDescriptorPool, m_FramesInFlight);
@@ -189,6 +191,7 @@ void cat::LightingPass::CreateDescriptors()
 				->AddImageWrite(1, m_GeometryPass.GetNormalBuffer(i).GetImageInfo(), i) // normal
 				->AddImageWrite(2, m_GeometryPass.GetSpecularBuffer(i).GetImageInfo(), i) // specular
 				->AddImageWrite(3, m_GeometryPass.GetWorldBuffer(i).GetImageInfo(), i) // world
+				->AddImageWrite(4, m_GeometryPass.GetDepthBuffer(i).GetImageInfo(), i) // depth
 				->UpdateByIdx(i);
 		}
 	}
