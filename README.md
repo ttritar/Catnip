@@ -26,6 +26,8 @@ For this project alot of sources different sources were used. But I'll list the 
 - [The Vulkan Documentation](https://docs.vulkan.org/spec/latest/index.html)
 - [https://vulkan-tutorial.com/](https://vulkan-tutorial.com/)
 - [https://learnopengl.com/](https://learnopengl.com/)
+- [https://vkguide.dev/](https://vkguide.dev/)
+- [https://github.com/blurrypiano/littleVulkanEngine/tree/main/src](https://github.com/blurrypiano/littleVulkanEngine/tree/main/src)
 - The slides and classes given by Matthieu Delaere in Graphics Programming 2.
 - The help and guidance from friends and classmates.
 - ...
