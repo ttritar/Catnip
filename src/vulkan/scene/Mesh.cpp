@@ -4,17 +4,17 @@
 #include <glm/gtx/hash.hpp>
 
 #include "Image.h"
-
-namespace std
-{
-    template<> struct hash<cat::Mesh::Vertex>
-	{
-        size_t operator()(cat::Mesh::Vertex const& vertex) const
-    	{
-            return ((hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^ (hash<glm::vec2>()(vertex.uv) << 1);
-        }
-    };
-}
+//
+//namespace std
+//{
+//    template<> struct hash<cat::Mesh::Vertex>
+//	{
+//        size_t operator()(cat::Mesh::Vertex const& vertex) const
+//    	{
+//            return ((hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^ (hash<glm::vec2>()(vertex.uv) << 1);
+//        }
+//    };
+//}
 
 namespace cat
 {

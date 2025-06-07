@@ -101,7 +101,7 @@ vec3 CalculatePBR_Point(vec3 albedo, vec3 normal, float metallic, float roughnes
     float LdotH = max(dot(L, H), 0.0001);
 
     // Radiance
-    vec3 radiance = lightColor * lightIntensity * attenuation;
+    vec3 radiance = lightColor * lightIntensity * PI/4 * attenuation ;
 
     // Reflectance at normal incidence
     vec3 F0 = mix(DIELECTRIC_F0, albedo, metallic);
