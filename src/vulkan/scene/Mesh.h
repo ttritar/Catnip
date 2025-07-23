@@ -128,7 +128,6 @@ namespace cat
 		//--------------------
         void CreateVertexBuffer();
 		void CreateIndexBuffer();
-		void LoadObj(const std::string& path);
 
 		// Private Datamembers
 		//--------------------

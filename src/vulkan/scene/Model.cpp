@@ -86,38 +86,33 @@ namespace cat
 		}
 		m_Directory = path.substr(0, path.find_last_of('/'));
 
-		ProcessNode(scene->mRootNode, scene);
+		ProcessNode(scene->mRootNode, scene, glm::mat4(1.0f));
 	}
 
-	void Model::ProcessNode(aiNode* node, const aiScene* scene)
+	void Model::ProcessNode(aiNode* node, const aiScene* scene, const glm::mat4& parentTransform)
 	{
+		glm::mat4 localTransform = ConvertMatrixToGLM(node->mTransformation);
+		glm::mat4 globalTransform = parentTransform * localTransform;
+
 		// for each mesh in the node
 		for (unsigned int i = 0; i < node->mNumMeshes; i++)
 		{
 			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-			ProcessMesh(mesh, scene);
+			ProcessMesh(mesh, scene, globalTransform);
 		}
 
 		// for each of its children
 		for (unsigned int i = 0; i < node->mNumChildren; i++)
 		{
-			ProcessNode(node->mChildren[i], scene);
+			ProcessNode(node->mChildren[i], scene, globalTransform);
 		}
 	}
 
-	void Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
+	void Model::ProcessMesh(aiMesh* mesh, const aiScene* scene, const glm::mat4& transform)
 	{
 		std::vector<Mesh::Vertex> vertices;
 		std::vector<uint32_t> indices;
 		Mesh::Material material;
-
-		// convert assimp matrix
-		glm::mat4 mat = {
-			scene->mRootNode->mTransformation.a1, scene->mRootNode->mTransformation.b1, scene->mRootNode->mTransformation.c1, scene->mRootNode->mTransformation.d1,
-			scene->mRootNode->mTransformation.a2, scene->mRootNode->mTransformation.b2, scene->mRootNode->mTransformation.c2, scene->mRootNode->mTransformation.d2,
-			scene->mRootNode->mTransformation.a3, scene->mRootNode->mTransformation.b3, scene->mRootNode->mTransformation.c3, scene->mRootNode->mTransformation.d3,
-			scene->mRootNode->mTransformation.a4, scene->mRootNode->mTransformation.b4, scene->mRootNode->mTransformation.c4, scene->mRootNode->mTransformation.d4
-		};
 
 
 		// process vertices
@@ -130,7 +125,7 @@ namespace cat
 			vector.x = mesh->mVertices[i].x ;
 			vector.y = mesh->mVertices[i].y;
 			vector.z = mesh->mVertices[i].z;
-			glm::vec4 transformedPos = mat * glm::vec4(vector, 1.0f);
+			glm::vec4 transformedPos = transform * glm::vec4(vector, 1.0f);
 			vertex.pos = glm::vec3(transformedPos.x, transformedPos.y, transformedPos.z);
 
 			// colors
@@ -234,5 +229,14 @@ namespace cat
 		});
 	}
 
+	glm::mat4 Model::ConvertMatrixToGLM(const aiMatrix4x4& mat) const
+	{
+		return glm::mat4(
+			mat.a1, mat.b1, mat.c1, mat.d1,
+			mat.a2, mat.b2, mat.c2, mat.d2,
+			mat.a3, mat.b3, mat.c3, mat.d3,
+			mat.a4, mat.b4, mat.c4, mat.d4
+		);
+	}
 
 }

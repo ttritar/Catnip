@@ -45,8 +45,9 @@ namespace cat
 		// Private methods
 		//--------------------
 		void LoadModel(const std::string& path);
-		void ProcessNode(aiNode* node, const aiScene* scene);
-		void ProcessMesh(aiMesh* mesh, const aiScene* scene);
+		void ProcessNode(::aiNode* node, const ::aiScene* scene, const glm::mat4& parentTransform);
+		void ProcessMesh(::aiMesh* mesh, const ::aiScene* scene, const glm::mat4& transform);
+		glm::mat4 ConvertMatrixToGLM(const aiMatrix4x4& mat) const;
 
 		// Private Datamembers
 		//--------------------
