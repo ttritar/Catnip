@@ -18,7 +18,7 @@ add_executable(GP2_VulkanTutorial
     src/vulkan/Pipeline.cpp
     src/vulkan/passes/GeometryPass.cpp  src/vulkan/passes/DepthPrepass.cpp src/vulkan/passes/LightingPass.cpp src/vulkan/passes/BlitPass.cpp
     src/vulkan/scene/Scene.cpp src/vulkan/scene/Model.cpp src/vulkan/scene/Mesh.cpp src/vulkan/scene/Image.cpp src/vulkan/scene/HDRImage.cpp src/vulkan/scene/Camera.cpp 
-    src/vulkan/utils/DebugLabel.cpp  "src/vulkan/passes/ForwardPass.cpp")
+    src/vulkan/utils/DebugLabel.cpp )
 
 
 

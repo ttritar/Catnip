@@ -72,10 +72,9 @@ const glm::mat4& cat::Camera::GetView()
 
 // Private Methods
 //-----------------
-void cat::Camera::UpdateVectors() const
+void cat::Camera::UpdateVectors()
 {
 	if (!m_IsPositionDirty) return;
-	m_IsPositionDirty = false;
 
 	// rotation
 	float pitch = glm::radians(m_TotalPitch);
@@ -91,7 +90,7 @@ void cat::Camera::UpdateVectors() const
 	m_Right = glm::normalize(glm::cross(m_Forward, glm::vec3(0, 1, 0)));
 	m_Up = glm::normalize(glm::cross(m_Right, m_Forward));
 
-	m_ViewMatrix = lookAtLH(m_Origin, m_Origin + m_Forward, m_Up);
+	GetView();
 }
 
 

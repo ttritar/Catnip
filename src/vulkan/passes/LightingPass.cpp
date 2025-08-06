@@ -30,8 +30,8 @@ cat::LightingPass::~LightingPass()
 
 void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, Camera camera, Scene& scene) const
 {
-	Image& litImage = *m_pLitImages[imageIndex];
 
+	Image& m_pLitImage = *m_pLitImages[imageIndex];
 	// BEGIN RECORDING
 	{
 		LightingUbo uboData = {
@@ -67,7 +67,7 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 			VK_ACCESS_SHADER_READ_BIT
 			});
 
-		litImage.TransitionImageLayout(commandBuffer,VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+		m_pLitImage.TransitionImageLayout(commandBuffer,VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			{
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 				VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -87,7 +87,7 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		colorAttachments.resize(1);
 
 		colorAttachments[0].sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-		colorAttachments[0].imageView = litImage.GetImageView();
+		colorAttachments[0].imageView = m_pLitImage.GetImageView();
 		colorAttachments[0].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		colorAttachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		colorAttachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -146,7 +146,7 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 				VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
 			});
 
-		litImage.TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		m_pLitImage.TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			Image::BarrierInfo{
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 			VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
@@ -258,16 +258,7 @@ void cat::LightingPass::CreatePipeline()
 	pipelineInfo.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
 
 	pipelineInfo.colorBlendAttachments.resize(pipelineInfo.colorAttachments.size(),
-		VkPipelineColorBlendAttachmentState{
-			.blendEnable = VK_TRUE,
-			.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
-			.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-			.colorBlendOp = VK_BLEND_OP_ADD,
-			.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-			.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
-			.alphaBlendOp = VK_BLEND_OP_ADD,
-			.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
-		}
+		VkPipelineColorBlendAttachmentState{ .blendEnable = VK_FALSE, .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT }
 	);
 	pipelineInfo.colorBlending.pAttachments = pipelineInfo.colorBlendAttachments.data();
 	pipelineInfo.colorBlending.attachmentCount = static_cast<uint32_t>(pipelineInfo.colorBlendAttachments.size());
