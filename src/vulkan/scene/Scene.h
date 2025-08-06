@@ -52,7 +52,27 @@ namespace cat
 
 
 		// Getters & Setters
-		const std::vector<Model*>& GetModels() const { return m_pModels; }
+		const std::vector<Model*> GetModels() const { return m_pModels; }
+		const std::vector<Mesh*> GetTransparentMeshes(const glm::vec3& cameraPos) const
+		{
+			std::vector<Mesh*> transparentMeshes;
+			
+			for (const auto& model : m_pModels) {
+				const auto& meshes = model->GetTransparentMeshes();
+				transparentMeshes.insert(transparentMeshes.end(), meshes.begin(), meshes.end());
+			}
+			
+			std::sort(transparentMeshes.begin(), transparentMeshes.end(),
+				[&](Mesh* a, Mesh* b)
+				{
+
+					float distA = glm::length(glm::vec3(a->GetTransform()[3]) - cameraPos);
+					float distB = glm::length(glm::vec3(b->GetTransform()[3]) - cameraPos);
+					return distA > distB; // back to front
+				});
+
+			return transparentMeshes;
+		}
 		const DirectionalLight& GetDirectionalLight() const { return m_DirectionalLight; }
 		const std::vector<PointLight>& GetPointLights() const { return m_PointLights; }
 		

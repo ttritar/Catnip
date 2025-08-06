@@ -108,6 +108,7 @@ namespace cat
 			m_Device, m_pSwapChain->GetSwapChainExtent(), cat::MAX_FRAMES_IN_FLIGHT, 
 			*m_pGeometryPass, 
 			m_pHDRImage, *m_pSwapChain);
+		m_pForwardPass = std::make_unique<ForwardPass>(m_Device, *m_pSwapChain, cat::MAX_FRAMES_IN_FLIGHT, *m_pLightingPass);
 		m_pBlitPass = std::make_unique<BlitPass>(m_Device, *m_pSwapChain, cat::MAX_FRAMES_IN_FLIGHT, *m_pLightingPass);
 	}
 
@@ -242,6 +243,13 @@ namespace cat
 			m_Camera,
 			*m_pCurrentScene
 		);
+
+		m_pForwardPass->Record(
+			commandBuffer,
+			m_CurrentFrame,
+			*m_pCurrentScene,
+			m_Camera
+		);
 		
 		m_pBlitPass->Record(
 			commandBuffer,
@@ -254,6 +262,7 @@ namespace cat
 	{
 		m_pGeometryPass->Resize(m_pSwapChain->GetSwapChainExtent());
 		m_pLightingPass->Resize(m_pSwapChain->GetSwapChainExtent(), *m_pGeometryPass);
+		m_pForwardPass->Resize(m_pSwapChain->GetSwapChainExtent());
 		m_pBlitPass->Resize(m_pSwapChain->GetSwapChainExtent(), *m_pLightingPass);
 	}
 

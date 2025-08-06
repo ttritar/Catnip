@@ -21,16 +21,15 @@ namespace cat
     // CTOR & DTOR
     //--------------------
 	Mesh::Mesh(Device& device, UniformBuffer<MatrixUbo>* ubo, DescriptorSetLayout* layout, DescriptorPool* pool,
-        const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const Material &material)
-		: m_Device{ device }, m_Vertices{ vertices }, m_Indices{ indices }
+        const RawMeshData& meshData )
+		: m_Device{ device }, m_Vertices{ meshData.vertices }, m_Indices{ meshData.indices }, m_Transform(meshData.transform)
     {
         CreateVertexBuffer();
         CreateIndexBuffer();
 
-
-		m_Images.push_back(new Image(device, material.albedoPath.c_str(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO)); // albedo texture
-		m_Images.push_back(new Image(device, material.normalPath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO)); // normal texture
-        m_Images.push_back(new Image(device, material.specularPath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO)); // normal texture
+		m_Images.push_back(new Image(device, meshData.material.albedoPath.c_str(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO)); // albedo texture
+        m_Images.push_back(new Image(device, meshData.material.normalPath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO)); // normal texture
+        m_Images.push_back(new Image(device, meshData.material.specularPath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO)); // normal texture
 
         m_pDescriptorSet = new DescriptorSet(device, *layout, *pool);
         m_pDescriptorSet

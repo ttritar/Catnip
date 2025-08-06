@@ -36,9 +36,18 @@ namespace cat
 		// Create meshes
 		for (auto& data : m_RawMeshes)
 		{
-			m_Meshes.push_back(new Mesh(m_Device, ubo,
-			                            m_pDescriptorSetLayout, m_pDescriptorPool,
-			                            data.vertices, data.indices, data.material));
+			if (data.opaque)
+			{
+				m_OpaqueMeshes.push_back(new Mesh(m_Device, ubo,
+											m_pDescriptorSetLayout, m_pDescriptorPool,
+											data));
+			}
+			else
+			{
+				m_TransparentMeshes.push_back(new Mesh(m_Device, ubo,
+						m_pDescriptorSetLayout, m_pDescriptorPool,
+						data));
+			}
 		}
 
 		m_RawMeshes.clear();
@@ -46,7 +55,13 @@ namespace cat
 
 	Model::~Model()
 	{
-		for (auto mesh : m_Meshes)
+		for (auto mesh : m_OpaqueMeshes)
+		{
+			delete mesh;
+			mesh = nullptr;
+		}
+
+		for (auto mesh : m_TransparentMeshes)
 		{
 			delete mesh;
 			mesh = nullptr;
@@ -63,7 +78,7 @@ namespace cat
 	//--------------------
 	void Model::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t frameIdx, bool isDepthPass) const
 	{
-		for (auto& mesh : m_Meshes)
+		for (auto& mesh : m_OpaqueMeshes)
 		{
 			mesh->Bind(commandBuffer, pipelineLayout, frameIdx, isDepthPass);
 			mesh->Draw(commandBuffer);
@@ -86,7 +101,7 @@ namespace cat
 		}
 		m_Directory = path.substr(0, path.find_last_of('/'));
 
-		ProcessNode(scene->mRootNode, scene, glm::mat4(1.0f));
+		ProcessNode(scene->mRootNode, scene, m_TransformMatrix);
 	}
 
 	void Model::ProcessNode(aiNode* node, const aiScene* scene, const glm::mat4& parentTransform)
@@ -113,6 +128,7 @@ namespace cat
 		std::vector<Mesh::Vertex> vertices;
 		std::vector<uint32_t> indices;
 		Mesh::Material material;
+		bool opaque = true;
 
 
 		// process vertices
@@ -219,14 +235,28 @@ namespace cat
 				material.specularPath = m_Directory + "/" + path.C_Str();
 			else
 				material.specularPath = "";
+
+			// transparency check
+			float opacity = 1.0f;
+			if (aiMaterial->GetTextureCount(aiTextureType_OPACITY) > 0 ||
+				( aiMaterial->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS && opacity < 1.0f ) ||
+				material.albedoPath.ends_with(".png"))
+			{
+				opaque = false;
+			}
 		}
 	
 
 		m_RawMeshes.emplace_back(Mesh::RawMeshData{
 			vertices,
 			indices,
-			material
+			material,
+			transform,
+			opaque
 		});
+
+		
+
 	}
 
 	glm::mat4 Model::ConvertMatrixToGLM(const aiMatrix4x4& mat) const

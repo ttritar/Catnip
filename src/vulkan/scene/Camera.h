@@ -57,7 +57,7 @@ namespace cat
 		const glm::vec3 GetUp() const { return m_Up; }
 		const glm::vec3 GetRight() const { return m_Right; }
 
-		glm::vec3 GetOrigin()
+		glm::vec3 GetOrigin() const
 		{
 			if (m_IsPositionDirty)
 			{
@@ -92,7 +92,7 @@ namespace cat
 		void HandleRotationInput(bool lmb, bool rmb, glm::vec2 d);
 
 
-		void UpdateVectors();
+		void UpdateVectors() const;
 
 		// Private Members
 		//-----------------
@@ -105,17 +105,17 @@ namespace cat
 
 		// position
 		glm::vec3 m_Origin;
-		bool m_IsPositionDirty{true};
+		mutable bool m_IsPositionDirty{true};
 
 
 		// planes
 		glm::mat4 m_ProjectionMatrix{ 1.f };
-		glm::mat4 m_ViewMatrix{ 1.f };
+		mutable glm::mat4 m_ViewMatrix{ 1.f };
 		glm::mat4 m_InverseViewMatrix{ 1.f };
 
-		glm::vec3 m_Forward{ glm::vec3{0.0f,0.0f,1.0f} };
-		glm::vec3 m_Up{ glm::vec3(0.0f, 1.0f, 0.0f) };
-		glm::vec3 m_Right{ glm::vec3{1.0f,0.0f,0.0f}};
+		mutable glm::vec3 m_Forward{ glm::vec3{0.0f,0.0f,1.0f} };
+		mutable glm::vec3 m_Up{ glm::vec3(0.0f, 1.0f, 0.0f) };
+		mutable glm::vec3 m_Right{ glm::vec3{1.0f,0.0f,0.0f}};
 
 		float m_TotalPitch{};
 		float m_TotalYaw{};

@@ -8,6 +8,7 @@
 #include "../vulkan/passes/DepthPrepass.h"
 #include "../vulkan/passes/GeometryPass.h"
 #include "../vulkan/passes/LightingPass.h"
+#include "../vulkan/passes/ForwardPass.h"
 #include "../vulkan/passes/BlitPass.h"
 
 namespace cat
@@ -65,6 +66,7 @@ namespace cat
 		std::unique_ptr<DepthPrepass> m_pDepthPrepass;
 		std::unique_ptr<GeometryPass> m_pGeometryPass;
 		std::unique_ptr<LightingPass> m_pLightingPass;
+		std::unique_ptr<ForwardPass> m_pForwardPass;
 		std::unique_ptr<BlitPass> m_pBlitPass;
 
 		HDRImage* m_pHDRImage;
