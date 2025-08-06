@@ -20,68 +20,67 @@ namespace cat
 {
     // CTOR & DTOR
     //--------------------
-	Mesh::Mesh(Device& device, UniformBuffer<MatrixUbo>* ubo, DescriptorSetLayout* layout, DescriptorPool* pool,
-        const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const Material &material)
-		: m_Device{ device }, m_Vertices{ vertices }, m_Indices{ indices }
+    Mesh::Mesh(Device& device, UniformBuffer<MatrixUbo>* ubo, DescriptorSetLayout* layout, DescriptorPool* pool,
+        const RawMeshData& meshData)
+        : m_Device{ device }, m_Vertices{ meshData.vertices }, m_Indices{ meshData.indices }, m_Transform(meshData.transform)
     {
         CreateVertexBuffer();
         CreateIndexBuffer();
 
-
-		m_Images.push_back(new Image(device, material.albedoPath.c_str(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO)); // albedo texture
-		m_Images.push_back(new Image(device, material.normalPath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO)); // normal texture
-        m_Images.push_back(new Image(device, material.specularPath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO)); // normal texture
+        m_Images.push_back(new Image(device, meshData.material.albedoPath.c_str(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO)); // albedo texture
+        m_Images.push_back(new Image(device, meshData.material.normalPath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO)); // normal texture
+        m_Images.push_back(new Image(device, meshData.material.specularPath.c_str(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_AUTO)); // normal texture
 
         m_pDescriptorSet = new DescriptorSet(device, *layout, *pool);
         m_pDescriptorSet
-			->AddImageWrite(0, m_Images[0]->GetImageInfo())  // albedo texture
-			->AddImageWrite(1, m_Images[1]->GetImageInfo())  // normal texture
-			->AddImageWrite(2, m_Images[2]->GetImageInfo())  // specular texture
-			->UpdateAll();
-    } 
+            ->AddImageWrite(0, m_Images[0]->GetImageInfo())  // albedo texture
+            ->AddImageWrite(1, m_Images[1]->GetImageInfo())  // normal texture
+            ->AddImageWrite(2, m_Images[2]->GetImageInfo())  // specular texture
+            ->UpdateAll();
+    }
 
     Mesh::~Mesh()
     {
-		delete m_pDescriptorSet;
-		m_pDescriptorSet = nullptr;
+        delete m_pDescriptorSet;
+        m_pDescriptorSet = nullptr;
 
-	    for (auto& image : m_Images)
-	    {
+        for (auto& image : m_Images)
+        {
             delete image;
-			image = nullptr;
-	    }
+            image = nullptr;
+        }
     }
 
 
     void Mesh::Draw(VkCommandBuffer commandBuffer)
-	{
-		if(m_HasIndexBuffer)
-			vkCmdDrawIndexed(commandBuffer, m_IndexCount, 1, 0, 0, 0);
-		else
-			vkCmdDraw(commandBuffer, m_VertexCount, 1, 0, 0);
+    {
+        if (m_HasIndexBuffer)
+            vkCmdDrawIndexed(commandBuffer, m_IndexCount, 1, 0, 0, 0);
+        else
+            vkCmdDraw(commandBuffer, m_VertexCount, 1, 0, 0);
     }
 
     void Mesh::Bind(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t idx, bool isDepthPass)
     {
         if (!isDepthPass)
-		{
-			vkCmdBindDescriptorSets(
-			   commandBuffer,
-			   VK_PIPELINE_BIND_POINT_GRAPHICS,
-			   pipelineLayout,
-			   1,
-			   1,
-			   m_pDescriptorSet->GetDescriptorSet(idx),
-			   0,
-			   nullptr
-		   );
-		}
+        {
+            vkCmdBindDescriptorSets(
+                commandBuffer,
+                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                pipelineLayout,
+                1,
+                1,
+                m_pDescriptorSet->GetDescriptorSet(idx),
+                0,
+                nullptr
+            );
+        }
 
         VkBuffer buffers[] = { m_VertexBuffer->GetBuffer() };
         VkDeviceSize offsets[] = { 0 };
 
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
-        if (m_HasIndexBuffer) 
+        if (m_HasIndexBuffer)
             vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
     }
@@ -96,7 +95,7 @@ namespace cat
 
         // Create staging buffer (CPU-accessible)
         auto stagingBuffer = std::make_unique<Buffer>(
-            m_Device, 
+            m_Device,
             Buffer::BufferInfo{ bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY }
         );
 
@@ -105,8 +104,8 @@ namespace cat
         stagingBuffer->Unmap();
 
         m_VertexBuffer = std::make_unique<Buffer>(
-            m_Device, 
-            Buffer::BufferInfo{bufferSize,VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,VMA_MEMORY_USAGE_GPU_ONLY }
+            m_Device,
+            Buffer::BufferInfo{ bufferSize,VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,VMA_MEMORY_USAGE_GPU_ONLY }
         );
 
         m_Device.CopyBuffer(stagingBuffer.get(), m_VertexBuffer.get(), bufferSize);
@@ -118,11 +117,11 @@ namespace cat
 
         if (!m_HasIndexBuffer) return;
 
-    	m_IndexBufferSize = sizeof(m_Indices[0]) * m_Indices.size();
+        m_IndexBufferSize = sizeof(m_Indices[0]) * m_Indices.size();
         m_IndexCount = m_Indices.size();
 
         std::unique_ptr<Buffer> stagingBuffer = std::make_unique<Buffer>(
-            m_Device, 
+            m_Device,
             Buffer::BufferInfo{ m_IndexBufferSize,VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY }
         );
 
@@ -130,9 +129,9 @@ namespace cat
         stagingBuffer->WriteToBuffer((void*)m_Indices.data());
 
         m_IndexBuffer = std::make_unique<Buffer>(
-            m_Device, 
+            m_Device,
             Buffer::BufferInfo{ m_IndexBufferSize,VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,VMA_MEMORY_USAGE_GPU_ONLY }
-            );
+        );
 
         m_Device.CopyBuffer(stagingBuffer.get(), m_IndexBuffer.get(), m_IndexBufferSize);
     }

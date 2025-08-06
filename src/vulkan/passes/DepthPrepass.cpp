@@ -81,7 +81,7 @@ void cat::DepthPrepass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		m_pDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex);
 
 		// draw the scene
-		scene.Draw(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, true);
+		scene.DrawOpaque(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, true);
 	}
 
 	// END RECORDING

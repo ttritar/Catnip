@@ -1,11 +1,14 @@
 #version 450
 
+
+
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inColor;
 layout(location = 2) in vec2 inUV;
 layout(location = 3) in vec3 inNormal;
 layout(location = 4) in vec3 inTangent;
 layout(location = 5) in vec3 inBitangent;
+layout(early_fragment_tests) in;
 
 layout(location = 0) out vec4 outAlbedo;
 layout(location = 1) out vec4 outNormal;
@@ -20,6 +23,7 @@ void main()
 {
     // albedo
     outAlbedo = texture(albedoSampler, inUV);
+    if (outAlbedo.a < 0.9) discard;
 
     // normal
     mat3 tangentSpace = mat3(

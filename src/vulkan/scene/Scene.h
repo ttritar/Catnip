@@ -49,10 +49,11 @@ namespace cat
 		void RemovePointLight(const PointLight& light);
 
 		void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t frameIdx, bool isDepthPass = 0) const;
+		void DrawOpaque(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t frameIdx, bool isDepthPass = 0) const;
 
 
 		// Getters & Setters
-		const std::vector<Model*>& GetModels() const { return m_pModels; }
+		const std::vector<Model*> GetModels() const { return m_pModels; }
 		const DirectionalLight& GetDirectionalLight() const { return m_DirectionalLight; }
 		const std::vector<PointLight>& GetPointLights() const { return m_PointLights; }
 		

@@ -7,10 +7,10 @@ namespace cat
 	// CTOR & DTOR
 	//--------------------
 
-	Model::Model(Device& device,UniformBuffer<MatrixUbo>* ubo, const std::string& path)
-		: m_Device{device},
-		  m_pUniformBuffer{ubo},
-		  m_Path(path), m_Directory{path}
+	Model::Model(Device& device, UniformBuffer<MatrixUbo>* ubo, const std::string& path)
+		: m_Device{ device },
+		m_pUniformBuffer{ ubo },
+		m_Path(path), m_Directory{ path }
 	{
 		LoadModel(path);
 
@@ -19,26 +19,35 @@ namespace cat
 		m_pDescriptorPool
 			->AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<uint32_t>(m_RawMeshes.size() * 2))
 			->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-			              static_cast<uint32_t>(m_RawMeshes.size() * 2) * m_Material.amount);
+				static_cast<uint32_t>(m_RawMeshes.size() * 2) * m_Material.amount);
 		m_pDescriptorPool = m_pDescriptorPool->Create(static_cast<uint32_t>(m_RawMeshes.size() * 2));
 
 		// Create descriptor set layout
 		m_pDescriptorSetLayout = new DescriptorSetLayout(device);
 		m_pDescriptorSetLayout = m_pDescriptorSetLayout
-		                         ->AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-		                                      VK_SHADER_STAGE_FRAGMENT_BIT) // albedo sampler
-		                         ->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-		                                      VK_SHADER_STAGE_FRAGMENT_BIT) // normal sampler
-		                         ->AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-		                                      VK_SHADER_STAGE_FRAGMENT_BIT) // specular sampler
-		                         ->Create();
+			->AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+				VK_SHADER_STAGE_FRAGMENT_BIT) // albedo sampler
+			->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+				VK_SHADER_STAGE_FRAGMENT_BIT) // normal sampler
+			->AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+				VK_SHADER_STAGE_FRAGMENT_BIT) // specular sampler
+			->Create();
 
 		// Create meshes
 		for (auto& data : m_RawMeshes)
 		{
-			m_Meshes.push_back(new Mesh(m_Device, ubo,
-			                            m_pDescriptorSetLayout, m_pDescriptorPool,
-			                            data.vertices, data.indices, data.material));
+			if (data.opaque)
+			{
+				m_OpaqueMeshes.push_back(new Mesh(m_Device, ubo,
+					m_pDescriptorSetLayout, m_pDescriptorPool,
+					data));
+			}
+			else
+			{
+				m_TransparentMeshes.push_back(new Mesh(m_Device, ubo,
+					m_pDescriptorSetLayout, m_pDescriptorPool,
+					data));
+			}
 		}
 
 		m_RawMeshes.clear();
@@ -46,7 +55,13 @@ namespace cat
 
 	Model::~Model()
 	{
-		for (auto mesh : m_Meshes)
+		for (auto mesh : m_OpaqueMeshes)
+		{
+			delete mesh;
+			mesh = nullptr;
+		}
+
+		for (auto mesh : m_TransparentMeshes)
 		{
 			delete mesh;
 			mesh = nullptr;
@@ -63,7 +78,13 @@ namespace cat
 	//--------------------
 	void Model::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t frameIdx, bool isDepthPass) const
 	{
-		for (auto& mesh : m_Meshes)
+		for (auto& mesh : m_OpaqueMeshes)
+		{
+			mesh->Bind(commandBuffer, pipelineLayout, frameIdx, isDepthPass);
+			mesh->Draw(commandBuffer);
+		}
+
+		for (auto& mesh : m_TransparentMeshes)
 		{
 			mesh->Bind(commandBuffer, pipelineLayout, frameIdx, isDepthPass);
 			mesh->Draw(commandBuffer);
@@ -81,12 +102,12 @@ namespace cat
 
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		{
-			std::cerr<<"ERROR::ASSIMP::" << std::string(importer.GetErrorString())<<std::endl;
+			std::cerr << "ERROR::ASSIMP::" << std::string(importer.GetErrorString()) << std::endl;
 			return;
 		}
 		m_Directory = path.substr(0, path.find_last_of('/'));
 
-		ProcessNode(scene->mRootNode, scene, glm::mat4(1.0f));
+		ProcessNode(scene->mRootNode, scene, m_TransformMatrix);
 	}
 
 	void Model::ProcessNode(aiNode* node, const aiScene* scene, const glm::mat4& parentTransform)
@@ -113,16 +134,17 @@ namespace cat
 		std::vector<Mesh::Vertex> vertices;
 		std::vector<uint32_t> indices;
 		Mesh::Material material;
+		bool opaque = true;
 
 
 		// process vertices
-		for (unsigned int i = 0; i< mesh->mNumVertices ; i++)
+		for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 		{
 			Mesh::Vertex vertex;
 			glm::vec3 vector;
 
 			// positions
-			vector.x = mesh->mVertices[i].x ;
+			vector.x = mesh->mVertices[i].x;
 			vector.y = mesh->mVertices[i].y;
 			vector.z = mesh->mVertices[i].z;
 			glm::vec4 transformedPos = transform * glm::vec4(vector, 1.0f);
@@ -169,7 +191,7 @@ namespace cat
 			{
 				// uv
 				glm::vec2 vec;
-				vec.x = mesh->mTextureCoords[0][i].x; 
+				vec.x = mesh->mTextureCoords[0][i].x;
 				vec.y = mesh->mTextureCoords[0][i].y;
 				vertex.uv = vec;
 
@@ -205,7 +227,7 @@ namespace cat
 			aiString path;
 
 			if (aiMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &path) == AI_SUCCESS)
-				material.albedoPath = m_Directory + "/" + path.C_Str() ;
+				material.albedoPath = m_Directory + "/" + path.C_Str();
 			else
 				material.albedoPath = "";
 
@@ -219,14 +241,28 @@ namespace cat
 				material.specularPath = m_Directory + "/" + path.C_Str();
 			else
 				material.specularPath = "";
+
+			// transparency check
+			float opacity = 1.0f;
+			if (aiMaterial->GetTextureCount(aiTextureType_OPACITY) > 0 ||
+				(aiMaterial->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS && opacity < 1.0f) ||
+				material.albedoPath.ends_with(".png"))
+			{
+				opaque = false;
+			}
 		}
-	
+
 
 		m_RawMeshes.emplace_back(Mesh::RawMeshData{
 			vertices,
 			indices,
-			material
-		});
+			material,
+			transform,
+			opaque
+			});
+
+
+
 	}
 
 	glm::mat4 Model::ConvertMatrixToGLM(const aiMatrix4x4& mat) const

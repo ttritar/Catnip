@@ -187,7 +187,7 @@ void cat::GeometryPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		m_pDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, 0);
 
 		// draw the scene
-		scene.Draw(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex);
+		scene.Draw(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, false);
 	}
 
 	// END RECORDING

@@ -31,14 +31,16 @@ namespace cat
 		void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, uint16_t frameIdx, bool isDepthPass) const;
 
 		// Getters & Setters
-		void SetTransform(const glm::mat4& transform){ m_TransformMatrix = transform; }
+		void SetTransform(const glm::mat4& transform) { m_TransformMatrix = transform; }
 		glm::mat4* GetTransform() { return &m_TransformMatrix; }
 		void SetTranslation(const glm::vec3& translation) { m_TransformMatrix = glm::translate(m_TransformMatrix, translation); }
 		void SetRotation(float angle, const glm::vec3& axis) { m_TransformMatrix = glm::rotate(m_TransformMatrix, angle, axis); }
 		void SetScale(const glm::vec3& scale) { m_TransformMatrix = glm::scale(m_TransformMatrix, scale); }
+		glm::vec3 GetWorldPosition() const { return glm::vec3(m_TransformMatrix[3]); }
 
 
-		const std::vector<Mesh*>& GetMeshes() const { return m_Meshes; }
+		const std::vector<Mesh*>& GetOpaqueMeshes() const { return m_OpaqueMeshes; }
+		const std::vector<Mesh*>& GetTransparentMeshes() const { return m_TransparentMeshes; }
 		std::string GetPath() const { return m_Path; }
 
 	private:
@@ -56,7 +58,8 @@ namespace cat
 		DescriptorSetLayout* m_pDescriptorSetLayout;
 		DescriptorPool* m_pDescriptorPool;
 
-		std::vector<Mesh*> m_Meshes;
+		std::vector<Mesh*> m_OpaqueMeshes;
+		std::vector<Mesh*> m_TransparentMeshes;
 		std::vector<Mesh::RawMeshData> m_RawMeshes;
 		std::vector<Mesh::Vertex> m_Vertices;
 		std::vector<uint32_t> m_Indices;
@@ -65,5 +68,7 @@ namespace cat
 		std::string m_Directory;
 
 		glm::mat4 m_TransformMatrix = glm::mat4(1);
+
+
 	};
 }
