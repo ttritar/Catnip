@@ -92,7 +92,7 @@ namespace cat
 		m_pScenes[2] = new Scene(m_Device, m_pUniformBuffer);
 		m_pScenes[2]->AddModel("resources/Models/ABeautifulGame/ABeautifulGame.gltf")
 			->SetScale(glm::vec3(10,10,10));
-		m_pScenes[2]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.f, -1.f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 100.f });
+		m_pScenes[2]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.5f, -1.f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 100.f });
 
 		m_pCurrentScene = m_pScenes[2]; // set default scene
 
@@ -103,13 +103,13 @@ namespace cat
 		// PASSES
 		//-----------------
 		m_pDepthPrepass = std::make_unique<DepthPrepass>(m_Device, cat::MAX_FRAMES_IN_FLIGHT);
-		m_pShadowPass = std::make_unique<ShadowPass>(m_Device, cat::MAX_FRAMES_IN_FLIGHT, *m_pSwapChain);
-		m_pGeometryPass = std::make_unique<GeometryPass>(m_Device, m_pSwapChain->GetSwapChainExtent(), cat::MAX_FRAMES_IN_FLIGHT);
+		m_pShadowPass = std::make_unique<ShadowPass>(m_Device, cat::MAX_FRAMES_IN_FLIGHT);
+		m_pGeometryPass = std::make_unique<GeometryPass>(m_Device, m_pSwapChain->GetSwapChainExtent(), cat::MAX_FRAMES_IN_FLIGHT);/*
 		m_pLightingPass = std::make_unique<LightingPass>(
 			m_Device, m_pSwapChain->GetSwapChainExtent(), cat::MAX_FRAMES_IN_FLIGHT, 
 			*m_pGeometryPass, 
-			m_pHDRImage, *m_pSwapChain);
-		m_pBlitPass = std::make_unique<BlitPass>(m_Device, *m_pSwapChain, cat::MAX_FRAMES_IN_FLIGHT, *m_pLightingPass);
+			m_pHDRImage, *m_pSwapChain, * m_pShadowPass);
+		m_pBlitPass = std::make_unique<BlitPass>(m_Device, *m_pSwapChain, cat::MAX_FRAMES_IN_FLIGHT, *m_pLightingPass);*/
 	}
 
 	void Renderer::DrawFrame() const
@@ -231,7 +231,6 @@ namespace cat
 		m_pShadowPass->Record(
 			commandBuffer,
 			m_CurrentFrame,
-			m_Camera,
 			*m_pCurrentScene
 		);
 
@@ -243,26 +242,26 @@ namespace cat
 			*m_pCurrentScene
 		);
 
-		
-		m_pLightingPass->Record(
-			commandBuffer,
-			m_CurrentFrame,
-			m_Camera,
-			*m_pCurrentScene
-		);
-		
+		//
+		//m_pLightingPass->Record(
+		//	commandBuffer,
+		//	m_CurrentFrame,
+		//	m_Camera,
+		//	*m_pCurrentScene
+		//);
+		/*
 		m_pBlitPass->Record(
 			commandBuffer,
 			m_CurrentFrame,
 			m_Camera
-		);
+		);*/
 	}
 
 	void Renderer::ResizePasses() const
 	{
-		m_pGeometryPass->Resize(m_pSwapChain->GetSwapChainExtent());
+		m_pGeometryPass->Resize(m_pSwapChain->GetSwapChainExtent());/*
 		m_pLightingPass->Resize(m_pSwapChain->GetSwapChainExtent(), *m_pGeometryPass);
-		m_pBlitPass->Resize(m_pSwapChain->GetSwapChainExtent(), *m_pLightingPass);
+		m_pBlitPass->Resize(m_pSwapChain->GetSwapChainExtent(), *m_pLightingPass);*/
 	}
 
 }

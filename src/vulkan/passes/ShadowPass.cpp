@@ -1,7 +1,7 @@
 #include "ShadowPass.h"
 #include "../utils/DebugLabel.h"
 
-cat::ShadowPass::ShadowPass(Device& device, uint32_t framesInFlight, SwapChain& swapchain)
+cat::ShadowPass::ShadowPass(Device& device, uint32_t framesInFlight)
 	: m_Device(device), m_FramesInFlight(framesInFlight)
 {
 	// IMAGES
@@ -9,7 +9,7 @@ cat::ShadowPass::ShadowPass(Device& device, uint32_t framesInFlight, SwapChain& 
 	for (int index{ 0 }; index < m_FramesInFlight; ++index) {
 		m_pDepthImages[index] = std::make_unique<Image>(
 			m_Device,
-			swapchain.GetSwapChainExtent().width, swapchain.GetSwapChainExtent().height,
+			2048, 2048,
 			VK_FORMAT_D32_SFLOAT,
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VMA_MEMORY_USAGE_AUTO
@@ -34,19 +34,19 @@ cat::ShadowPass::~ShadowPass()
 	delete m_pPipeline;
 }
 
-void cat::ShadowPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, Camera camera, Scene& scene) const
+void cat::ShadowPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, Scene& scene) const
 {
 	// BEGIN RECORDING
 	{
-		ShadowUbo uboData = { scene.GetDirectionalLight().viewMatrix, scene.GetDirectionalLight().projectionMatrix };
+		ShadowUbo uboData = {  scene.GetDirectionalLight().projectionMatrix,scene.GetDirectionalLight().viewMatrix };
 		m_pUniformBuffer->Update(imageIndex, uboData);
 
 		m_pDepthImages[imageIndex]->TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 			Image::BarrierInfo{
 				VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
 				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-	VK_ACCESS_NONE,
-	VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
+				VK_ACCESS_NONE,
+				VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
 			});
 
 		// Render Attachments
@@ -66,8 +66,8 @@ void cat::ShadowPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex,
 		renderInfo.colorAttachmentCount = 0;
 		renderInfo.pColorAttachments = nullptr;
 		renderInfo.pDepthAttachment = &depthAttachmentInfo;
+		DebugLabel::BeginCmdLabel(commandBuffer, "Shadow Pass", glm::vec4(0.7f, 0.1f, 0.5f, 1));
 		vkCmdBeginRenderingKHR(commandBuffer, &renderInfo);
-		DebugLabel::BeginCmdLabel(commandBuffer, "Shadow Pass", glm::vec4(0.3f, 0.5f, 1.f, 1));
 	}
 
 	// Drawing
@@ -80,6 +80,7 @@ void cat::ShadowPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex,
 		viewport.y = 0.0f;
 		viewport.width = static_cast<float>(m_pDepthImages[imageIndex]->GetExtent().width);
 		viewport.height = static_cast<float>(m_pDepthImages[imageIndex]->GetExtent().height);
+		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
@@ -101,10 +102,10 @@ void cat::ShadowPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex,
 		DebugLabel::EndCmdLabel(commandBuffer);
 		m_pDepthImages[imageIndex]->TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			Image::BarrierInfo{
-				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+				VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,   
+				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
 				VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-				VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
+				 VK_ACCESS_SHADER_READ_BIT
 			});
 	}
 }

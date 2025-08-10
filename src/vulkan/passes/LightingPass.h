@@ -5,6 +5,7 @@
 #include "../buffers/StorageBuffer.h"
 
 #include "GeometryPass.h"
+#include "ShadowPass.h"
 
 namespace cat
 {
@@ -16,7 +17,7 @@ namespace cat
 		// CTOR & DTOR
 		//----------------
 		LightingPass(Device& device, VkExtent2D extent, uint32_t framesInFlight, const GeometryPass& geometryPass,
-		 	HDRImage* pSkyBoxImage, SwapChain& swapchain);
+		             HDRImage* pSkyBoxImage, SwapChain& swapchain, const ShadowPass& shadowPass);
 		~LightingPass();
 
 		LightingPass(const LightingPass&) = delete;
@@ -46,6 +47,7 @@ namespace cat
 		SwapChain& m_SwapChain;
 		uint32_t m_FramesInFlight;
 		VkExtent2D m_Extent;
+		const ShadowPass& m_ShadowPass;
 		const GeometryPass& m_GeometryPass;
 
 
@@ -55,13 +57,16 @@ namespace cat
 			const float padding{};
 			glm::vec3 lightColor = { 1.f, 1.f, 1.f };
 			float lightIntensity;
+			glm::mat4 lightViewProj = glm::mat4(1.0f);
 
 			glm::vec4 cameraPosition;
 			glm::mat4 proj;
 			glm::mat4 view;
 			glm::vec2 viewportSize;
+			float padding1[2]{};
 
 			uint32_t pointLightCount;
+			float padding2[3]{};
 		};
 		std::unique_ptr<UniformBuffer<LightingUbo>> m_pUniformBuffer;
 		std::unique_ptr<StorageBuffer<Scene::PointLight, MAX_POINT_LIGHTS>> m_pPointLightingStorageBuffer;
@@ -70,10 +75,12 @@ namespace cat
 		std::unique_ptr<DescriptorSetLayout> m_pUboDescriptorSetLayout;
 		std::unique_ptr<DescriptorSetLayout> m_pSamplersDescriptorSetLayout;
 		std::unique_ptr<DescriptorSetLayout> m_pHDRISamplersDescriptorSetLayout;
+		std::unique_ptr<DescriptorSetLayout> m_pShadowDescriptorSetLayout;
 
 		std::unique_ptr<DescriptorSet> m_pUboDescriptorSet;
 		std::unique_ptr<DescriptorSet> m_pSamplersDescriptorSet;
 		std::unique_ptr<DescriptorSet> m_pHDRISamplersDescriptorSet;
+		std::unique_ptr<DescriptorSet> m_pShadowDescriptorSet;
 
 		std::string m_VertPath = "shaders/triangle.vert.spv";
 		std::string m_FragPath = "shaders/lighting.frag.spv";

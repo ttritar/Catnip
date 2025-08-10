@@ -11,7 +11,7 @@ namespace cat
 	public:
 		// CTOR & DTOR
 		//------------------------------
-		ShadowPass(Device& device, uint32_t framesInFlight, SwapChain& swapchain);
+		ShadowPass(Device& device, uint32_t framesInFlight);
 		~ShadowPass();
 
 		ShadowPass(const ShadowPass&) = delete;
@@ -22,7 +22,10 @@ namespace cat
 
 		// METHODS
 		//------------------------------
-		void Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, Camera camera, Scene& scene) const;
+		void Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, Scene& scene) const;
+
+		// Getters & Setters
+		const Image& GetDepthImages(int idx) const { return *m_pDepthImages[idx]; }
 
 	private:
 		// Private methods

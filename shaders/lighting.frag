@@ -7,6 +7,7 @@ layout(set = 0, binding = 0) uniform LightUBO {
     vec3 lightDir;     
     vec3 lightColor;  // luminance
     float lightIntensity; // lumen
+    mat4 lightViewProj;
 
     vec4 cameraPos;  
     mat4 proj;
@@ -40,6 +41,9 @@ layout(set = 1, binding = 4) uniform sampler2D depthSampler;
 
 layout(set = 2, binding = 0) uniform samplerCube environmentMap;
 layout(set = 2, binding = 1) uniform samplerCube irradianceMap;
+
+layout(set = 3, binding = 0) uniform sampler2DShadow shadowSampler; 
+
 
 // CONSTANTS
 const float MIN_ROUGHNESS = 0.045;
@@ -75,8 +79,8 @@ void main()
     vec3 litColor = vec3(0.0);
 
     // 1. Directional Light
-    litColor += CalculatePBR_Directional(albedoSample, normalSample, metallic, roughness, worldPosSample,
-    ubo.lightDir, ubo.lightColor, ubo.lightIntensity, ubo.cameraPos.xyz);
+    vec3 directLight = CalculatePBR_Directional(albedoSample, normalSample, metallic, roughness, worldPosSample,
+        ubo.lightDir, ubo.lightColor, ubo.lightIntensity, ubo.cameraPos.xyz);
 
     // 2. Point Lights
     uint pointLightCount = ubo.pointLightCount;
@@ -91,14 +95,18 @@ void main()
         {
             float attenuation = 1.0 / (distance * distance + 0.0001);
 
-            litColor += CalculatePBR_Point(albedoSample, normalSample, metallic, roughness, worldPosSample,
+            directLight += CalculatePBR_Point(albedoSample, normalSample, metallic, roughness, worldPosSample,
                 pl.position.xyz, pl.color.rgb, pl.intensity * attenuation, ubo.cameraPos.xyz );
         }
     }
 
 
-    // 3. IBL
-    vec3 iblColor = CalculateDiffuseIrradiance( irradianceMap ,albedoSample, normalSample);
+    // 3. Shadow
+    float shdw = CalculateShadow( ubo.lightViewProj, worldPosSample, shadowSampler );
+    litColor += directLight * shdw; 
+
+    // 4. IBL
+    vec3 iblColor = CalculateDiffuseIrradiance( irradianceMap, albedoSample, normalSample);
     litColor += iblColor;
 
 

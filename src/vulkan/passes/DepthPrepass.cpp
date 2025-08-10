@@ -55,8 +55,8 @@ void cat::DepthPrepass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		renderInfo.colorAttachmentCount = 0;
 		renderInfo.pColorAttachments = nullptr;
 		renderInfo.pDepthAttachment = &depthAttachmentInfo;
-		vkCmdBeginRenderingKHR(commandBuffer, &renderInfo);
 		DebugLabel::BeginCmdLabel(commandBuffer, "Depth Prepass", glm::vec4(0.3f, 0.5f, 1.f, 1));
+		vkCmdBeginRenderingKHR(commandBuffer, &renderInfo);
 	}
 
 	// Drawing

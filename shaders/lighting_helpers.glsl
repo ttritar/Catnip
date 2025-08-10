@@ -163,3 +163,19 @@ vec3 CalculateDiffuseIrradiance( samplerCube irradianceMap,
 
     return diffuse;
 }
+
+
+
+// SHADOWS
+//----------------
+float CalculateShadow(mat4 lightViewProj, vec3 worldPos, sampler2DShadow shadowSampler)
+{
+    vec4 lightSpacePos = lightViewProj * vec4(worldPos,1.f);
+    lightSpacePos /= lightSpacePos.w;
+    vec3 shadowMapUV = vec3(lightSpacePos.xy * 0.5 + 0.5, lightSpacePos.z);
+    //shadowMapUV.y = 1.0 - shadowMapUV.y; 
+
+    float shadow = texture(shadowSampler, shadowMapUV);
+   
+    return shadow;
+}
