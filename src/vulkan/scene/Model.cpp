@@ -2,6 +2,9 @@
 
 #include <iostream>
 
+#undef min
+#undef max
+
 namespace cat
 {
 	// CTOR & DTOR
@@ -150,6 +153,10 @@ namespace cat
 			glm::vec4 transformedPos = transform * glm::vec4(vector, 1.0f);
 			vertex.pos = glm::vec3(transformedPos.x, transformedPos.y, transformedPos.z);
 
+			m_MinBounds = glm::min(m_MinBounds, vertex.pos);
+			m_MaxBounds = glm::max(m_MaxBounds, vertex.pos);
+
+
 			// colors
 			if (mesh->HasVertexColors(i))
 			{
@@ -209,6 +216,8 @@ namespace cat
 			}
 
 			vertices.push_back(vertex);
+
+			aiAABB aabb = mesh->mAABB;
 		}
 
 		// process indices
@@ -260,7 +269,6 @@ namespace cat
 			transform,
 			opaque
 			});
-
 
 
 	}

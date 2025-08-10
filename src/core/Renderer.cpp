@@ -103,6 +103,7 @@ namespace cat
 		// PASSES
 		//-----------------
 		m_pDepthPrepass = std::make_unique<DepthPrepass>(m_Device, cat::MAX_FRAMES_IN_FLIGHT);
+		m_pShadowPass = std::make_unique<ShadowPass>(m_Device, cat::MAX_FRAMES_IN_FLIGHT, *m_pSwapChain);
 		m_pGeometryPass = std::make_unique<GeometryPass>(m_Device, m_pSwapChain->GetSwapChainExtent(), cat::MAX_FRAMES_IN_FLIGHT);
 		m_pLightingPass = std::make_unique<LightingPass>(
 			m_Device, m_pSwapChain->GetSwapChainExtent(), cat::MAX_FRAMES_IN_FLIGHT, 
@@ -223,6 +224,13 @@ namespace cat
 			commandBuffer,
 			m_CurrentFrame,
 			*m_pSwapChain->GetDepthImage(m_CurrentFrame),
+			m_Camera,
+			*m_pCurrentScene
+		);
+
+		m_pShadowPass->Record(
+			commandBuffer,
+			m_CurrentFrame,
 			m_Camera,
 			*m_pCurrentScene
 		);

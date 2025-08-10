@@ -25,6 +25,10 @@ namespace cat
 			glm::vec3 direction = { 0.f,-1.f,0.f };
 			glm::vec3 color {1.0f};
 			float intensity = 5.f;
+
+			// should be updated
+			glm::mat4 viewMatrix = glm::mat4(1.0f);
+			glm::mat4 projectionMatrix = glm::mat4(1.0f);
 		};
 
 		// CTOR & DTOR
@@ -56,7 +60,8 @@ namespace cat
 		const std::vector<Model*> GetModels() const { return m_pModels; }
 		const DirectionalLight& GetDirectionalLight() const { return m_DirectionalLight; }
 		const std::vector<PointLight>& GetPointLights() const { return m_PointLights; }
-		
+		std::pair<glm::vec3, glm::vec3> GetSceneBounds() const { return { m_MinBounds, m_MaxBounds }; }
+
 	private:
 		// Private members
 		//--------------------
@@ -66,5 +71,8 @@ namespace cat
 		std::vector<Model*> m_pModels;
 		DirectionalLight m_DirectionalLight{};
 		std::vector<PointLight> m_PointLights;
+
+		glm::vec3 m_MinBounds{ FLT_MAX };
+		glm::vec3 m_MaxBounds{ -FLT_MAX };
 	};
 }

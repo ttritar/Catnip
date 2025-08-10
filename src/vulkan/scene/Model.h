@@ -5,12 +5,20 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+
+
 // std
 #include <memory>
 #include <string>
+#include <algorithm>
 
 namespace cat
 {
+	struct AABB {
+		glm::vec3 min;
+		glm::vec3 max;
+	};
+
 	class Model final
 	{
 	public:
@@ -38,10 +46,12 @@ namespace cat
 		void SetScale(const glm::vec3& scale) { m_TransformMatrix = glm::scale(m_TransformMatrix, scale); }
 		glm::vec3 GetWorldPosition() const { return glm::vec3(m_TransformMatrix[3]); }
 
+		std::pair<glm::vec3, glm::vec3> GetBounds() const { return { m_MinBounds, m_MaxBounds }; }
 
 		const std::vector<Mesh*>& GetOpaqueMeshes() const { return m_OpaqueMeshes; }
 		const std::vector<Mesh*>& GetTransparentMeshes() const { return m_TransparentMeshes; }
 		std::string GetPath() const { return m_Path; }
+
 
 	private:
 		// Private methods
@@ -50,6 +60,27 @@ namespace cat
 		void ProcessNode(::aiNode* node, const ::aiScene* scene, const glm::mat4& parentTransform);
 		void ProcessMesh(::aiMesh* mesh, const ::aiScene* scene, const glm::mat4& transform);
 		glm::mat4 ConvertMatrixToGLM(const aiMatrix4x4& mat) const;
+
+		AABB CalculateAABB(const std::vector<Mesh::Vertex>& vertices) const
+		{
+			AABB box;
+			box.min = glm::vec3(FLT_MAX);
+			box.max = glm::vec3(-FLT_MAX);
+
+			for (const auto& v : vertices) 
+			{
+				// min
+				if (v.pos.x < box.min.x) box.min.x = v.pos.x;
+				if (v.pos.y < box.min.y) box.min.y = v.pos.y;
+				if (v.pos.z < box.min.z) box.min.z = v.pos.z;
+
+				// max
+				if (v.pos.x > box.max.x) box.max.x = v.pos.x;
+				if (v.pos.y > box.max.y) box.max.y = v.pos.y;
+				if (v.pos.z > box.max.z) box.max.z = v.pos.z;
+			}
+			return box;
+		}
 
 		// Private Datamembers
 		//--------------------
@@ -69,6 +100,7 @@ namespace cat
 
 		glm::mat4 m_TransformMatrix = glm::mat4(1);
 
-
+		glm::vec3 m_MinBounds = glm::vec3(FLT_MAX);
+		glm::vec3 m_MaxBounds = glm::vec3(-FLT_MAX);
 	};
 }

@@ -23,13 +23,68 @@ namespace cat
 	//--------------------
 	void Scene::Update(float deltaTime)
 	{
-		// Update logic for the scene can be added here
+		glm::vec3 sceneCenter = (m_MinBounds + m_MaxBounds) * 0.5f;
+		glm::vec3 lightDirection = glm::normalize(m_DirectionalLight.direction);
+
+
+		std::vector<glm::vec3> corners = {
+			{ m_MinBounds.x, m_MinBounds.y, m_MinBounds.z },
+			{ m_MaxBounds.x, m_MinBounds.y, m_MinBounds.z },
+			{ m_MinBounds.x, m_MaxBounds.y, m_MinBounds.z },
+			{ m_MaxBounds.x, m_MaxBounds.y, m_MinBounds.z },
+			{ m_MinBounds.x, m_MinBounds.y, m_MaxBounds.z },
+			{ m_MaxBounds.x, m_MinBounds.y, m_MaxBounds.z },
+			{ m_MinBounds.x, m_MaxBounds.y, m_MaxBounds.z },
+			{ m_MaxBounds.x, m_MaxBounds.y, m_MaxBounds.z },
+		};
+
+		float minProj = FLT_MAX;
+		float maxProj = -FLT_MAX;
+
+		for (const auto& corner : corners)
+		{
+			float proj = glm::dot(corner, lightDirection);
+			minProj = std::min(minProj, proj);
+			maxProj = std::max(maxProj, proj);
+		}
+
+		const float distance = maxProj - glm::dot(sceneCenter, lightDirection);
+		const glm::vec3 lightPosition = sceneCenter - lightDirection * distance;
+
+		const glm::vec3 up = glm::abs(glm::dot(lightDirection, glm::vec3(0.f, 1.f, 0.f))) < 0.999f
+			? glm::vec3(0.f, 1.f, 0.f)
+			: glm::vec3(1.f, 0.f, 0.f);
+
+		m_DirectionalLight.viewMatrix = glm::lookAt(lightPosition, sceneCenter, up);
+
+		glm::vec3 minLightSpace(FLT_MAX);
+		glm::vec3 maxLightSpace(-FLT_MAX);
+		for (const auto& corner : corners)
+		{
+			const glm::vec3 transformedCorner = glm::vec3(m_DirectionalLight.viewMatrix * glm::vec4(corner, 1.0f));
+			minLightSpace = glm::min(minLightSpace, transformedCorner);
+			maxLightSpace = glm::max(maxLightSpace, transformedCorner);
+		}
+
+		const float nearZ = 0.0f;
+		const float farZ = maxLightSpace.z - minLightSpace.z;
+		m_DirectionalLight.projectionMatrix = glm::ortho(
+			minLightSpace.x, maxLightSpace.x,
+			minLightSpace.y, maxLightSpace.y,
+			nearZ, farZ
+		);
+
 	}
 
 	Model* Scene::AddModel(const std::string& path)
 	{
 		Model* model = new Model(m_Device,m_pUniformBuffer,path);
 		m_pModels.push_back(model);
+
+		auto [modelMin, modelMax] = model->GetBounds();
+		m_MinBounds = glm::min(m_MinBounds, modelMin);
+		m_MaxBounds = glm::max(m_MaxBounds, modelMax);
+
 		return model;
 	}
 
