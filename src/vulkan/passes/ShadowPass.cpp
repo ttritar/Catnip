@@ -140,6 +140,12 @@ void cat::ShadowPass::CreatePipeline()
 	pipelineInfo.colorAttachments = { };
 	pipelineInfo.colorBlending.attachmentCount = 0;
 	pipelineInfo.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
+	VkVertexInputAttributeDescription attrib{};
+	attrib.location = 0;
+	attrib.binding = 0;
+	attrib.format = VK_FORMAT_R32G32B32_SFLOAT;
+	attrib.offset = offsetof(Mesh::Vertex, Mesh::Vertex::pos);
+	pipelineInfo.vertexAttributeDescriptions = { attrib };
 	pipelineInfo.CreatePipelineLayout(m_Device, { m_pDescriptorSetLayout->GetDescriptorSetLayout() });
 
 	m_pPipeline = new Pipeline(

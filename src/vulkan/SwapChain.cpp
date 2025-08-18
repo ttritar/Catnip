@@ -56,33 +56,23 @@ namespace cat
     void SwapChain::CreateSwapChain()
     {
         SwapChainSupportDetails swapChainSupport = m_Device.GetSwapChainSupport();
-
         VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
         VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
         VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities);
 
-
-        m_ImageCount = swapChainSupport.capabilities.minImageCount;
-
-        if (swapChainSupport.capabilities.maxImageCount > 0 && m_ImageCount > swapChainSupport.capabilities.maxImageCount)
-        {
-            m_ImageCount = swapChainSupport.capabilities.maxImageCount;
-        }
-
+        uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+        if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
+            imageCount = swapChainSupport.capabilities.maxImageCount;
 
         VkSwapchainCreateInfoKHR createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         createInfo.surface = m_Device.GetSurface();
-
-
-        createInfo.minImageCount = m_ImageCount;
+        createInfo.minImageCount = imageCount;
         createInfo.imageFormat = surfaceFormat.format;
         createInfo.imageColorSpace = surfaceFormat.colorSpace;
         createInfo.imageExtent = extent;
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-
 
         cat::QueueFamilyIndices indices = m_Device.GetPhysicalQueueFamilies();
         uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
@@ -96,37 +86,29 @@ namespace cat
         else
         {
             createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-            createInfo.queueFamilyIndexCount = 0; // Optional
-            createInfo.pQueueFamilyIndices = nullptr; // Optional
         }
-
 
         createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
-
         createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-
         createInfo.presentMode = presentMode;
         createInfo.clipped = VK_TRUE;
-
         createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-
         if (vkCreateSwapchainKHR(m_Device.GetDevice(), &createInfo, nullptr, &m_SwapChain) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create swap chain!");
-        }
+            throw std::runtime_error("failed to create swap chain");
 
-        vkGetSwapchainImagesKHR(m_Device.GetDevice(), m_SwapChain, &m_ImageCount, nullptr);
-		std::vector<VkImage> swapChainImages(m_ImageCount);
-        vkGetSwapchainImagesKHR(m_Device.GetDevice(), m_SwapChain, &m_ImageCount, swapChainImages.data());
+        vkGetSwapchainImagesKHR(m_Device.GetDevice(), m_SwapChain, &imageCount, nullptr);
+        std::vector<VkImage> swapChainImages(imageCount);
+        vkGetSwapchainImagesKHR(m_Device.GetDevice(), m_SwapChain, &imageCount, swapChainImages.data());
 
+        m_ImageCount = imageCount;
         m_SwapChainExtent = extent;
         m_pSwapChainImages.clear();
-		m_pSwapChainImages.resize(m_ImageCount);
+        m_pSwapChainImages.resize(m_ImageCount);
 
-        for (int i{}; i < m_ImageCount;i++)
+        for (uint32_t i = 0; i < m_ImageCount; i++)
         {
-            auto myImg = std::make_unique< Image>(
+            auto myImg = std::make_unique<Image>(
                 m_Device,
                 m_SwapChainExtent.width,
                 m_SwapChainExtent.height,
@@ -134,12 +116,12 @@ namespace cat
                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 VMA_MEMORY_USAGE_GPU_ONLY,
                 swapChainImages[i]);
-
-            m_pSwapChainImages[i]=std::move(myImg);
+            m_pSwapChainImages[i] = std::move(myImg);
         }
 
         m_SwapChainImageFormat = surfaceFormat.format;
     }
+
 
     void SwapChain::CleanupSwapChain()
     {

@@ -241,7 +241,6 @@ namespace cat
 			m_Camera,
 			*m_pCurrentScene
 		);
-
 		
 		m_pLightingPass->Record(
 			commandBuffer,
@@ -255,6 +254,7 @@ namespace cat
 			m_CurrentFrame,
 			m_Camera
 		);
+
 	}
 
 	void Renderer::ResizePasses() const
