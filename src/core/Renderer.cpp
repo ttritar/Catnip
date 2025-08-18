@@ -222,7 +222,7 @@ namespace cat
 
 		m_pDepthPrepass->Record(
 			commandBuffer,
-			m_CurrentFrame,
+			m_pSwapChain->GetImageIndex(),
 			*m_pSwapChain->GetDepthImage(m_CurrentFrame),
 			m_Camera,
 			*m_pCurrentScene
@@ -230,13 +230,13 @@ namespace cat
 
 		m_pShadowPass->Record(
 			commandBuffer,
-			m_CurrentFrame,
+			m_pSwapChain->GetImageIndex(),
 			*m_pCurrentScene
 		);
 
 		m_pGeometryPass->Record(
 			commandBuffer,
-			m_CurrentFrame,
+			m_pSwapChain->GetImageIndex(),
 			*m_pSwapChain->GetDepthImage(m_CurrentFrame),
 			m_Camera,
 			*m_pCurrentScene
@@ -244,14 +244,14 @@ namespace cat
 		
 		m_pLightingPass->Record(
 			commandBuffer,
-			m_CurrentFrame,
+			m_pSwapChain->GetImageIndex(),
 			m_Camera,
 			*m_pCurrentScene
 		);
 		
 		m_pBlitPass->Record(
 			commandBuffer,
-			m_CurrentFrame,
+			m_pSwapChain->GetImageIndex(),
 			m_Camera
 		);
 
