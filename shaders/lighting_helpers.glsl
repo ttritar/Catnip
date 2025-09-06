@@ -168,14 +168,33 @@ vec3 CalculateDiffuseIrradiance( samplerCube irradianceMap,
 
 // SHADOWS
 //----------------
-float CalculateShadow(mat4 lightViewProj, vec3 worldPos, sampler2DShadow shadowSampler)
+float CalculateShadow(mat4 lightViewProj, vec3 lightDir, vec3 normal, vec3 worldPos, sampler2DShadow shadowSampler, vec2 fragUV)
 {
     vec4 lightSpacePos = lightViewProj * vec4(worldPos,1.f);
-    lightSpacePos /= lightSpacePos.w;
-    vec3 shadowMapUV = vec3(lightSpacePos.xy * 0.5 + 0.5, lightSpacePos.z);
-    //shadowMapUV.y = 1.0 - shadowMapUV.y; 
+    lightSpacePos.xyz /= lightSpacePos.w;
+    
+    if (lightSpacePos.z < 0.0 || lightSpacePos.z > 1.0 ||
+    lightSpacePos.x < -1.0 || lightSpacePos.x > 1.0 ||
+    lightSpacePos.y < -1.0 || lightSpacePos.y > 1.0) {
+        return 0.0;
+    }
 
-    float shadow = texture(shadowSampler, shadowMapUV);
-   
+    vec3 shadowMapUV = vec3(lightSpacePos.xy * 0.5 + 0.5, lightSpacePos.z);
+    shadowMapUV.y = 1.0 - shadowMapUV.y; 
+
+    vec3 L = normalize(-lightDir);
+    float bias = max(0.005 * (1.0 - dot(normal, L)), 0.001);
+
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
+            float shadowDepth = texture(shadowMap, shadowMapUV.xy + vec2(x, y) * texelSize).r;
+            shadow += (shadowMapUV.z - bias) > shadowDepth ? 1.0 : 0.0;
+        }
+    }
+    shadow /= 9.0;
+
     return shadow;
 }
+

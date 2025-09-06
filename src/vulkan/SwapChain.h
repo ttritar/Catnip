@@ -93,7 +93,7 @@ namespace cat
 		bool m_FramebufferResized;
 		VkSwapchainKHR m_SwapChain;
 		uint32_t m_ImageCount ;
-		uint32_t m_ImageIndex;
+		uint32_t m_ImageIndex{};
 
 		std::vector<std::unique_ptr<Image>> m_pSwapChainImages;
 		VkFormat m_SwapChainImageFormat;

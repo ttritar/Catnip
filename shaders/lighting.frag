@@ -102,7 +102,7 @@ void main()
 
 
     // 3. Shadow
-    float shdw = CalculateShadow( ubo.lightViewProj, worldPosSample, shadowSampler );
+    float shdw = CalculateShadow( ubo.lightViewProj, ubo.lightDir, normalSample, worldPosSample, shadowSampler, fragUV );
     litColor += directLight * shdw; 
 
     // 4. IBL

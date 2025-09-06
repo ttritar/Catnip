@@ -78,13 +78,13 @@ namespace cat
 
 		m_pScenes[0] = new Scene(m_Device, m_pUniformBuffer);
 		m_pScenes[0]->AddModel("resources/Models/FlightHelmet/FlightHelmet.gltf");
-		m_pScenes[0]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.f, -1.f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 1.f });
+		m_pScenes[0]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.f, -1.f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 1000.f });
 		//m_pScenes[0]->AddPointLight(Scene::PointLight{ .position = { 0.f, 1.f, 0.f ,0.f}, .color = { 1.f, 0.f, 0.f ,0.f}, .intensity = 5.f, .radius = 100.f });
 
 		m_pScenes[1] = new Scene(m_Device, m_pUniformBuffer);
 		m_pScenes[1]->AddModel("resources/Models/Sponza/Sponza.gltf")
 			->SetRotation(glm::radians(90.f), { 0,1,0 });
-		m_pScenes[1]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.f, -1.f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 1.f });
+		m_pScenes[1]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.f, -1.f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 1000.f });
 		m_pScenes[1]->AddPointLight(Scene::PointLight{ .position = { 0.f, 1.f, 5.f ,0.f}, .color = { 1.f, 0.f, 0.f ,0.f}, .intensity = 150.f , .radius = 100.f});
 		m_pScenes[1]->AddPointLight(Scene::PointLight{ .position = { 0.f, 1.f, 0.f ,0.f}, .color = { 0.f, 1.f, 0.f ,0.f}, .intensity = 150.f , .radius = 100.f });
 		m_pScenes[1]->AddPointLight(Scene::PointLight{ .position = { 0.f, 1.f, 2.5f ,0.f}, .color = { 0.f, 0.f, 1.f ,0.f}, .intensity = 150.f , .radius = 100.f });
@@ -222,7 +222,7 @@ namespace cat
 
 		m_pDepthPrepass->Record(
 			commandBuffer,
-			m_pSwapChain->GetImageIndex(),
+			m_CurrentFrame,
 			*m_pSwapChain->GetDepthImage(m_CurrentFrame),
 			m_Camera,
 			*m_pCurrentScene
@@ -230,13 +230,13 @@ namespace cat
 
 		m_pShadowPass->Record(
 			commandBuffer,
-			m_pSwapChain->GetImageIndex(),
+			m_CurrentFrame,
 			*m_pCurrentScene
 		);
 
 		m_pGeometryPass->Record(
 			commandBuffer,
-			m_pSwapChain->GetImageIndex(),
+			m_CurrentFrame,
 			*m_pSwapChain->GetDepthImage(m_CurrentFrame),
 			m_Camera,
 			*m_pCurrentScene
@@ -244,14 +244,14 @@ namespace cat
 		
 		m_pLightingPass->Record(
 			commandBuffer,
-			m_pSwapChain->GetImageIndex(),
+			m_CurrentFrame,
 			m_Camera,
 			*m_pCurrentScene
 		);
 		
 		m_pBlitPass->Record(
 			commandBuffer,
-			m_pSwapChain->GetImageIndex(),
+			m_CurrentFrame,
 			m_Camera
 		);
 
