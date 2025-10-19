@@ -85,8 +85,8 @@ namespace cat
 
 		m_pScenes[1] = new Scene(m_Device, m_pUniformBuffer);
 		m_pScenes[1]->AddModel("resources/Models/ABeautifulGame/ABeautifulGame.gltf")
-			->SetScale({ 10.f,10.f,10.f });
-		m_pScenes[1]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.0f, -0.2f, 0.05f }, .color = { 1.f, 1.f, 1.f }, .intensity = 100.f });
+			->SetScale({ 1.f,1.f,1.f });
+		m_pScenes[1]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.2f, -0.9f, 0.2f }, .color = { 1.f, 1.f, 1.f }, .intensity = 100.f });
 
 		m_pCurrentScene = m_pScenes[1]; // set default scene
 
@@ -208,7 +208,7 @@ namespace cat
 
 		m_CurrentFrame = (m_CurrentFrame + 1) % cat::MAX_FRAMES_IN_FLIGHT;
 	}
-
+	
 	
 	void Renderer::RecordPasses() const
 	{

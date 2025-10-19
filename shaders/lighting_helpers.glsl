@@ -168,33 +168,47 @@ vec3 CalculateDiffuseIrradiance( samplerCube irradianceMap,
 
 // SHADOWS
 //----------------
-float CalculateShadow(mat4 lightViewProj, vec3 lightDir, vec3 normal, vec3 worldPos, sampler2DShadow shadowMap, vec2 fragUV)
+// New CalculateShadow using sampler2D (depth texture) + manual PCF
+float CalculateShadow(mat4 lightViewProj, vec3 lightDir, vec3 normal, vec3 worldPos, sampler2D shadowDepthTex)
 {
-    vec4 lightSpacePos = lightViewProj * vec4(worldPos,1.f);
+    vec4 lightSpacePos = lightViewProj * vec4(worldPos, 1.0);
+    // perspective divide
     lightSpacePos.xyz /= lightSpacePos.w;
-    
+
+    // outside light frustum => not shadowed
     if (lightSpacePos.z < 0.0 || lightSpacePos.z > 1.0 ||
-    lightSpacePos.x < -1.0 || lightSpacePos.x > 1.0 ||
-    lightSpacePos.y < -1.0 || lightSpacePos.y > 1.0) {
+        lightSpacePos.x < -1.0 || lightSpacePos.x > 1.0 ||
+        lightSpacePos.y < -1.0 || lightSpacePos.y > 1.0)
+    {
         return 1.0;
     }
 
-    vec3 shadowMapUV = vec3(lightSpacePos.xy * 0.5 + 0.5, lightSpacePos.z);
-    shadowMapUV.y = 1.0 - shadowMapUV.y; 
+    vec2 uv = lightSpacePos.xy * 0.5 + 0.5;
+    float currentDepth = lightSpacePos.z;
 
+    // bias: smaller values reduce peter-panning but avoid being too large
     vec3 L = normalize(-lightDir);
-    float bias = max(0.005 * (1.0 - dot(normal, L)), 0.001);
+    float bias = max(0.0005 * (1.0 - dot(normal, L)), 0.00005); // reduce baseline bias
+
+    // PCF 3x3
+    ivec2 size = textureSize(shadowDepthTex, 0);
+    vec2 texelSize = 1.0 / vec2(size);
 
     float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
-    for (int x = -1; x <= 1; ++x) {
-        for (int y = -1; y <= 1; ++y) {
-            float shadowDepth = texture(shadowMap, vec3(shadowMapUV.xy + vec2(x, y) * texelSize, shadowMapUV.z - bias));
-            shadow += shadowDepth;
+    for (int x = -1; x <= 1; ++x)
+    {
+        for (int y = -1; y <= 1; ++y)
+        {
+            vec2 sampleUV = uv + vec2(x, y) * texelSize;
+            // clamp sampleUV if you want, or rely on sampler addressing mode
+            float sampledDepth = texture(shadowDepthTex, sampleUV).r;
+            // If an occluder is closer than currentDepth - bias, we are in shadow
+            float visibility = (currentDepth - bias) > sampledDepth ? 0.0 : 1.0;
+            shadow += visibility;
         }
     }
     shadow /= 9.0;
-
     return shadow;
 }
+
 

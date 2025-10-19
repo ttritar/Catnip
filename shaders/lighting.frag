@@ -42,7 +42,7 @@ layout(set = 1, binding = 4) uniform sampler2D depthSampler;
 layout(set = 2, binding = 0) uniform samplerCube environmentMap;
 layout(set = 2, binding = 1) uniform samplerCube irradianceMap;
 
-layout(set = 3, binding = 0) uniform sampler2DShadow shadowSampler; 
+layout(set = 3, binding = 0) uniform sampler2D  shadowSampler; 
 
 
 // CONSTANTS
@@ -93,7 +93,7 @@ void main()
 
         if (distance < pl.radius) // radius check
         {
-            float attenuation = 1.0 / (distance * distance + 0.0001);
+            float attenuation = 1.0 / (distance * distance + 0.00001);
 
             directLight += CalculatePBR_Point(albedoSample, normalSample, metallic, roughness, worldPosSample,
                 pl.position.xyz, pl.color.rgb, pl.intensity * attenuation, ubo.cameraPos.xyz );
@@ -102,7 +102,7 @@ void main()
 
 
     // 3. Shadow
-    float shdw = CalculateShadow( ubo.lightViewProj, ubo.lightDir, normalSample, worldPosSample, shadowSampler, fragUV );
+    float shdw = CalculateShadow( ubo.lightViewProj, ubo.lightDir, normalSample, worldPosSample, shadowSampler);
     litColor += directLight * shdw; 
 
     // 4. IBL
