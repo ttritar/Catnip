@@ -176,7 +176,7 @@ float CalculateShadow(mat4 lightViewProj, vec3 lightDir, vec3 normal, vec3 world
     if (lightSpacePos.z < 0.0 || lightSpacePos.z > 1.0 ||
     lightSpacePos.x < -1.0 || lightSpacePos.x > 1.0 ||
     lightSpacePos.y < -1.0 || lightSpacePos.y > 1.0) {
-        return 0.0;
+        return 1.0;
     }
 
     vec3 shadowMapUV = vec3(lightSpacePos.xy * 0.5 + 0.5, lightSpacePos.z);

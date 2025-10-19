@@ -98,6 +98,11 @@ namespace cat
 	//--------------------
 	void Model::LoadModel(const std::string& path)
 	{
+		// reset bound
+		m_MinBounds = glm::vec3(std::numeric_limits<float>::max());
+		m_MaxBounds = glm::vec3(std::numeric_limits<float>::lowest());
+
+
 		Assimp::Importer importer;
 		const aiScene* scene = importer.ReadFile(path,
 			aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_ConvertToLeftHanded

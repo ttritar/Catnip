@@ -51,7 +51,6 @@ namespace cat
 	{
 		if (glfwGetKey(m_Window.GetWindow(), GLFW_KEY_0)) m_pCurrentScene = m_pScenes[0];
 		if (glfwGetKey(m_Window.GetWindow(), GLFW_KEY_1)) m_pCurrentScene = m_pScenes[1];
-		if (glfwGetKey(m_Window.GetWindow(), GLFW_KEY_2)) m_pCurrentScene = m_pScenes[2];
 
 
 		m_Camera.Update(deltaTime);
@@ -86,8 +85,8 @@ namespace cat
 
 		m_pScenes[1] = new Scene(m_Device, m_pUniformBuffer);
 		m_pScenes[1]->AddModel("resources/Models/ABeautifulGame/ABeautifulGame.gltf")
-			->SetScale(glm::vec3(10, 10, 10));
-		m_pScenes[1]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { -0.5f, -1.f, -0.5f }, .color = { 1.f, 1.f, 1.f }, .intensity = 100.f });
+			->SetScale({ 10.f,10.f,10.f });
+		m_pScenes[1]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.0f, -0.2f, 0.05f }, .color = { 1.f, 1.f, 1.f }, .intensity = 100.f });
 
 		m_pCurrentScene = m_pScenes[1]; // set default scene
 
