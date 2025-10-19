@@ -187,10 +187,14 @@ namespace cat
 			// normals
 			if (mesh->HasNormals())
 			{
-				vector.x = mesh->mNormals[i].x;
-				vector.y = mesh->mNormals[i].y;
-				vector.z = mesh->mNormals[i].z;
-				vertex.normal = vector;
+				glm::vec3 normal(
+					mesh->mNormals[i].x,
+					mesh->mNormals[i].y,
+					mesh->mNormals[i].z
+				);
+
+				glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(transform)));
+				vertex.normal = glm::normalize(normalMatrix * normal);
 			}
 
 			// tangents and bitangents
@@ -202,17 +206,12 @@ namespace cat
 				vec.y = mesh->mTextureCoords[0][i].y;
 				vertex.uv = vec;
 
-				// tangent
-				vector.x = mesh->mTangents[i].x;
-				vector.y = mesh->mTangents[i].y;
-				vector.z = mesh->mTangents[i].z;
-				vertex.tangent = vector;
+				// tangents and bitangents
+				glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(transform)));
 
-				// bitangent
-				vector.x = mesh->mBitangents[i].x;
-				vector.y = mesh->mBitangents[i].y;
-				vector.z = mesh->mBitangents[i].z;
-				vertex.bitangent = vector;
+				vertex.tangent = glm::normalize(normalMatrix * glm::vec3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z));
+				vertex.bitangent = glm::normalize(normalMatrix * glm::vec3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z));
+
 			}
 
 			vertices.push_back(vertex);

@@ -76,11 +76,11 @@ namespace cat
 		//-----------------
 		m_pScenes.resize(3);
 
-		m_pScenes[0] = new Scene(m_Device, m_pUniformBuffer);
-		m_pScenes[0]->AddModel("resources/Models/FlightHelmet/FlightHelmet.gltf");
-		m_pScenes[0]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.f, -1.f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 1000.f });
-		//m_pScenes[0]->AddPointLight(Scene::PointLight{ .position = { 0.f, 1.f, 0.f ,0.f}, .color = { 1.f, 0.f, 0.f ,0.f}, .intensity = 5.f, .radius = 100.f });
-
+		//m_pScenes[0] = new Scene(m_Device, m_pUniformBuffer);
+		//m_pScenes[0]->AddModel("resources/Models/FlightHelmet/FlightHelmet.gltf");
+		//m_pScenes[0]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.f, -1.f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 1000.f });
+		////m_pScenes[0]->AddPointLight(Scene::PointLight{ .position = { 0.f, 1.f, 0.f ,0.f}, .color = { 1.f, 0.f, 0.f ,0.f}, .intensity = 5.f, .radius = 100.f });
+		//
 		m_pScenes[1] = new Scene(m_Device, m_pUniformBuffer);
 		m_pScenes[1]->AddModel("resources/Models/Sponza/Sponza.gltf")
 			->SetRotation(glm::radians(90.f), { 0,1,0 });
@@ -91,7 +91,7 @@ namespace cat
 
 		m_pScenes[2] = new Scene(m_Device, m_pUniformBuffer);
 		m_pScenes[2]->AddModel("resources/Models/ABeautifulGame/ABeautifulGame.gltf")
-			->SetScale(glm::vec3(10,10,10));
+			->SetScale(glm::vec3(10, 10, 10));
 		m_pScenes[2]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { -0.5f, -1.f, -0.5f }, .color = { 1.f, 1.f, 1.f }, .intensity = 100.f });
 
 		m_pCurrentScene = m_pScenes[2]; // set default scene
