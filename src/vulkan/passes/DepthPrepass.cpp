@@ -108,7 +108,7 @@ void cat::DepthPrepass::CreateDescriptors()
 {
 	m_pDescriptorPool = new DescriptorPool(m_Device);
 	m_pDescriptorPool
-		->AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2)
+		->AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, cat::MAX_FRAMES_IN_FLIGHT)
 		->Create(m_FramesInFlight);
 
 	m_pDescriptorSetLayout = new DescriptorSetLayout(m_Device);

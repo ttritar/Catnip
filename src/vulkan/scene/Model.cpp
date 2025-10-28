@@ -20,10 +20,10 @@ namespace cat
 		// Create descriptor pool
 		m_pDescriptorPool = new DescriptorPool(device);
 		m_pDescriptorPool
-			->AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<uint32_t>(m_RawMeshes.size() * 2))
+			->AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<uint32_t>(m_RawMeshes.size() * cat::MAX_FRAMES_IN_FLIGHT))
 			->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-				static_cast<uint32_t>(m_RawMeshes.size() * 2) * m_Material.amount);
-		m_pDescriptorPool = m_pDescriptorPool->Create(static_cast<uint32_t>(m_RawMeshes.size() * 2));
+				static_cast<uint32_t>(m_RawMeshes.size() * cat::MAX_FRAMES_IN_FLIGHT) * m_Material.amount);
+		m_pDescriptorPool = m_pDescriptorPool->Create(static_cast<uint32_t>(m_RawMeshes.size() * cat::MAX_FRAMES_IN_FLIGHT));
 
 		// Create descriptor set layout
 		m_pDescriptorSetLayout = new DescriptorSetLayout(device);
