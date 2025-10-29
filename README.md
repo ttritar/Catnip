@@ -1,5 +1,5 @@
 # Vulkan Renderer [![wakatime](https://wakatime.com/badge/user/9ddd942c-b6f3-4a8e-aab7-1f2d3af43b2c/project/30cea435-6d91-4bae-9567-9d6072ece5e7.svg)](https://wakatime.com/badge/user/9ddd942c-b6f3-4a8e-aab7-1f2d3af43b2c/project/30cea435-6d91-4bae-9567-9d6072ece5e7)
-![HelmetBlit](https://github.com/user-attachments/assets/105c9017-c5aa-4e46-a285-cfde914af38c)
+
 
 ## Description
 This is my Vulkan renderer for the Graphics Programming 2 course of Howest - Digital Arts and Entertainment. 
