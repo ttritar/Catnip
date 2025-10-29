@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.3)
 
-project(GP2_VulkanTutorial)
+project(Catnip)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -9,7 +9,7 @@ find_package(Vulkan REQUIRED)
 
 
 # Define the executable
-add_executable(GP2_VulkanTutorial 
+add_executable(Catnip 
     src/main.cpp 
     src/core/Renderer.cpp
     src/core/Window.cpp
@@ -82,7 +82,7 @@ FetchContent_MakeAvailable(assimp)
 #-----------
 FetchContent_Declare(
     rsrc
-    GIT_REPOSITORY https://github.com/ttritar/GP2_Resources.git
+    GIT_REPOSITORY https://github.com/ttritar/Catnip_Resources.git
     GIT_TAG main 
 )
 FetchContent_MakeAvailable(rsrc)
@@ -105,10 +105,10 @@ endif()
 
 
 # Link necessary libraries
-target_link_libraries(GP2_VulkanTutorial PRIVATE glfw glm Vulkan::Vulkan assimp)
+target_link_libraries(Catnip PRIVATE glfw glm Vulkan::Vulkan assimp)
 
 # Include directories
-target_include_directories(GP2_VulkanTutorial PRIVATE 
+target_include_directories(Catnip PRIVATE 
     ${Vulkan_INCLUDE_DIRS}  
     ${GLFW_INCLUDE_DIRS}     
     ${glm_SOURCE_DIR}     
@@ -119,18 +119,18 @@ target_include_directories(GP2_VulkanTutorial PRIVATE
     ${vma_SOURCE_DIR}
 )
 
-target_link_directories(GP2_VulkanTutorial PRIVATE 
+target_link_directories(Catnip PRIVATE 
     ${GLFW_SOURCE_DIR}/src
     _deps/glfw-build/src
 )
 
-add_custom_command(TARGET GP2_VulkanTutorial POST_BUILD
+add_custom_command(TARGET Catnip POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         $<TARGET_FILE:glfw>
-        $<TARGET_FILE_DIR:GP2_VulkanTutorial>
+        $<TARGET_FILE_DIR:Catnip>
 )
 
-set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT GP2_VulkanTutorial)
+set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT Catnip)
 
 
 
