@@ -170,15 +170,12 @@ void cat::LightingPass::CreateDescriptors()
 {
 	m_pDescriptorPool = std::make_unique<DescriptorPool>(m_Device);
 	m_pDescriptorPool
-		->AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_FramesInFlight * 2)
-		->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_FramesInFlight * 8)
-
+		->AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_FramesInFlight)
 		->AddPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, m_FramesInFlight)
-
+		->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_FramesInFlight * 5)
 		->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_FramesInFlight * 2)
-
 		->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_FramesInFlight)
-		->Create(m_FramesInFlight * 5);
+		->Create(m_FramesInFlight * 4);
 
 	// UBO 
 	{

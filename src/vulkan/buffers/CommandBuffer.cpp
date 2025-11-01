@@ -4,9 +4,11 @@
 
 namespace cat
 {
-	CommandBuffer::CommandBuffer(Device& device)
+	CommandBuffer::CommandBuffer(Device& device, uint32_t count)
 		: m_Device(device)
 	{
+		m_CommandBuffers.resize(cat::MAX_FRAMES_IN_FLIGHT);
+
 		CreateCommandBuffer();
 	}
 	CommandBuffer::~CommandBuffer()
@@ -16,7 +18,6 @@ namespace cat
 
 	void CommandBuffer::CreateCommandBuffer()
 	{
-		m_CommandBuffers.resize(cat::MAX_FRAMES_IN_FLIGHT);
 
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;

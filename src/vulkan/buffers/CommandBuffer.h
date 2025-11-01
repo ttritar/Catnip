@@ -9,7 +9,7 @@ namespace cat
 	public:
 		// CTOR & DTOR
 		//--------------------
-		CommandBuffer(Device& device);
+		CommandBuffer(Device& device, uint32_t count = cat::MAX_FRAMES_IN_FLIGHT);
 		~CommandBuffer();
 
 		CommandBuffer(const CommandBuffer&) = delete;
