@@ -55,7 +55,7 @@ void cat::DepthPrepass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		renderInfo.colorAttachmentCount = 0;
 		renderInfo.pColorAttachments = nullptr;
 		renderInfo.pDepthAttachment = &depthAttachmentInfo;
-		DebugLabel::BeginCmdLabel(commandBuffer, "Depth Prepass", glm::vec4(0.3f, 0.5f, 1.f, 1));
+		DebugLabel::Begin(commandBuffer, "Depth Prepass", glm::vec4(0.3f, 0.5f, 1.f, 1));
 		vkCmdBeginRenderingKHR(commandBuffer, &renderInfo);
 	}
 
@@ -87,7 +87,7 @@ void cat::DepthPrepass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 	// END RECORDING
 	{
 		vkCmdEndRenderingKHR(commandBuffer);
-		DebugLabel::EndCmdLabel(commandBuffer);
+		DebugLabel::End(commandBuffer);
 		depthImage.TransitionImageLayout( commandBuffer, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 			Image::BarrierInfo{
 				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,

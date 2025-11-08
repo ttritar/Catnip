@@ -99,11 +99,9 @@ namespace cat
 		m_pDepthPrepass = std::make_unique<DepthPrepass>(m_Device, cat::MAX_FRAMES_IN_FLIGHT);
 		m_pShadowPass = std::make_unique<ShadowPass>(m_Device, cat::MAX_FRAMES_IN_FLIGHT);
 		m_pGeometryPass = std::make_unique<GeometryPass>(m_Device, m_pSwapChain->GetSwapChainExtent(), cat::MAX_FRAMES_IN_FLIGHT);
-		m_pLightingPass = std::make_unique<LightingPass>(
-			m_Device, m_pSwapChain->GetSwapChainExtent(), cat::MAX_FRAMES_IN_FLIGHT, 
-			*m_pGeometryPass, 
-			m_pHDRImage, *m_pSwapChain, * m_pShadowPass);
-		m_pBlitPass = std::make_unique<BlitPass>(m_Device, *m_pSwapChain, cat::MAX_FRAMES_IN_FLIGHT, *m_pLightingPass);
+		m_pLightingPass = std::make_unique<LightingPass>(m_Device, m_pSwapChain->GetSwapChainExtent(), cat::MAX_FRAMES_IN_FLIGHT, *m_pGeometryPass, m_pHDRImage, *m_pSwapChain, * m_pShadowPass);
+		m_pVolumetricPass = std::make_unique<VolumetricPass>(m_Device, *m_pSwapChain, cat::MAX_FRAMES_IN_FLIGHT, *m_pLightingPass);
+		//m_pBlitPass = std::make_unique<BlitPass>(m_Device, *m_pSwapChain, cat::MAX_FRAMES_IN_FLIGHT, *m_pLightingPass);
 	}
 
 	void Renderer::DrawFrame() const
@@ -242,12 +240,18 @@ namespace cat
 			m_Camera,
 			*m_pCurrentScene
 		);
-		
-		m_pBlitPass->Record(
+
+		m_pVolumetricPass->Record(
 			commandBuffer,
 			m_CurrentFrame,
 			m_Camera
 		);
+		
+		//m_pBlitPass->Record(
+		//	commandBuffer,
+		//	m_CurrentFrame,
+		//	m_Camera
+		//);
 
 	}
 
@@ -255,7 +259,8 @@ namespace cat
 	{
 		m_pGeometryPass->Resize(m_pSwapChain->GetSwapChainExtent());
 		m_pLightingPass->Resize(m_pSwapChain->GetSwapChainExtent(), *m_pGeometryPass);
-		m_pBlitPass->Resize(m_pSwapChain->GetSwapChainExtent(), *m_pLightingPass);
+		m_pVolumetricPass->Resize(m_pSwapChain->GetSwapChainExtent());
+		//m_pBlitPass->Resize(m_pSwapChain->GetSwapChainExtent());
 	}
 
 }

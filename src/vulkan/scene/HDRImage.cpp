@@ -595,7 +595,7 @@ void cat::HDRImage::RenderToCubeMap(const VkExtent2D& extent,uint32_t mipLevels,
 		renderInfo.pColorAttachments = &colorAttachment;
 
 		vkCmdBeginRenderingKHR(commandBuffer, &renderInfo);
-		DebugLabel::BeginCmdLabel(commandBuffer, "HDRI Capture Face: " + std::to_string(face), glm::vec4(0.1f, 0.3f, 0.75f, 1));
+		DebugLabel::Begin(commandBuffer, "HDRI Capture Face: " + std::to_string(face), glm::vec4(0.1f, 0.3f, 0.75f, 1));
 
 		pPipeline->Bind(commandBuffer);
 
@@ -623,7 +623,7 @@ void cat::HDRImage::RenderToCubeMap(const VkExtent2D& extent,uint32_t mipLevels,
 		vkCmdDraw(commandBuffer, 36, 1, 0, 0);
 
 		vkCmdEndRenderingKHR(commandBuffer);
-		DebugLabel::EndCmdLabel(commandBuffer);
+		DebugLabel::End(commandBuffer);
 	}
 
 	// TRAMSITION TO SHADER READ ONLY

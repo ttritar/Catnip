@@ -66,7 +66,7 @@ void cat::ShadowPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex,
 		renderInfo.colorAttachmentCount = 0;
 		renderInfo.pColorAttachments = nullptr;
 		renderInfo.pDepthAttachment = &depthAttachmentInfo;
-		DebugLabel::BeginCmdLabel(commandBuffer, "Shadow Pass", glm::vec4(0.7f, 0.1f, 0.5f, 1));
+		DebugLabel::Begin(commandBuffer, "Shadow Pass", glm::vec4(0.7f, 0.1f, 0.5f, 1));
 		vkCmdBeginRenderingKHR(commandBuffer, &renderInfo);
 	}
 
@@ -99,7 +99,7 @@ void cat::ShadowPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex,
 	// END RECORDING
 	{
 		vkCmdEndRenderingKHR(commandBuffer);
-		DebugLabel::EndCmdLabel(commandBuffer);
+		DebugLabel::End(commandBuffer);
 		m_pDepthImages[imageIndex]->TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			Image::BarrierInfo{
 				VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,   

@@ -9,6 +9,7 @@
 #include "../vulkan/passes/ShadowPass.h"
 #include "../vulkan/passes/GeometryPass.h"
 #include "../vulkan/passes/LightingPass.h"
+#include "../vulkan/passes/VolumetricPass.h"
 #include "../vulkan/passes/BlitPass.h"
 
 namespace cat
@@ -67,6 +68,7 @@ namespace cat
 		std::unique_ptr<ShadowPass> m_pShadowPass;
 		std::unique_ptr<GeometryPass> m_pGeometryPass;
 		std::unique_ptr<LightingPass> m_pLightingPass;
+		std::unique_ptr<VolumetricPass> m_pVolumetricPass;
 		std::unique_ptr<BlitPass> m_pBlitPass;
 
 		HDRImage* m_pHDRImage;

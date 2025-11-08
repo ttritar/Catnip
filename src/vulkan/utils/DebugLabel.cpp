@@ -47,7 +47,7 @@ namespace cat
         
     }
     
-    void DebugLabel::BeginCmdLabel(VkCommandBuffer cmdBuffer, const std::string& name, glm::vec4 color)
+    void DebugLabel::Begin(VkCommandBuffer cmdBuffer, const std::string& name, glm::vec4 color)
 	{
         if (vkCmdBeginDebugUtilsLabelEXT) 
         {
@@ -62,7 +62,7 @@ namespace cat
         }
     }
     
-    void DebugLabel::EndCmdLabel(VkCommandBuffer cmdBuffer)
+    void DebugLabel::End(VkCommandBuffer cmdBuffer)
 	{
         if (vkCmdEndDebugUtilsLabelEXT) 
         {

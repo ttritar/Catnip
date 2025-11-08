@@ -162,7 +162,7 @@ void cat::GeometryPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		renderInfo.pDepthAttachment = &depthAttachmentInfo;
 		vkCmdBeginRenderingKHR(commandBuffer, &renderInfo);
 
-		DebugLabel::BeginCmdLabel(commandBuffer, "Geometry Pass", glm::vec4(0.5f, 0.1f, 0.3f, 1));
+		DebugLabel::Begin(commandBuffer, "Geometry Pass", glm::vec4(0.5f, 0.1f, 0.3f, 1));
 	}
 
 	// Drawing
@@ -193,7 +193,7 @@ void cat::GeometryPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 	// END RECORDING
 	{
 		vkCmdEndRenderingKHR(commandBuffer);
-		DebugLabel::EndCmdLabel(commandBuffer);
+		DebugLabel::End(commandBuffer);
 
 		// transitioning images
 		//----------------------

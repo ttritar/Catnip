@@ -7,18 +7,18 @@
 namespace cat
 {
 
-	class BlitPass final
+	class VolumetricPass final
 	{
 	public:
 		// CTOR & DTOR
 		//----------------
-		BlitPass(Device& device, SwapChain& swapChain, uint32_t framesInFlight, LightingPass& lightingPass);
-		~BlitPass();
+		VolumetricPass(Device& device, SwapChain& swapChain, uint32_t framesInFlight, LightingPass& lightingPass);
+		~VolumetricPass();
 
-		BlitPass(const BlitPass&) = delete;
-		BlitPass(BlitPass&&) = delete;
-		BlitPass& operator=(const BlitPass&) = delete;
-		BlitPass& operator=(BlitPass&&) = delete;
+		VolumetricPass(const VolumetricPass&) = delete;
+		VolumetricPass(VolumetricPass&&) = delete;
+		VolumetricPass& operator=(const VolumetricPass&) = delete;
+		VolumetricPass& operator=(VolumetricPass&&) = delete;
 
 		// METHODS
 		//-----------------
@@ -41,15 +41,8 @@ namespace cat
 		SwapChain& m_SwapChain;
 		VkExtent2D m_Extent;
 
-		struct alignas(16) ToneMappingUbo{
-			float aperture;
-			float shutterSpeed;
-			float iso;
-		};
-		std::unique_ptr<UniformBuffer<ToneMappingUbo>> m_pUniformBuffer;
-
 		std::string m_VertPath = "shaders/triangle.vert.spv";
-		std::string m_FragPath = "shaders/blit.frag.spv";
+		std::string m_FragPath = "shaders/volumetric.frag.spv";
 		Pipeline* m_pPipeline;
 
 		DescriptorSetLayout* m_pDescriptorSetLayout;

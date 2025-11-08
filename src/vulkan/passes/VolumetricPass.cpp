@@ -1,16 +1,16 @@
-#include "BlitPass.h"
+#include "VolumetricPass.h"
 
 #include "LightingPass.h"
 #include "../utils/DebugLabel.h"
 
-cat::BlitPass::BlitPass(Device& device, SwapChain& swapChain, uint32_t framesInFlight, LightingPass& lightingPass)
+cat::VolumetricPass::VolumetricPass(Device& device, SwapChain& swapChain, uint32_t framesInFlight, LightingPass& lightingPass)
 	: m_Device(device), m_FramesInFlight(framesInFlight), m_SwapChain(swapChain) , m_Extent(swapChain.GetSwapChainExtent()), m_LightingPass(lightingPass)
 {
 	CreateDescriptors();
 	CreatePipeline();
 }
 
-cat::BlitPass::~BlitPass()
+cat::VolumetricPass::~VolumetricPass()
 {
 	delete m_pDescriptorPool;
 	m_pDescriptorPool = nullptr;
@@ -23,22 +23,14 @@ cat::BlitPass::~BlitPass()
 	m_pPipeline = nullptr;
 }
 
-void cat::BlitPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, const Camera& camera) const
+void cat::VolumetricPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, const Camera& camera) const
 {
-	DebugLabel::Begin(commandBuffer, "Blit Pass", glm::vec4(1.0f, 0.7f, 0.7f, 1));
+	DebugLabel::Begin(commandBuffer, "Volumetric Pass", glm::vec4(0.4f, 0.0f, 0.8f, 1.0f));
 
 	Image& swapchainImage = *m_SwapChain.GetSwapChainImage(imageIndex);
 
 	// BEGIN RECORDING
 	{
-		ToneMappingUbo uboData = {
-			.aperture = camera.GetAperture(),
-			.shutterSpeed = camera.GetShutterSpeed(),
-			.iso = camera.GetIso()
-		};
-		m_pUniformBuffer->Update(imageIndex, uboData);
-
-
 		// transitioning images
 		//----------------------
 		swapchainImage.TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -56,6 +48,14 @@ void cat::BlitPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, c
 				VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 				VK_ACCESS_SHADER_READ_BIT
 			});
+
+		m_SwapChain.GetDepthImage(imageIndex)->TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, {
+				VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+				VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+				VK_ACCESS_SHADER_READ_BIT
+			});
+
 
 		// Render Attachments
 		//---------------------
@@ -121,48 +121,43 @@ void cat::BlitPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, c
 				VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 				VK_ACCESS_NONE
 			});
+
 	}
 
 	DebugLabel::End(commandBuffer);
 }
 
-void cat::BlitPass::CreateDescriptors()
+void cat::VolumetricPass::CreateDescriptors()
 {
-	m_pUniformBuffer = std::make_unique<UniformBuffer<ToneMappingUbo>>(m_Device, m_FramesInFlight);
-
-
 	m_pDescriptorPool = new DescriptorPool(m_Device);
-	m_pDescriptorPool
-		->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_FramesInFlight )
-		->AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_FramesInFlight)
-		->Create(m_FramesInFlight);
+	m_pDescriptorPool->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 * m_FramesInFlight);
+	m_pDescriptorPool->Create(m_FramesInFlight);
 
 	m_pDescriptorSetLayout = new DescriptorSetLayout(m_Device);
-	m_pDescriptorSetLayout
-		->AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		->AddBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		->Create();
+	m_pDescriptorSetLayout->AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT); // lit
+	m_pDescriptorSetLayout->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT); // depth
+	m_pDescriptorSetLayout->Create();
 
 	m_pDescriptorSet = new DescriptorSet(m_Device, *m_pDescriptorSetLayout, *m_pDescriptorPool, m_FramesInFlight);
 	for (int i{}; i < m_pDescriptorSet->GetDescriptorSetCount();i++)
 	{
 		m_pDescriptorSet
-			->AddImageWrite(0, m_LightingPass.GetLitImages()[i]->GetImageInfo(), i) //Lit image
-			->AddBufferWrite(1, m_pUniformBuffer->GetDescriptorBufferInfos(), i)
+			->AddImageWrite(0, m_LightingPass.GetLitImages()[i]->GetImageInfo(), i) // lit 
+			->AddImageWrite(1, m_SwapChain.GetDepthImage(i)->GetImageInfo(), i) // depth 
 			->UpdateByIdx(i);
 	}
 }
 
-void cat::BlitPass::CreatePipeline()
+void cat::VolumetricPass::CreatePipeline()
 {
 	Pipeline::PipelineInfo pipelineInfo{};
 	pipelineInfo.SetDefault();
 
 	// attachments
+	pipelineInfo.depthStencil.depthTestEnable = VK_FALSE;
 	pipelineInfo.colorAttachments = {
 		*m_SwapChain.GetSwapChainImageFormat()
 	};
-	pipelineInfo.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
 	pipelineInfo.colorBlendAttachments.resize(pipelineInfo.colorAttachments.size(),
 		VkPipelineColorBlendAttachmentState{ .blendEnable = VK_FALSE, .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT }
 	);
@@ -177,14 +172,15 @@ void cat::BlitPass::CreatePipeline()
 	m_pPipeline = new Pipeline(m_Device, m_VertPath, m_FragPath, pipelineInfo);
 }
 
-void cat::BlitPass::Resize(VkExtent2D size)
+void cat::VolumetricPass::Resize(VkExtent2D size)
 {
 	m_Extent = size;
-	for (size_t i{ 0 }; i < m_FramesInFlight; i++) 
+	for (size_t i{ 0 }; i < m_FramesInFlight; i++)
 	{
 		m_pDescriptorSet->ClearDescriptorWrites();
 		m_pDescriptorSet
 			->AddImageWrite(0, m_LightingPass.GetLitImages()[i]->GetImageInfo(), i) //Lit image
+			->AddImageWrite(1, m_SwapChain.GetDepthImage(i)->GetImageInfo(), i) // depth
 			->UpdateByIdx(i);
 	}
 }

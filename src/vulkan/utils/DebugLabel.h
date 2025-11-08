@@ -33,9 +33,9 @@ namespace cat
             VkCommandBuffer cmdBuffer;
         };
     
-        static void BeginCmdLabel(VkCommandBuffer cmdBuffer, const std::string& name, glm::vec4 color);
+        static void Begin(VkCommandBuffer cmdBuffer, const std::string& name, glm::vec4 color);
     
-        static void EndCmdLabel(VkCommandBuffer cmdBuffer);
+        static void End(VkCommandBuffer cmdBuffer);
 
     
         static void SetObjectName(uint64_t objectHandle, VkObjectType objectType, const std::string& name);

@@ -102,7 +102,7 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		renderInfo.layerCount = 1;
 		renderInfo.colorAttachmentCount = colorAttachments.size();
 		renderInfo.pColorAttachments = colorAttachments.data();
-		DebugLabel::BeginCmdLabel(commandBuffer, "Lighting Pass", glm::vec4(0.1f, 0.3f, 0.05f, 1));
+		DebugLabel::Begin(commandBuffer, "Lighting Pass", glm::vec4(0.1f, 0.3f, 0.05f, 1));
 		vkCmdBeginRenderingKHR(commandBuffer, &renderInfo);
 	}
 
@@ -138,7 +138,7 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 	// END RECORDING
 	{
 		vkCmdEndRenderingKHR(commandBuffer);
-		DebugLabel::EndCmdLabel(commandBuffer);
+		DebugLabel::End(commandBuffer);
 
 		// transitioning images
 		//----------------------
