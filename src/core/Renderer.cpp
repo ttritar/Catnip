@@ -73,7 +73,7 @@ namespace cat
 
 		// SCENES
 		//-----------------
-		m_pScenes.resize(1);
+		m_pScenes.resize(2);
 
 		//m_pScenes[0] = new Scene(m_Device, m_pUniformBuffer);
 		//m_pScenes[0]->AddModel("resources/Models/Sponza/Sponza.gltf")
@@ -101,7 +101,7 @@ namespace cat
 		m_pGeometryPass = std::make_unique<GeometryPass>(m_Device, m_pSwapChain->GetSwapChainExtent(), cat::MAX_FRAMES_IN_FLIGHT);
 		m_pLightingPass = std::make_unique<LightingPass>(m_Device, m_pSwapChain->GetSwapChainExtent(), cat::MAX_FRAMES_IN_FLIGHT, *m_pGeometryPass, m_pHDRImage, *m_pSwapChain, * m_pShadowPass);
 		m_pVolumetricPass = std::make_unique<VolumetricPass>(m_Device, *m_pSwapChain, cat::MAX_FRAMES_IN_FLIGHT, *m_pLightingPass);
-		//m_pBlitPass = std::make_unique<BlitPass>(m_Device, *m_pSwapChain, cat::MAX_FRAMES_IN_FLIGHT, *m_pLightingPass);
+		m_pBlitPass = std::make_unique<BlitPass>(m_Device, *m_pSwapChain, cat::MAX_FRAMES_IN_FLIGHT, *m_pLightingPass);
 	}
 
 	void Renderer::DrawFrame() const
@@ -244,14 +244,15 @@ namespace cat
 		m_pVolumetricPass->Record(
 			commandBuffer,
 			m_CurrentFrame,
-			m_Camera
+			m_Camera,
+			*m_pCurrentScene
 		);
 		
-		//m_pBlitPass->Record(
-		//	commandBuffer,
-		//	m_CurrentFrame,
-		//	m_Camera
-		//);
+		m_pBlitPass->Record(
+			commandBuffer,
+			m_CurrentFrame,
+			m_Camera
+		);
 
 	}
 
@@ -260,7 +261,7 @@ namespace cat
 		m_pGeometryPass->Resize(m_pSwapChain->GetSwapChainExtent());
 		m_pLightingPass->Resize(m_pSwapChain->GetSwapChainExtent(), *m_pGeometryPass);
 		m_pVolumetricPass->Resize(m_pSwapChain->GetSwapChainExtent());
-		//m_pBlitPass->Resize(m_pSwapChain->GetSwapChainExtent());
+		m_pBlitPass->Resize(m_pSwapChain->GetSwapChainExtent());
 	}
 
 }

@@ -22,7 +22,7 @@ namespace cat
 
 		// METHODS
 		//-----------------
-		void Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, const Camera& camera) const;
+		void Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, Camera camera, Scene& scene) const;
 		void Resize(VkExtent2D size);
 
 
@@ -30,6 +30,7 @@ namespace cat
 	private:
 		// PRIVATE METHODS
 		//-----------------
+		void CreateBuffers();
 		void CreatePipeline();
 		void CreateDescriptors();
 
@@ -49,5 +50,18 @@ namespace cat
 		DescriptorPool* m_pDescriptorPool;
 		DescriptorSet* m_pDescriptorSet;
 		LightingPass& m_LightingPass;
+
+		struct alignas(16) VolumetricsUbo
+		{
+			glm::vec2 screenLightPos;
+			float _pad0[2];
+			float density;
+			float weight;
+			float decay;
+			float exposure;
+			int numSamples;
+			int _pad1[3];
+		};
+		std::unique_ptr<UniformBuffer<VolumetricsUbo>> m_pUniformBuffer;
 	};
 }

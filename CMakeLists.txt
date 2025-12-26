@@ -16,9 +16,9 @@ add_executable(Catnip
     src/vulkan/Device.cpp src/vulkan/SwapChain.cpp src/vulkan/Descriptors.cpp
     src/vulkan/buffers/Buffer.cpp src/vulkan/buffers/CommandBuffer.cpp  
     src/vulkan/Pipeline.cpp
-    src/vulkan/passes/GeometryPass.cpp  src/vulkan/passes/DepthPrepass.cpp src/vulkan/passes/LightingPass.cpp src/vulkan/passes/BlitPass.cpp src/vulkan/passes/ShadowPass.cpp
+    src/vulkan/passes/GeometryPass.cpp src/vulkan/passes/DepthPrepass.cpp src/vulkan/passes/LightingPass.cpp src/vulkan/passes/BlitPass.cpp src/vulkan/passes/ShadowPass.cpp src/vulkan/passes/VolumetricPass.cpp
     src/vulkan/scene/Scene.cpp src/vulkan/scene/Model.cpp src/vulkan/scene/Mesh.cpp src/vulkan/scene/Image.cpp src/vulkan/scene/HDRImage.cpp src/vulkan/scene/Camera.cpp 
-    src/vulkan/utils/DebugLabel.cpp   "src/vulkan/passes/VolumetricPass.cpp" "src/vulkan/passes/BlitPass (2).h")
+    src/vulkan/utils/DebugLabel.cpp)
 
 
 

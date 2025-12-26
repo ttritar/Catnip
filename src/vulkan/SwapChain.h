@@ -16,7 +16,7 @@
 
 namespace cat
 {
-	static const int MAX_FRAMES_IN_FLIGHT = 3;
+	static const int MAX_FRAMES_IN_FLIGHT = 2;
 
 	class SwapChain
 	{
@@ -74,7 +74,7 @@ namespace cat
 		//--------------------
 
 		// Creators
-		void CreateSwapChain();
+		void CreateSwapChain(VkSwapchainKHR oldSwapchain = VK_NULL_HANDLE);
 		void CleanupSwapChain();
 		void CreateDepthResources();
 		void CreateSyncObjects();

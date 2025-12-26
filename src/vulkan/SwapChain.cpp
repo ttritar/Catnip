@@ -44,16 +44,14 @@ namespace cat
 
         vkDeviceWaitIdle(m_Device.GetDevice());
 
-        CleanupSwapChain();
-
-        CreateSwapChain();
+        CreateSwapChain(m_SwapChain);
         CreateDepthResources();
     }
 
  
 	// Creators
 	//--------------------
-    void SwapChain::CreateSwapChain()
+    void SwapChain::CreateSwapChain(VkSwapchainKHR oldSwapchain)
     {
         SwapChainSupportDetails swapChainSupport = m_Device.GetSwapChainSupport();
         VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
@@ -92,7 +90,7 @@ namespace cat
         createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
         createInfo.presentMode = presentMode;
         createInfo.clipped = VK_TRUE;
-        createInfo.oldSwapchain = VK_NULL_HANDLE;
+        createInfo.oldSwapchain = oldSwapchain;
 
         if (vkCreateSwapchainKHR(m_Device.GetDevice(), &createInfo, nullptr, &m_SwapChain) != VK_SUCCESS)
             throw std::runtime_error("failed to create swap chain");
