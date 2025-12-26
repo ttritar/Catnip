@@ -1,6 +1,6 @@
 #pragma once
 
-#include "LightingPass.h"
+#include "VolumetricPass.h"
 #include "../Descriptors.h"
 #include "../Pipeline.h"
 
@@ -12,7 +12,7 @@ namespace cat
 	public:
 		// CTOR & DTOR
 		//----------------
-		BlitPass(Device& device, SwapChain& swapChain, uint32_t framesInFlight, LightingPass& lightingPass);
+		BlitPass(Device& device, SwapChain& swapChain, uint32_t framesInFlight, VolumetricPass& prevPass);
 		~BlitPass();
 
 		BlitPass(const BlitPass&) = delete;
@@ -22,7 +22,7 @@ namespace cat
 
 		// METHODS
 		//-----------------
-		void Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, const Camera& camera) const;
+		void Record(VkCommandBuffer commandBuffer, uint32_t frameIndex, const Camera& camera) const;
 		void Resize(VkExtent2D size);
 
 
@@ -55,6 +55,6 @@ namespace cat
 		DescriptorSetLayout* m_pDescriptorSetLayout;
 		DescriptorPool* m_pDescriptorPool;
 		DescriptorSet* m_pDescriptorSet;
-		LightingPass& m_LightingPass;
+		VolumetricPass& m_PrevPass;
 	};
 }

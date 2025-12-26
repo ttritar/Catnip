@@ -22,7 +22,7 @@ namespace cat
 
 		// METHODS
 		//------------------------------
-		void Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, Image& depthImage, Camera camera, Scene& scene) const;
+		void Record(VkCommandBuffer commandBuffer, uint32_t frameIndex, Image& depthImage, Camera camera, Scene& scene) const;
 
 	private:
 		// Private methods

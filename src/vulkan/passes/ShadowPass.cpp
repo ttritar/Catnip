@@ -34,14 +34,14 @@ cat::ShadowPass::~ShadowPass()
 	delete m_pPipeline;
 }
 
-void cat::ShadowPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, Scene& scene) const
+void cat::ShadowPass::Record(VkCommandBuffer commandBuffer, uint32_t frameIndex, Scene& scene) const
 {
 	// BEGIN RECORDING
 	{
 		ShadowUbo uboData = {  scene.GetDirectionalLight().projectionMatrix,scene.GetDirectionalLight().viewMatrix };
-		m_pUniformBuffer->Update(imageIndex, uboData);
+		m_pUniformBuffer->Update(frameIndex, uboData);
 
-		m_pDepthImages[imageIndex]->TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+		m_pDepthImages[frameIndex]->TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 			Image::BarrierInfo{
 				VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
 				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
@@ -52,7 +52,7 @@ void cat::ShadowPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex,
 		// Render Attachments
 		VkRenderingAttachmentInfoKHR depthAttachmentInfo{};
 		depthAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-		depthAttachmentInfo.imageView = m_pDepthImages[imageIndex]->GetImageView();
+		depthAttachmentInfo.imageView = m_pDepthImages[frameIndex]->GetImageView();
 		depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 		depthAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		depthAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -61,7 +61,7 @@ void cat::ShadowPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex,
 		// Render Info
 		VkRenderingInfoKHR renderInfo{};
 		renderInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
-		renderInfo.renderArea = { {0, 0}, m_pDepthImages[imageIndex]->GetExtent() };
+		renderInfo.renderArea = { {0, 0}, m_pDepthImages[frameIndex]->GetExtent() };
 		renderInfo.layerCount = 1;
 		renderInfo.colorAttachmentCount = 0;
 		renderInfo.pColorAttachments = nullptr;
@@ -78,8 +78,8 @@ void cat::ShadowPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex,
 		VkViewport viewport{};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
-		viewport.width = static_cast<float>(m_pDepthImages[imageIndex]->GetExtent().width);
-		viewport.height = static_cast<float>(m_pDepthImages[imageIndex]->GetExtent().height);
+		viewport.width = static_cast<float>(m_pDepthImages[frameIndex]->GetExtent().width);
+		viewport.height = static_cast<float>(m_pDepthImages[frameIndex]->GetExtent().height);
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
@@ -87,20 +87,20 @@ void cat::ShadowPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex,
 		// scissor
 		VkRect2D scissor{};
 		scissor.offset = { 0, 0 };
-		scissor.extent = m_pDepthImages[imageIndex]->GetExtent();
+		scissor.extent = m_pDepthImages[frameIndex]->GetExtent();
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		m_pDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex);
+		m_pDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), frameIndex);
 
 		// draw the scene
-		scene.DrawOpaque(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, true);
+		scene.DrawOpaque(commandBuffer, m_pPipeline->GetPipelineLayout(), frameIndex, true);
 	}
 
 	// END RECORDING
 	{
 		vkCmdEndRenderingKHR(commandBuffer);
 		DebugLabel::End(commandBuffer);
-		m_pDepthImages[imageIndex]->TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		m_pDepthImages[frameIndex]->TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			Image::BarrierInfo{
 				VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,   
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,

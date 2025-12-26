@@ -22,10 +22,11 @@ namespace cat
 
 		// METHODS
 		//-----------------
-		void Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, Camera camera, Scene& scene) const;
+		void Record(VkCommandBuffer commandBuffer, uint32_t frameIndex, Camera camera, Scene& scene) const;
 		void Resize(VkExtent2D size);
 
-
+		// Getters & Setters
+		const std::vector<std::unique_ptr<Image>>& GetVolumetricImages() const { return m_pVolumetricImages; }
 
 	private:
 		// PRIVATE METHODS
@@ -63,5 +64,7 @@ namespace cat
 			int _pad1[3];
 		};
 		std::unique_ptr<UniformBuffer<VolumetricsUbo>> m_pUniformBuffer;
+
+		std::vector<std::unique_ptr<Image>> m_pVolumetricImages;
 	};
 }

@@ -3,8 +3,8 @@
 #include "LightingPass.h"
 #include "../utils/DebugLabel.h"
 
-cat::BlitPass::BlitPass(Device& device, SwapChain& swapChain, uint32_t framesInFlight, LightingPass& lightingPass)
-	: m_Device(device), m_FramesInFlight(framesInFlight), m_SwapChain(swapChain) , m_Extent(swapChain.GetSwapChainExtent()), m_LightingPass(lightingPass)
+cat::BlitPass::BlitPass(Device& device, SwapChain& swapChain, uint32_t framesInFlight, VolumetricPass& prevPass)
+	: m_Device(device), m_FramesInFlight(framesInFlight), m_SwapChain(swapChain) , m_Extent(swapChain.GetSwapChainExtent()), m_PrevPass(prevPass)
 {
 	CreateDescriptors();
 	CreatePipeline();
@@ -23,11 +23,11 @@ cat::BlitPass::~BlitPass()
 	m_pPipeline = nullptr;
 }
 
-void cat::BlitPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, const Camera& camera) const
+void cat::BlitPass::Record(VkCommandBuffer commandBuffer, uint32_t frameIndex, const Camera& camera) const
 {
 	DebugLabel::Begin(commandBuffer, "Blit Pass", glm::vec4(1.0f, 0.7f, 0.7f, 1));
 
-	Image& swapchainImage = *m_SwapChain.GetSwapChainImage(imageIndex);
+	Image& swapchainImage = *m_SwapChain.GetSwapChainImage(frameIndex);
 
 	// BEGIN RECORDING
 	{
@@ -36,7 +36,7 @@ void cat::BlitPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, c
 			.shutterSpeed = camera.GetShutterSpeed(),
 			.iso = camera.GetIso()
 		};
-		m_pUniformBuffer->Update(imageIndex, uboData);
+		m_pUniformBuffer->Update(frameIndex, uboData);
 
 
 		// transitioning images
@@ -49,7 +49,7 @@ void cat::BlitPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, c
 				VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
 			});
 
-		m_LightingPass.GetLitImages()[imageIndex]->TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		m_PrevPass.GetVolumetricImages()[frameIndex]->TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			{
 				VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
@@ -102,7 +102,7 @@ void cat::BlitPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, c
 
 		m_pPipeline->Bind(commandBuffer);
 
-		m_pDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, 0);
+		m_pDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), frameIndex, 0);
 
 		vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
@@ -147,7 +147,7 @@ void cat::BlitPass::CreateDescriptors()
 	for (int i{}; i < m_pDescriptorSet->GetDescriptorSetCount();i++)
 	{
 		m_pDescriptorSet
-			->AddImageWrite(0, m_LightingPass.GetLitImages()[i]->GetImageInfo(), i) //Lit image
+			->AddImageWrite(0, m_PrevPass.GetVolumetricImages()[i]->GetImageInfo(), i) //Lit image
 			->AddBufferWrite(1, m_pUniformBuffer->GetDescriptorBufferInfos(), i)
 			->UpdateByIdx(i);
 	}
@@ -184,7 +184,7 @@ void cat::BlitPass::Resize(VkExtent2D size)
 	{
 		m_pDescriptorSet->ClearDescriptorWrites();
 		m_pDescriptorSet
-			->AddImageWrite(0, m_LightingPass.GetLitImages()[i]->GetImageInfo(), i) //Lit image
+			->AddImageWrite(0, m_PrevPass.GetVolumetricImages()[i]->GetImageInfo(), i) //Lit image
 			->UpdateByIdx(i);
 	}
 }

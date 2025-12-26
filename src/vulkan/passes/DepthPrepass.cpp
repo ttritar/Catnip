@@ -22,13 +22,13 @@ cat::DepthPrepass::~DepthPrepass()
 	delete m_pPipeline;
 }
 
-void cat::DepthPrepass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex,
+void cat::DepthPrepass::Record(VkCommandBuffer commandBuffer, uint32_t frameIndex,
 	Image& depthImage, Camera camera, Scene& scene) const
 {
 	// BEGIN RECORDING
 	{
 		MatrixUbo uboData = { camera.GetView(), camera.GetProjection() };
-		m_pUniformBuffer->Update(imageIndex, uboData);
+		m_pUniformBuffer->Update(frameIndex, uboData);
 
 		depthImage.TransitionImageLayout(commandBuffer,VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 			Image::BarrierInfo{
@@ -78,10 +78,10 @@ void cat::DepthPrepass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		scissor.extent = depthImage.GetExtent();
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		m_pDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex);
+		m_pDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), frameIndex);
 
 		// draw the scene
-		scene.DrawOpaque(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, true);
+		scene.DrawOpaque(commandBuffer, m_pPipeline->GetPipelineLayout(), frameIndex, true);
 	}
 
 	// END RECORDING

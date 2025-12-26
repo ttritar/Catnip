@@ -22,7 +22,7 @@ namespace cat
 
 		// METHODS
 		//------------------------------
-		void Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, Scene& scene) const;
+		void Record(VkCommandBuffer commandBuffer, uint32_t frameIndex, Scene& scene) const;
 
 		// Getters & Setters
 		const Image& GetDepthImages(int idx) const { return *m_pDepthImages[idx]; }

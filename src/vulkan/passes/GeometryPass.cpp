@@ -69,14 +69,14 @@ cat::GeometryPass::~GeometryPass()
 	m_pPipeline = nullptr;
 }
 
-void cat::GeometryPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, 
+void cat::GeometryPass::Record(VkCommandBuffer commandBuffer, uint32_t frameIndex, 
 	Image& depthImage,
 	Camera camera, Scene& scene) const
 {
 	// BEGIN RECORDING
 	{
 		MatrixUbo uboData = { camera.GetView(), camera.GetProjection() };
-		m_pUniformBuffer->Update(imageIndex, uboData);
+		m_pUniformBuffer->Update(frameIndex, uboData);
 
 		// transitioning images
 		//----------------------
@@ -88,18 +88,18 @@ void cat::GeometryPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 			VK_ACCESS_NONE, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
 		};
 
-		m_pAlbedoBuffers[imageIndex]->TransitionImageLayout( commandBuffer,
+		m_pAlbedoBuffers[frameIndex]->TransitionImageLayout( commandBuffer,
 			targetLayout, barrierInfo
 		);
-		m_pNormalBuffers[imageIndex]->TransitionImageLayout(
+		m_pNormalBuffers[frameIndex]->TransitionImageLayout(
 			commandBuffer,
 			targetLayout, barrierInfo
 		);
-		m_pSpecularBuffers[imageIndex]->TransitionImageLayout(
+		m_pSpecularBuffers[frameIndex]->TransitionImageLayout(
 			commandBuffer,
 			targetLayout, barrierInfo
 		);
-		m_pWorldBuffers[imageIndex]->TransitionImageLayout(
+		m_pWorldBuffers[frameIndex]->TransitionImageLayout(
 			commandBuffer,
 			targetLayout, barrierInfo
 		);
@@ -116,28 +116,28 @@ void cat::GeometryPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		colorAttachments.resize(4);
 
 		colorAttachments[0].sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-		colorAttachments[0].imageView = m_pAlbedoBuffers[imageIndex]->GetImageView();
+		colorAttachments[0].imageView = m_pAlbedoBuffers[frameIndex]->GetImageView();
 		colorAttachments[0].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		colorAttachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		colorAttachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		colorAttachments[0].clearValue = clearValues[0];
 
 		colorAttachments[1].sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-		colorAttachments[1].imageView = m_pNormalBuffers[imageIndex]->GetImageView();
+		colorAttachments[1].imageView = m_pNormalBuffers[frameIndex]->GetImageView();
 		colorAttachments[1].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		colorAttachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		colorAttachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		colorAttachments[1].clearValue = clearValues[0];
 
 		colorAttachments[2].sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-		colorAttachments[2].imageView = m_pSpecularBuffers[imageIndex]->GetImageView();
+		colorAttachments[2].imageView = m_pSpecularBuffers[frameIndex]->GetImageView();
 		colorAttachments[2].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		colorAttachments[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		colorAttachments[2].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		colorAttachments[2].clearValue = clearValues[0];
 
 		colorAttachments[3].sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-		colorAttachments[3].imageView = m_pWorldBuffers[imageIndex]->GetImageView();
+		colorAttachments[3].imageView = m_pWorldBuffers[frameIndex]->GetImageView();
 		colorAttachments[3].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		colorAttachments[3].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		colorAttachments[3].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -184,10 +184,10 @@ void cat::GeometryPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		scissor.extent = m_Extent;
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		m_pDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, 0);
+		m_pDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), frameIndex, 0);
 
 		// draw the scene
-		scene.Draw(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, false);
+		scene.Draw(commandBuffer, m_pPipeline->GetPipelineLayout(), frameIndex, false);
 	}
 
 	// END RECORDING
@@ -202,19 +202,19 @@ void cat::GeometryPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
 			VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT
 		};
-		m_pAlbedoBuffers[imageIndex]->TransitionImageLayout(
+		m_pAlbedoBuffers[frameIndex]->TransitionImageLayout(
 			commandBuffer,
 			targetLayout, barrierInfo
 		);
-		m_pNormalBuffers[imageIndex]->TransitionImageLayout(
+		m_pNormalBuffers[frameIndex]->TransitionImageLayout(
 			commandBuffer,
 			targetLayout, barrierInfo
 		);
-		m_pSpecularBuffers[imageIndex]->TransitionImageLayout(
+		m_pSpecularBuffers[frameIndex]->TransitionImageLayout(
 			commandBuffer,
 			targetLayout, barrierInfo
 		);
-		m_pWorldBuffers[imageIndex]->TransitionImageLayout(
+		m_pWorldBuffers[frameIndex]->TransitionImageLayout(
 			commandBuffer,
 			targetLayout, barrierInfo
 		);

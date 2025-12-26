@@ -30,9 +30,9 @@ cat::LightingPass::~LightingPass()
 	m_pPipeline = nullptr;
 }
 
-void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageIndex, Camera camera, Scene& scene) const
+void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t frameIndex, Camera camera, Scene& scene) const
 {
-	Image& m_pLitImage = *m_pLitImages[imageIndex];
+	Image& litImage = *m_pLitImages[frameIndex];
 	// BEGIN RECORDING
 	{
 		LightingUbo uboData = {
@@ -48,20 +48,20 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 
 			.pointLightCount = static_cast<uint32_t>(scene.GetPointLights().size())
 		};
-		m_pUniformBuffer->Update(imageIndex,uboData);
+		m_pUniformBuffer->Update(frameIndex,uboData);
 
 		std::array<Scene::PointLight, LightingPass::MAX_POINT_LIGHTS> pointLights{};
 		const auto& sceneLights = scene.GetPointLights();
 		for (size_t i = 0; i < sceneLights.size() && i < LightingPass::MAX_POINT_LIGHTS; ++i) {
 			pointLights[i] = sceneLights[i];
 		}
-		m_pPointLightingStorageBuffer->Update(imageIndex, pointLights);
+		m_pPointLightingStorageBuffer->Update(frameIndex, pointLights);
 
 
 
 		// transitioning images
 		//----------------------
-		m_SwapChain.GetDepthImage(imageIndex)->TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		m_SwapChain.GetDepthImage(frameIndex)->TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			Image::BarrierInfo{
 			VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
@@ -69,7 +69,7 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 			VK_ACCESS_SHADER_READ_BIT
 			});
 
-		m_pLitImage.TransitionImageLayout(commandBuffer,VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+		litImage.TransitionImageLayout(commandBuffer,VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			{
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 				VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -89,7 +89,7 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		colorAttachments.resize(1);
 
 		colorAttachments[0].sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-		colorAttachments[0].imageView = m_pLitImage.GetImageView();
+		colorAttachments[0].imageView = litImage.GetImageView();
 		colorAttachments[0].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		colorAttachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		colorAttachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -126,10 +126,10 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 		scissor.extent = m_Extent;
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		m_pUboDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, 0);
-		m_pSamplersDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, 1);
-		m_pHDRISamplersDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, 2);
-		m_pShadowDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), imageIndex, 3);
+		m_pUboDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), frameIndex, 0);
+		m_pSamplersDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), frameIndex, 1);
+		m_pHDRISamplersDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), frameIndex, 2);
+		m_pShadowDescriptorSet->Bind(commandBuffer, m_pPipeline->GetPipelineLayout(), frameIndex, 3);
 
 		vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
@@ -142,7 +142,7 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 
 		// transitioning images
 		//----------------------
-		m_SwapChain.GetDepthImage(imageIndex)->TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+		m_SwapChain.GetDepthImage(frameIndex)->TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 			Image::BarrierInfo{
 			VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
 				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
@@ -150,7 +150,7 @@ void cat::LightingPass::Record(VkCommandBuffer commandBuffer, uint32_t imageInde
 				VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
 			});
 
-		m_pLitImage.TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		litImage.TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			Image::BarrierInfo{
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 			VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,

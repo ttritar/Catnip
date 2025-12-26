@@ -27,7 +27,7 @@ namespace cat
 
 		// METHODS
 		//-----------------
-		void Record(VkCommandBuffer commandBuffer, uint32_t imageIndex,
+		void Record(VkCommandBuffer commandBuffer, uint32_t frameIndex,
 		            Camera camera, Scene& scene) const;
 		void Resize(VkExtent2D size, const GeometryPass& geometryPass);
 
