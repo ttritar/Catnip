@@ -11,7 +11,7 @@ namespace cat
 
 	Renderer::Renderer(Window& window)
 		: m_Window(window), m_Device(m_Window.GetWindow()),
-		m_Camera(m_Window, { 0.f,1.f,-1.f })
+		m_Camera(m_Window, { 2.39926267f ,4.13730288f,-8.73105431f })
 	{
 		m_Camera.SetSpecs({ .fovy = glm::radians(90.f), .nearPlane = 0.1f, .farPlane = 1500.f, .aperture = 1.4f, .shutterSpeed = 1.0f / 60.0f, .iso = 1600.f });
 		InitializeVulkan();

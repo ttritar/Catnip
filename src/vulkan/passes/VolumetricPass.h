@@ -74,7 +74,7 @@ namespace cat
 			float rayDecay;
 			float rayDensity;
 			float rayWeight;
-			float padding3;
+			int useMultiscattering = 1;
 		};
 		std::unique_ptr<UniformBuffer<VolumetricsUbo>> m_pUniformBuffer;
 

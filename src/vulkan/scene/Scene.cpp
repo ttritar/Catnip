@@ -7,6 +7,8 @@ namespace cat
 	Scene::Scene(Device& device, UniformBuffer<MatrixUbo>* ubo)
 		: m_Device{ device }, m_pUniformBuffer(ubo), m_DirectionalLight({})
 	{
+		m_MinBounds = glm::vec3(FLT_MAX);
+		m_MaxBounds = glm::vec3(-FLT_MAX);
 	}
 
 	Scene::~Scene()
@@ -23,19 +25,38 @@ namespace cat
 	//--------------------
 	void Scene::Update(float deltaTime)
 	{
+		m_MinBounds = glm::vec3(FLT_MAX);
+		m_MaxBounds = glm::vec3(-FLT_MAX);
+
 		// update bounds (account for transforms)
 		for (const auto& model : m_pModels)
 		{
 			auto [modelMin, modelMax] = model->GetBounds();
 			glm::mat4 transform = *model->GetTransform();
 
-				glm::vec3 worldMin = glm::vec3(transform * glm::vec4(modelMin, 1.0f));
-			glm::vec3 worldMax = glm::vec3(transform * glm::vec4(modelMax, 1.0f));
+			glm::vec3 corners[8] = {
+				glm::vec3(transform * glm::vec4(modelMin.x, modelMin.y, modelMin.z, 1.0f)),
+				glm::vec3(transform * glm::vec4(modelMax.x, modelMin.y, modelMin.z, 1.0f)),
+				glm::vec3(transform * glm::vec4(modelMin.x, modelMax.y, modelMin.z, 1.0f)),
+				glm::vec3(transform * glm::vec4(modelMax.x, modelMax.y, modelMin.z, 1.0f)),
+				glm::vec3(transform * glm::vec4(modelMin.x, modelMin.y, modelMax.z, 1.0f)),
+				glm::vec3(transform * glm::vec4(modelMax.x, modelMin.y, modelMax.z, 1.0f)),
+				glm::vec3(transform * glm::vec4(modelMin.x, modelMax.y, modelMax.z, 1.0f)),
+				glm::vec3(transform * glm::vec4(modelMax.x, modelMax.y, modelMax.z, 1.0f))
+			};
 
-			m_MinBounds = glm::min(m_MinBounds, worldMin);
-			m_MaxBounds = glm::max(m_MaxBounds, worldMax);
+			for (int i = 0; i < 8; ++i)
+			{
+				m_MinBounds = glm::min(m_MinBounds, corners[i]);
+				m_MaxBounds = glm::max(m_MaxBounds, corners[i]);
+			}
 		}
 
+		if (m_pModels.empty())
+		{
+			m_MinBounds = glm::vec3(-1.0f, -1.0f, -1.0f);
+			m_MaxBounds = glm::vec3(1.0f, 1.0f, 1.0f);
+		}
 
 		glm::vec3 sceneCenter = (m_MinBounds + m_MaxBounds) * 0.5f;
 		glm::vec3 lightDirection = glm::normalize(m_DirectionalLight.direction);
@@ -98,8 +119,13 @@ namespace cat
 
 		auto [modelMin, modelMax] = model->GetBounds();
 
-		m_MinBounds = glm::min(m_MinBounds, modelMin);
-		m_MaxBounds = glm::max(m_MaxBounds, modelMax);
+		glm::mat4 transform = *model->GetTransform();
+		glm::vec3 worldMin = glm::vec3(transform * glm::vec4(modelMin, 1.0f));
+		glm::vec3 worldMax = glm::vec3(transform * glm::vec4(modelMax, 1.0f));
+
+
+		m_MinBounds = glm::min(m_MinBounds, worldMin);
+		m_MaxBounds = glm::max(m_MaxBounds, worldMax);
 
 		return model;
 	}
