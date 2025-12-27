@@ -1,4 +1,7 @@
 #pragma once
+
+#include "../vulkan/utils/PerformanceTimer.h"
+
 #include "../vulkan/scene/Camera.h"
 #include "../vulkan/Descriptors.h"
 #include "../vulkan/Pipeline.h"
@@ -51,6 +54,8 @@ namespace cat
 
 		// Private Members
 		//--------------------
+		mutable PerformanceTimer m_PerformanceTimer;
+
 		Window& m_Window;
 		Camera m_Camera;
 		Device m_Device;

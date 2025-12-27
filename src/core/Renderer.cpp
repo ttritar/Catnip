@@ -16,10 +16,16 @@ namespace cat
 		m_Camera.SetSpecs({ .fovy = glm::radians(90.f), .nearPlane = 0.1f, .farPlane = 1500.f, .aperture = 1.4f, .shutterSpeed = 1.0f / 60.0f, .iso = 1600.f });
 		InitializeVulkan();
 		OutputKeybinds();
+
+		// Start performance recording
+		m_PerformanceTimer.StartRecording(500);
 	}
 
 	Renderer::~Renderer()
 	{
+		m_PerformanceTimer.StopRecording();
+		m_PerformanceTimer.SaveToCSV("performance.csv", true);
+
 		vkDeviceWaitIdle(m_Device.GetDevice());
 
 
@@ -41,15 +47,42 @@ namespace cat
 	{
 		m_Camera.OutputKeybinds();
 
-
 		// SCENE SWITCHING
 		std::cout << COLOR_GREEN	<< "SCENE SWITCHING: " << COLOR_RESET << std::endl;
 		std::cout << COLOR_YELLOW	<< "\t Press 0 to switch to Scene 0 (Flight Helmet)" << COLOR_RESET << std::endl;
 		std::cout << COLOR_YELLOW	<< "\t Press 1 to switch to Scene 1 (Sponza)" << COLOR_RESET << std::endl;
+
+		// PERFORMANCE RECORDING
+		std::cout << COLOR_GREEN << "PERFORMANCE TESTING: " << COLOR_RESET << std::endl;
+		std::cout << COLOR_YELLOW << "\t Press P to start/stop recording (500 frames)" << COLOR_RESET << std::endl;
+		std::cout << COLOR_YELLOW << "\t Press F5 to save snapshot while recording" << COLOR_RESET << std::endl;
 	}
 
 	void Renderer::Update(float deltaTime)
 	{
+		// PERFORMANCE RECORDING TOGGLE
+		if (glfwGetKey(m_Window.GetWindow(), GLFW_KEY_P))
+		{
+			static bool lastKeyState = false;
+			bool currentKeyState = glfwGetKey(m_Window.GetWindow(), GLFW_KEY_P);
+			if (currentKeyState && !lastKeyState)
+			{
+				if (m_PerformanceTimer.IsRecording())
+				{
+					// Stop and save
+					m_PerformanceTimer.StopRecording();
+					m_PerformanceTimer.SaveToCSV("performance_data.csv");
+				}
+				else
+				{
+					// Start recording first 500 frames
+					m_PerformanceTimer.StartRecording(500);
+				}
+			}
+			lastKeyState = currentKeyState;
+		}
+
+		// SCENE SWITCHING
 		if (glfwGetKey(m_Window.GetWindow(), GLFW_KEY_0)) m_pCurrentScene = m_pScenes[0];
 		if (glfwGetKey(m_Window.GetWindow(), GLFW_KEY_1)) m_pCurrentScene = m_pScenes[1];
 
@@ -62,7 +95,9 @@ namespace cat
 
 	void Renderer::Render() const
 	{
+		m_PerformanceTimer.BeginFrame();
 		DrawFrame();
+		m_PerformanceTimer.EndFrame();
 	}
 
 	void Renderer::InitializeVulkan()
@@ -214,6 +249,8 @@ namespace cat
 	{
 		auto& commandBuffer = *m_pCommandBuffer->GetCommandBuffer(m_CurrentFrame);
 
+
+		m_PerformanceTimer.BeginPass("DepthPrepass");
 		m_pDepthPrepass->Record(
 			commandBuffer,
 			m_CurrentFrame,
@@ -221,13 +258,17 @@ namespace cat
 			m_Camera,
 			*m_pCurrentScene
 		);
+		m_PerformanceTimer.EndPass("DepthPrepass");
 
+		m_PerformanceTimer.BeginPass("ShadowPass");
 		m_pShadowPass->Record(
 			commandBuffer,
 			m_CurrentFrame,
 			*m_pCurrentScene
 		);
+		m_PerformanceTimer.EndPass("ShadowPass");
 
+		m_PerformanceTimer.BeginPass("GeometryPass");
 		m_pGeometryPass->Record(
 			commandBuffer,
 			m_CurrentFrame,
@@ -235,26 +276,33 @@ namespace cat
 			m_Camera,
 			*m_pCurrentScene
 		);
-		
+		m_PerformanceTimer.EndPass("GeometryPass");
+
+		m_PerformanceTimer.BeginPass("LightingPass");
 		m_pLightingPass->Record(
 			commandBuffer,
 			m_CurrentFrame,
 			m_Camera,
 			*m_pCurrentScene
 		);
+		m_PerformanceTimer.EndPass("LightingPass");
 
+		m_PerformanceTimer.BeginPass("VolumetricPass");
 		m_pVolumetricPass->Record(
 			commandBuffer,
 			m_CurrentFrame,
 			m_Camera,
 			*m_pCurrentScene
 		);
-		
+		m_PerformanceTimer.EndPass("VolumetricPass");
+
+		m_PerformanceTimer.BeginPass("BlitPass");
 		m_pBlitPass->Record(
 			commandBuffer,
 			m_CurrentFrame,
 			m_Camera
 		);
+		m_PerformanceTimer.EndPass("BlitPass");
 
 	}
 

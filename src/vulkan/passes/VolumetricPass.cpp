@@ -64,7 +64,7 @@ void cat::VolumetricPass::Record(VkCommandBuffer commandBuffer, uint32_t frameIn
 			.rayDensity = 5.f,
 			.rayWeight = 0.8f,
 
-			.useMultiscattering = 0
+			.useMultiscattering = 1
 		};
 		m_pUniformBuffer->Update(frameIndex, uboData);
 
