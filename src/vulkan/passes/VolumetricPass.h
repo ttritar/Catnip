@@ -69,6 +69,11 @@ namespace cat
 
 			float stepSize;
 			int numSteps;
+
+			float rayStrength;
+			float rayDecay;
+			float rayDensity;
+			float rayWeight;
 			float padding3;
 		};
 		std::unique_ptr<UniformBuffer<VolumetricsUbo>> m_pUniformBuffer;

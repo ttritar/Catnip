@@ -56,8 +56,14 @@ void cat::VolumetricPass::Record(VkCommandBuffer commandBuffer, uint32_t frameIn
 			.lightIntensity = scene.GetDirectionalLight().intensity,
 			.volumetricDensity = 0.1f,
 
-			.stepSize = 0.2f,
+			.stepSize = 0.5f,
 			.numSteps = 100,
+
+			.rayStrength = 100.f,
+			.rayDecay = 0.99f,
+			.rayDensity = 5.f,
+			.rayWeight = 0.8f
+
 		};
 		m_pUniformBuffer->Update(frameIndex, uboData);
 
