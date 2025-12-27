@@ -1,6 +1,7 @@
 #include "Renderer.h"
 
 #include <iostream>
+#include <vulkan/vk_enum_string_helper.h>
 
 #include "Window.h"
 #include "../vulkan/Device.h"
@@ -75,20 +76,20 @@ namespace cat
 		//-----------------
 		m_pScenes.resize(2);
 
-		//m_pScenes[0] = new Scene(m_Device, m_pUniformBuffer);
-		//m_pScenes[0]->AddModel("resources/Models/Sponza/Sponza.gltf")
-		//	->SetRotation(glm::radians(90.f), { 0,1,0 });
-		//m_pScenes[0]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.f, -1.f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 1000.f });
+		m_pScenes[0] = new Scene(m_Device, m_pUniformBuffer);
+		m_pScenes[0]->AddModel("resources/Models/Sponza/Sponza.gltf")
+			->SetRotation(glm::radians(90.f), { 0,1,0 });
+		m_pScenes[0]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.45f, -0.9f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 5.f });
 		//m_pScenes[0]->AddPointLight(Scene::PointLight{ .position = { 0.f, 1.f, 5.f ,0.f}, .color = { 1.f, 0.f, 0.f ,0.f}, .intensity = 150.f , .radius = 100.f});
 		//m_pScenes[0]->AddPointLight(Scene::PointLight{ .position = { 0.f, 1.f, 0.f ,0.f}, .color = { 0.f, 1.f, 0.f ,0.f}, .intensity = 150.f , .radius = 100.f });
 		//m_pScenes[0]->AddPointLight(Scene::PointLight{ .position = { 0.f, 1.f, 2.5f ,0.f}, .color = { 0.f, 0.f, 1.f ,0.f}, .intensity = 150.f , .radius = 100.f });
 
-		m_pScenes[1] = new Scene(m_Device, m_pUniformBuffer);
-		m_pScenes[1]->AddModel("resources/Models/ABeautifulGame/ABeautifulGame.gltf")
-			->SetScale({ 1.f,1.f,1.f });
-		m_pScenes[1]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.2f, -0.9f, 0.2f }, .color = { 1.f, 1.f, 1.f }, .intensity = 100.f });
+		//m_pScenes[1] = new Scene(m_Device, m_pUniformBuffer);
+		//m_pScenes[1]->AddModel("resources/Models/ABeautifulGame/ABeautifulGame.gltf")
+		//	->SetScale({ 1.f,1.f,1.f });
+		//m_pScenes[1]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.2f, -0.9f, 0.2f }, .color = { 1.f, 1.f, 1.f }, .intensity = 100.f });
 
-		m_pCurrentScene = m_pScenes[1]; // set default scene
+		m_pCurrentScene = m_pScenes[0]; // set default scene
 
 		m_pHDRImage = new HDRImage(m_Device, "resources/HDRIs/CircusArena.hdr");
 
@@ -100,7 +101,7 @@ namespace cat
 		m_pShadowPass = std::make_unique<ShadowPass>(m_Device, cat::MAX_FRAMES_IN_FLIGHT);
 		m_pGeometryPass = std::make_unique<GeometryPass>(m_Device, m_pSwapChain->GetSwapChainExtent(), cat::MAX_FRAMES_IN_FLIGHT);
 		m_pLightingPass = std::make_unique<LightingPass>(m_Device, m_pSwapChain->GetSwapChainExtent(), cat::MAX_FRAMES_IN_FLIGHT, *m_pGeometryPass, m_pHDRImage, *m_pSwapChain, * m_pShadowPass);
-		m_pVolumetricPass = std::make_unique<VolumetricPass>(m_Device, *m_pSwapChain, cat::MAX_FRAMES_IN_FLIGHT, *m_pLightingPass);
+		m_pVolumetricPass = std::make_unique<VolumetricPass>(m_Device, *m_pSwapChain, cat::MAX_FRAMES_IN_FLIGHT, *m_pLightingPass, *m_pShadowPass);
 		m_pBlitPass = std::make_unique<BlitPass>(m_Device, *m_pSwapChain, cat::MAX_FRAMES_IN_FLIGHT, *m_pVolumetricPass);
 	}
 
@@ -119,7 +120,7 @@ namespace cat
 		}
 		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 		{
-			throw std::runtime_error("failed to acquire swap chain image!");
+			throw std::runtime_error("failed to acquire swap chain image!" + std::string(string_VkResult(result)));
 		}
 
 		vkResetFences(m_Device.GetDevice(), 1, m_pSwapChain->GetInFlightFences(m_CurrentFrame)); //reset fence to unsignaled
@@ -172,9 +173,10 @@ namespace cat
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphore;
 
-		if (vkQueueSubmit(m_Device.GetGraphicsQueue(), 1, &submitInfo, *m_pSwapChain->GetInFlightFences(m_CurrentFrame)) != VK_SUCCESS)
+		auto result2 = vkQueueSubmit(m_Device.GetGraphicsQueue(), 1, &submitInfo, *m_pSwapChain->GetInFlightFences(m_CurrentFrame));
+		if (result2 != VK_SUCCESS)
 		{
-			throw std::runtime_error("failed to submit draw command buffer!");
+			throw std::runtime_error("Failed to submit draw command buffer!" + std::string(string_VkResult(result2)));
 		}
 
 		// PRESENTATION
@@ -201,7 +203,7 @@ namespace cat
 		}
 		else if (result != VK_SUCCESS)
 		{
-			throw std::runtime_error("failed to acquire swap chain image!");
+			throw std::runtime_error("failed to acquire swap chain image!" + std::string(string_VkResult(result)));
 		}
 
 		m_CurrentFrame = (m_CurrentFrame + 1) % cat::MAX_FRAMES_IN_FLIGHT;

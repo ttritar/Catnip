@@ -3,8 +3,9 @@
 #include "LightingPass.h"
 #include "../utils/DebugLabel.h"
 
-cat::VolumetricPass::VolumetricPass(Device& device, SwapChain& swapChain, uint32_t framesInFlight, LightingPass& lightingPass)
-	: m_Device(device), m_FramesInFlight(framesInFlight), m_SwapChain(swapChain) , m_Extent(swapChain.GetSwapChainExtent()), m_LightingPass(lightingPass)
+cat::VolumetricPass::VolumetricPass(Device& device, SwapChain& swapChain, uint32_t framesInFlight, LightingPass& lightingPass, ShadowPass& shadowPass)
+	: m_Device(device), m_FramesInFlight(framesInFlight), m_SwapChain(swapChain), m_Extent(swapChain.GetSwapChainExtent()),
+	m_ShadowPass(shadowPass), m_LightingPass(lightingPass)
 {
 	// IMAGES
 	m_pVolumetricImages.resize(m_FramesInFlight);
@@ -45,22 +46,18 @@ void cat::VolumetricPass::Record(VkCommandBuffer commandBuffer, uint32_t frameIn
 
 	// BEGIN RECORDING
 	{
-		glm::vec2 screenLightPos = {};
-		{
-			glm::vec4 lightPosView = camera.GetView() * glm::vec4(scene.GetDirectionalLight().direction * -1.0f * 1000.0f + camera.GetOrigin(), 1.0f);
-			glm::vec4 lightPosClip = camera.GetProjection() * lightPosView;
-			glm::vec3 lightPosNDC = lightPosClip / lightPosClip.w;
-			screenLightPos = glm::vec2(
-				0.5f * (lightPosNDC.x + 1.0f) * static_cast<float>(m_Extent.width),
-				0.5f * (1.0f - lightPosNDC.y) * static_cast<float>(m_Extent.height)
-			);
-		}
 		VolumetricsUbo uboData = {
-			.screenLightPos = screenLightPos,
-			.density = 0.96f,
-			.weight = 0.4f,
-			.decay = 1.0f,
-			.exposure = 0.73f
+			.invViewProj = glm::inverse(camera.GetProjection() * camera.GetView()),
+			.lightViewProj = scene.GetDirectionalLight().projectionMatrix * scene.GetDirectionalLight().viewMatrix,
+			.camPos = camera.GetOrigin(),
+
+			.lightDir = scene.GetDirectionalLight().direction,
+			.lightColor = scene.GetDirectionalLight().color,
+			.lightIntensity = scene.GetDirectionalLight().intensity,
+			.volumetricDensity = 0.1f,
+
+			.stepSize = 0.2f,
+			.numSteps = 100,
 		};
 		m_pUniformBuffer->Update(frameIndex, uboData);
 
@@ -73,6 +70,17 @@ void cat::VolumetricPass::Record(VkCommandBuffer commandBuffer, uint32_t frameIn
 				VK_ACCESS_NONE,
 				VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
 			});
+
+		m_ShadowPass.GetDepthImages()[frameIndex]->TransitionImageLayout(
+			commandBuffer,
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			{
+				VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+				VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+				VK_ACCESS_SHADER_READ_BIT
+			}
+		);
 
 		m_LightingPass.GetLitImages()[frameIndex]->TransitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			{
@@ -169,21 +177,25 @@ void cat::VolumetricPass::CreateBuffers()
 void cat::VolumetricPass::CreateDescriptors()
 {
 	m_pDescriptorPool = new DescriptorPool(m_Device);
-	m_pDescriptorPool->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 * m_FramesInFlight);
+	m_pDescriptorPool->AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3 * m_FramesInFlight);
 	m_pDescriptorPool->AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 * m_FramesInFlight);
 	m_pDescriptorPool->Create(m_FramesInFlight);
 
 	m_pDescriptorSetLayout = new DescriptorSetLayout(m_Device);
 	m_pDescriptorSetLayout->AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT); // frame
-	m_pDescriptorSetLayout->AddBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT); // buffer
+	m_pDescriptorSetLayout->AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT); // depth
+	m_pDescriptorSetLayout->AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT); // shadow map
+	m_pDescriptorSetLayout->AddBinding(3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT); // buffer
 	m_pDescriptorSetLayout->Create();
 
 	m_pDescriptorSet = new DescriptorSet(m_Device, *m_pDescriptorSetLayout, *m_pDescriptorPool, m_FramesInFlight);
 	for (int i{}; i < m_pDescriptorSet->GetDescriptorSetCount();i++)
 	{
 		m_pDescriptorSet
-			->AddImageWrite(0, m_LightingPass.GetLitImages()[i]->GetImageInfo(), i) // frame 
-			->AddBufferWrite(1, m_pUniformBuffer->GetDescriptorBufferInfos(), i) // buffer 
+			->AddImageWrite(0, m_LightingPass.GetLitImages()[i]->GetImageInfo(), i) // scene
+			->AddImageWrite(1, m_SwapChain.GetDepthImage(i)->GetImageInfo(), i) // depth
+			->AddImageWrite(2, m_ShadowPass.GetDepthImages()[i]->GetImageInfo(), i) // shadow map)
+			->AddBufferWrite(3, m_pUniformBuffer->GetDescriptorBufferInfos(), i) // buffer 
 			->UpdateByIdx(i);
 	}
 }
@@ -219,8 +231,10 @@ void cat::VolumetricPass::Resize(VkExtent2D size)
 	{
 		m_pDescriptorSet->ClearDescriptorWrites();
 		m_pDescriptorSet
-			->AddImageWrite(0, m_LightingPass.GetLitImages()[i]->GetImageInfo(), i)
-			->AddBufferWrite(1, m_pUniformBuffer->GetDescriptorBufferInfos(), i)
+			->AddImageWrite(0, m_LightingPass.GetLitImages()[i]->GetImageInfo(), i) //Lit image
+			->AddImageWrite(1, m_SwapChain.GetDepthImage(i)->GetImageInfo(), i) // depth
+			->AddImageWrite(2, m_ShadowPass.GetDepthImages()[i]->GetImageInfo(), i) // shadow map
+			->AddBufferWrite(3, m_pUniformBuffer->GetDescriptorBufferInfos(), i)
 			->UpdateByIdx(i);
 	}
 }

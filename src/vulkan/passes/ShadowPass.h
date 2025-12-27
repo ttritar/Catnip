@@ -25,7 +25,7 @@ namespace cat
 		void Record(VkCommandBuffer commandBuffer, uint32_t frameIndex, Scene& scene) const;
 
 		// Getters & Setters
-		const Image& GetDepthImages(int idx) const { return *m_pDepthImages[idx]; }
+		const std::vector<std::unique_ptr<Image>>& GetDepthImages() const { return m_pDepthImages; }
 
 	private:
 		// Private methods

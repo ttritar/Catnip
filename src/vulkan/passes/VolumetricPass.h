@@ -12,7 +12,7 @@ namespace cat
 	public:
 		// CTOR & DTOR
 		//----------------
-		VolumetricPass(Device& device, SwapChain& swapChain, uint32_t framesInFlight, LightingPass& lightingPass);
+		VolumetricPass(Device& device, SwapChain& swapChain, uint32_t framesInFlight, LightingPass& lightingPass, ShadowPass& shadowPass);
 		~VolumetricPass();
 
 		VolumetricPass(const VolumetricPass&) = delete;
@@ -50,18 +50,26 @@ namespace cat
 		DescriptorSetLayout* m_pDescriptorSetLayout;
 		DescriptorPool* m_pDescriptorPool;
 		DescriptorSet* m_pDescriptorSet;
+		ShadowPass& m_ShadowPass;
 		LightingPass& m_LightingPass;
 
 		struct alignas(16) VolumetricsUbo
 		{
-			glm::vec2 screenLightPos;
-			float _pad0[2];
-			float density;
-			float weight;
-			float decay;
-			float exposure;
-			int numSamples;
-			int _pad1[3];
+			glm::mat4 invViewProj;
+			glm::mat4 lightViewProj;
+
+			glm::vec3 camPos;
+			float padding1;
+
+			glm::vec3 lightDir;
+			float padding2;
+			glm::vec3 lightColor;
+			float lightIntensity;
+			float volumetricDensity;
+
+			float stepSize;
+			int numSteps;
+			float padding3;
 		};
 		std::unique_ptr<UniformBuffer<VolumetricsUbo>> m_pUniformBuffer;
 

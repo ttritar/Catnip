@@ -258,7 +258,7 @@ void cat::LightingPass::CreateDescriptors()
 		for (int i = 0; i < m_pShadowDescriptorSet->GetDescriptorSetCount(); ++i)
 		{
 			m_pShadowDescriptorSet
-				->AddImageWrite(0, m_ShadowPass.GetDepthImages(i).GetImageInfo(), i) // shadow map
+				->AddImageWrite(0, m_ShadowPass.GetDepthImages()[i]->GetImageInfo(), i) // shadow map
 				->UpdateByIdx(i);
 		}
 	}
@@ -359,7 +359,7 @@ void cat::LightingPass::Resize(VkExtent2D size, const GeometryPass& geometryPass
 
 		m_pShadowDescriptorSet->ClearDescriptorWrites();
 		m_pShadowDescriptorSet
-			->AddImageWrite(0, m_ShadowPass.GetDepthImages(i).GetImageInfo(), i) // shadow map
+			->AddImageWrite(0, m_ShadowPass.GetDepthImages()[i]->GetImageInfo(), i) // shadow map
 			->UpdateByIdx(i);
 	}
 }
