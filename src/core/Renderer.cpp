@@ -109,24 +109,16 @@ namespace cat
 
 		// SCENES
 		//-----------------
-		m_pScenes.resize(2);
+		m_pScenes.resize(1);
 
 		m_pScenes[0] = new Scene(m_Device, m_pUniformBuffer);
 		m_pScenes[0]->AddModel("resources/Models/Sponza/Sponza.gltf")
 			->SetRotation(glm::radians(90.f), { 0,1,0 });
-		m_pScenes[0]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.45f, -0.9f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 5.f });
-		//m_pScenes[0]->AddPointLight(Scene::PointLight{ .position = { 0.f, 1.f, 5.f ,0.f}, .color = { 1.f, 0.f, 0.f ,0.f}, .intensity = 150.f , .radius = 100.f});
-		//m_pScenes[0]->AddPointLight(Scene::PointLight{ .position = { 0.f, 1.f, 0.f ,0.f}, .color = { 0.f, 1.f, 0.f ,0.f}, .intensity = 150.f , .radius = 100.f });
-		//m_pScenes[0]->AddPointLight(Scene::PointLight{ .position = { 0.f, 1.f, 2.5f ,0.f}, .color = { 0.f, 0.f, 1.f ,0.f}, .intensity = 150.f , .radius = 100.f });
-
-		//m_pScenes[1] = new Scene(m_Device, m_pUniformBuffer);
-		//m_pScenes[1]->AddModel("resources/Models/ABeautifulGame/ABeautifulGame.gltf")
-		//	->SetScale({ 1.f,1.f,1.f });
-		//m_pScenes[1]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.2f, -0.9f, 0.2f }, .color = { 1.f, 1.f, 1.f }, .intensity = 100.f });
+		m_pScenes[0]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.45f, -0.9f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 10.f });
 
 		m_pCurrentScene = m_pScenes[0]; // set default scene
 
-		m_pHDRImage = new HDRImage(m_Device, "resources/HDRIs/CircusArena.hdr");
+		m_pHDRImage = new HDRImage(m_Device, "resources/HDRIs/Overcast.hdr");
 
 		m_pCommandBuffer = new CommandBuffer(m_Device, cat::MAX_FRAMES_IN_FLIGHT);
 
