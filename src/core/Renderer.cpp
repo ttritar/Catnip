@@ -13,20 +13,18 @@ namespace cat
 
 	Renderer::Renderer(Window& window)
 		: m_Window(window), m_Device(m_Window.GetWindow()),
-		m_Camera(m_Window, { 2.39926267f ,4.13730288f,-8.73105431f })
+		m_Camera(m_Window, { 3.02689219f ,4.13660812f,-8.76823330f })
 	{
+		m_Camera.SetPitchYaw(-2.40000081f, -34.5999947f);
 		m_Camera.SetSpecs({ .fovy = glm::radians(90.f), .nearPlane = 0.1f, .farPlane = 1500.f, .aperture = 1.4f, .shutterSpeed = 1.0f / 60.0f, .iso = 1600.f });
 		InitializeVulkan();
 		OutputKeybinds();
-
-		// Start performance recording
-		m_PerformanceTimer.StartRecording();
 	}
 
 	Renderer::~Renderer()
 	{
 		m_PerformanceTimer.StopRecording();
-		m_PerformanceTimer.SaveToCSV();
+		m_PerformanceTimer.SaveToCSV("performance.csv");
 
 		vkDeviceWaitIdle(m_Device.GetDevice());
 
@@ -55,8 +53,8 @@ namespace cat
 
 		// SCENE SWITCHING
 		std::cout << COLOR_GREEN	<< "SCENE SWITCHING: " << COLOR_RESET << std::endl;
-		std::cout << COLOR_YELLOW	<< "\t Press 0 to switch to Scene 0 (Flight Helmet)" << COLOR_RESET << std::endl;
-		std::cout << COLOR_YELLOW	<< "\t Press 1 to switch to Scene 1 (Sponza)" << COLOR_RESET << std::endl;
+		std::cout << COLOR_YELLOW	<< "\t Press 0 to switch to Scene 0 (Sponza)" << COLOR_RESET << std::endl;
+		std::cout << COLOR_YELLOW	<< "\t Press 1 to switch to Scene 1 (Cornell Box)" << COLOR_RESET << std::endl;
 
 		// PERFORMANCE RECORDING
 		std::cout << COLOR_GREEN << "PERFORMANCE TESTING: " << COLOR_RESET << std::endl;
@@ -89,11 +87,11 @@ namespace cat
 				m_pCurrentScene = m_pScenes[0];
 				std::cout << "Switched to Scene 0 (Sponza)" << std::endl;
 			}
-			//if (IsKeyPressedOnce(window, GLFW_KEY_1))
-			//{
-			//	m_pCurrentScene = m_pScenes[1];
-			//	std::cout << COLOR_CYAN << "Switched to Scene 1 (Flight Helmet)" << COLOR_RESET << std::endl;
-			//}
+			if (IsKeyPressedOnce(window, GLFW_KEY_1))
+			{
+				m_pCurrentScene = m_pScenes[1];
+				std::cout << COLOR_CYAN << "Switched to Scene 1 (Cornell Box)" << COLOR_RESET << std::endl;
+			}
 
 			// DIRECTIONAL LIGHT ROTATE TOGGLE
 			if (IsKeyPressedOnce(window, GLFW_KEY_L))
@@ -122,19 +120,7 @@ namespace cat
 
 		// SCENES
 		//-----------------
-		m_pScenes.resize(1);
-
-		m_pScenes[0] = new Scene(m_Device, m_pUniformBuffer);
-		m_pScenes[0]->AddModel("resources/Models/Sponza/Sponza.gltf")
-			->SetRotation(glm::radians(90.f), { 0,1,0 });
-		m_pScenes[0]->AddModel("resources/Models/FlightHelmet/FlightHelmet.gltf");
-		m_pScenes[0]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.45f, -0.9f, 0.f }, .color = { 0.9f, 0.9f, 1.f }, .intensity = 100.f });
-
-		m_pCurrentScene = m_pScenes[0]; // set default scene
-
-		m_pHDRImage = new HDRImage(m_Device, "resources/HDRIs/Overcast.hdr");
-
-		m_pCommandBuffer = new CommandBuffer(m_Device, cat::MAX_FRAMES_IN_FLIGHT);
+		CreateScenes();
 
 		// PASSES
 		//-----------------
@@ -144,6 +130,29 @@ namespace cat
 		m_pLightingPass = std::make_unique<LightingPass>(m_Device, m_pSwapChain->GetSwapChainExtent(), cat::MAX_FRAMES_IN_FLIGHT, *m_pGeometryPass, m_pHDRImage, *m_pSwapChain, * m_pShadowPass);
 		m_pVolumetricPass = std::make_unique<VolumetricPass>(m_Device, *m_pSwapChain, cat::MAX_FRAMES_IN_FLIGHT, *m_pLightingPass, *m_pShadowPass);
 		m_pBlitPass = std::make_unique<BlitPass>(m_Device, *m_pSwapChain, cat::MAX_FRAMES_IN_FLIGHT, *m_pVolumetricPass);
+
+		// Start performance recording
+		m_PerformanceTimer.StartRecording();
+	}
+
+	void Renderer::CreateScenes()
+	{
+		// SCENES
+		//-----------------
+		m_pScenes.resize(1);
+
+		m_pScenes[0] = new Scene(m_Device, m_pUniformBuffer);
+		m_pScenes[0]->AddModel("resources/Models/Sponza/Sponza.gltf")
+			->SetRotation(glm::radians(90.f), { 0,1,0 });
+		m_pScenes[0]->AddModel("resources/Models/Lucy/scene.gltf");
+		m_pScenes[0]->SetDirectionalLight(Scene::DirectionalLight{ .direction = {0.104399815f, -0.894427419f, -0.434856594f}, .color = { 0.9f, 0.9f, 1.f }, .intensity = 100.f });
+
+		m_pCurrentScene = m_pScenes[0]; // set default scene
+
+		m_pHDRImage = new HDRImage(m_Device, "resources/HDRIs/Overcast.hdr");
+
+		m_pCommandBuffer = new CommandBuffer(m_Device, cat::MAX_FRAMES_IN_FLIGHT);
+
 	}
 
 	void Renderer::DrawFrame() const

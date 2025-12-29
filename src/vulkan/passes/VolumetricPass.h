@@ -60,7 +60,7 @@ namespace cat
 		ShadowPass& m_ShadowPass;
 		LightingPass& m_LightingPass;
 
-		bool m_UseMultiScattering = false;
+		bool m_UseMultiScattering = true;
 		struct alignas(16) VolumetricsUbo
 		{
 			glm::mat4 invViewProj;

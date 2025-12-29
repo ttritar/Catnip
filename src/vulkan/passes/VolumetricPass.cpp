@@ -54,14 +54,14 @@ void cat::VolumetricPass::Record(VkCommandBuffer commandBuffer, uint32_t frameIn
 			.lightDir = scene.GetDirectionalLight().direction,
 			.lightColor = scene.GetDirectionalLight().color,
 			.lightIntensity = scene.GetDirectionalLight().intensity,
-			.volumetricDensity = 0.08f,
+			.volumetricDensity = 0.005f,
 
 			.stepSize = 0.1f,
 			.numSteps = 500,
 
-			.rayStrength = 100.f,
+			.rayStrength = 80.f,
 			.rayDecay = 0.99f,
-			.rayDensity = 1.f,
+			.rayDensity = 0.98f,
 			.rayWeight = 0.8f,
 
 			.useMultiScattering = m_UseMultiScattering,

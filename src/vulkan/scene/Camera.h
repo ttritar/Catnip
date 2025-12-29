@@ -67,6 +67,13 @@ namespace cat
 			return m_Origin;
 		}
 
+		void SetPitchYaw(float pitch, float yaw)
+		{
+			m_TotalPitch = pitch;
+			m_TotalYaw = yaw;
+			UpdateVectors();
+		}
+
 		Specifications GetSpecs() const { return m_Specs; }	
 		void SetSpecs(const Specifications& specs)
 		{

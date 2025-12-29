@@ -221,7 +221,7 @@ namespace cat
         //Now, let's look through the list to see if VK_PRESENT_MODE_MAILBOX_KHR is available:
         for (const auto& availablePresentMode : availablePresentModes)
         {
-            if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+            if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
             {
                 return availablePresentMode;
             }
