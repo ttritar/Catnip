@@ -6,6 +6,8 @@
 #include "Window.h"
 #include "../vulkan/Device.h"
 
+#include "../utils/KeyInput.h"
+
 namespace cat
 {
 
@@ -18,13 +20,13 @@ namespace cat
 		OutputKeybinds();
 
 		// Start performance recording
-		m_PerformanceTimer.StartRecording(500);
+		m_PerformanceTimer.StartRecording();
 	}
 
 	Renderer::~Renderer()
 	{
 		m_PerformanceTimer.StopRecording();
-		m_PerformanceTimer.SaveToCSV("performance.csv", true);
+		m_PerformanceTimer.SaveToCSV();
 
 		vkDeviceWaitIdle(m_Device.GetDevice());
 
@@ -47,6 +49,10 @@ namespace cat
 	{
 		m_Camera.OutputKeybinds();
 
+		// SCATTERING TOGGLE
+		std::cout << COLOR_GREEN << "VOLUMETRICS: " << COLOR_RESET << std::endl;
+		std::cout << COLOR_YELLOW << "\t Press M to toggle multi-scattering" << COLOR_RESET << std::endl;
+
 		// SCENE SWITCHING
 		std::cout << COLOR_GREEN	<< "SCENE SWITCHING: " << COLOR_RESET << std::endl;
 		std::cout << COLOR_YELLOW	<< "\t Press 0 to switch to Scene 0 (Flight Helmet)" << COLOR_RESET << std::endl;
@@ -60,32 +66,39 @@ namespace cat
 
 	void Renderer::Update(float deltaTime)
 	{
-		// PERFORMANCE RECORDING TOGGLE
-		if (glfwGetKey(m_Window.GetWindow(), GLFW_KEY_P))
+		// INPUT HANDLING
 		{
-			static bool lastKeyState = false;
-			bool currentKeyState = glfwGetKey(m_Window.GetWindow(), GLFW_KEY_P);
-			if (currentKeyState && !lastKeyState)
+			auto window = m_Window.GetWindow();
+
+			// VOLUMETRIC SCATTERING TOGGLE
+			if (IsKeyPressedOnce(window, GLFW_KEY_M))
+				m_pVolumetricPass->ToggleUseMultiScattering();
+
+
+			// PERFORMANCE RECORDING TOGGLE
+			if (IsKeyPressedOnce(window, GLFW_KEY_P))
 			{
-				if (m_PerformanceTimer.IsRecording())
-				{
-					// Stop and save
-					m_PerformanceTimer.StopRecording();
-					m_PerformanceTimer.SaveToCSV("performance_data.csv");
-				}
-				else
-				{
-					// Start recording first 500 frames
-					m_PerformanceTimer.StartRecording(500);
-				}
+				m_PerformanceTimer.ToggleRecording();
+				if (!m_PerformanceTimer.IsRecording())
+					m_PerformanceTimer.SaveToCSV();
 			}
-			lastKeyState = currentKeyState;
+
+			// SCENE SWITCHING
+			if (IsKeyPressedOnce(window, GLFW_KEY_0))
+			{
+				m_pCurrentScene = m_pScenes[0];
+				std::cout << "Switched to Scene 0 (Sponza)" << std::endl;
+			}
+			//if (IsKeyPressedOnce(window, GLFW_KEY_1))
+			//{
+			//	m_pCurrentScene = m_pScenes[1];
+			//	std::cout << COLOR_CYAN << "Switched to Scene 1 (Flight Helmet)" << COLOR_RESET << std::endl;
+			//}
+
+			// DIRECTIONAL LIGHT ROTATE TOGGLE
+			if (IsKeyPressedOnce(window, GLFW_KEY_L))
+				m_pCurrentScene->ToggleRotateDirectionalLight();
 		}
-
-		// SCENE SWITCHING
-		if (glfwGetKey(m_Window.GetWindow(), GLFW_KEY_0)) m_pCurrentScene = m_pScenes[0];
-		if (glfwGetKey(m_Window.GetWindow(), GLFW_KEY_1)) m_pCurrentScene = m_pScenes[1];
-
 
 		m_Camera.Update(deltaTime);
 		m_pCurrentScene->Update(deltaTime);
@@ -114,7 +127,8 @@ namespace cat
 		m_pScenes[0] = new Scene(m_Device, m_pUniformBuffer);
 		m_pScenes[0]->AddModel("resources/Models/Sponza/Sponza.gltf")
 			->SetRotation(glm::radians(90.f), { 0,1,0 });
-		m_pScenes[0]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.45f, -0.9f, 0.f }, .color = { 1.f, 1.f, 1.f }, .intensity = 10.f });
+		m_pScenes[0]->AddModel("resources/Models/FlightHelmet/FlightHelmet.gltf");
+		m_pScenes[0]->SetDirectionalLight(Scene::DirectionalLight{ .direction = { 0.45f, -0.9f, 0.f }, .color = { 0.9f, 0.9f, 1.f }, .intensity = 100.f });
 
 		m_pCurrentScene = m_pScenes[0]; // set default scene
 

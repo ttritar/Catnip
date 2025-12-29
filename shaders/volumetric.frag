@@ -31,7 +31,10 @@ layout(set = 0, binding = 3) uniform VolumetricsUBO
     float rayDecay;
     float rayDensity;
     float rayWeight;
+    
     int useMultipleScattering; // 0 = SS, 1 = MS
+    float multiScatterStrength;
+vec2 _pad2;
 
 } ubo;
 
@@ -117,7 +120,6 @@ FogResult SingleScattering(vec3 worldPos, vec3 viewDir, float maxDistance)
     result.transmittance = 1.0;
 
     int steps = min(ubo.numSteps, int(maxDistance / ubo.stepSize));
-
     for (int i = 0; i < steps && traveled < maxDistance; ++i)
     {
         marchPos += viewDir * ubo.stepSize;
@@ -161,7 +163,6 @@ FogResult SingleScattering(vec3 worldPos, vec3 viewDir, float maxDistance)
 }
 
 
-// MULTI SCATTERING
 FogResult MultipleScattering(vec3 worldPos, vec3 viewDir, float maxDistance)
 {
     vec3 marchPos = ubo.cameraPos;
@@ -171,11 +172,9 @@ FogResult MultipleScattering(vec3 worldPos, vec3 viewDir, float maxDistance)
     result.light = vec3(0.0);
     result.transmittance = 1.0;
 
-    vec3 accumulatedEnergy = vec3(0.0);
+    vec3 msLight = vec3(0.0); // accumulated indirect light
 
     int steps = min(ubo.numSteps, int(maxDistance / ubo.stepSize));
-    const float msStrength = 0.4;
-
     for (int i = 0; i < steps && traveled < maxDistance; ++i)
     {
         marchPos += viewDir * ubo.stepSize;
@@ -183,22 +182,23 @@ FogResult MultipleScattering(vec3 worldPos, vec3 viewDir, float maxDistance)
 
         float density = ubo.fogDensity;
 
+        // === Shadowed direct lighting (same as SS) ===
         vec4 lightClip = ubo.lightViewProj * vec4(marchPos, 1.0);
-        vec3 ndc = lightClip.xyz / lightClip.w;
-        vec2 shadowUV = ndc.xy * 0.5 + 0.5;
+        vec3 proj = lightClip.xyz / lightClip.w;
+        vec2 shadowUV = proj.xy * 0.5 + 0.5;
         shadowUV.y = 1.0 - shadowUV.y;
 
         float visibility = 0.0;
-        if (abs(ndc.x) <= 1.0 &&
-            abs(ndc.y) <= 1.0 &&
-            ndc.z >= 0.0 &&
-            ndc.z <= 1.0)
+        if (abs(proj.x) <= 1.0 &&
+            abs(proj.y) <= 1.0 &&
+            proj.z >= 0.0 &&
+            proj.z <= 1.0)
         {
             float shadowDepth = texture(dirShadowMap, shadowUV).r;
-            visibility = (lightClip.z >= shadowDepth - 0.001) ? 1.0 : 0.0;
+            visibility = (proj.z >= shadowDepth + 0.001) ? 1.0 : 0.0;
         }
 
-        float cosTheta = dot(viewDir, normalize(-ubo.lightDir));
+        float cosTheta = dot(normalize(viewDir), normalize(ubo.lightDir));
         float phase = SchlickPhase(cosTheta, 0.82);
 
         vec3 singleScatter =
@@ -208,18 +208,17 @@ FogResult MultipleScattering(vec3 worldPos, vec3 viewDir, float maxDistance)
             visibility *
             phase;
 
-        vec3 multiScatter =
-            accumulatedEnergy *
-            density *
-            msStrength *
-            (1.0 / (4.0 * 3.14159265));
+        // === MULTI-SCATTERING APPROXIMATION ===
+        // Feed previously scattered light forward
+        msLight += singleScatter * ubo.stepSize;
 
-        vec3 totalScatter = singleScatter + multiScatter;
+        // Attenuate MS light as it travels
+        msLight *= exp(-density * ubo.stepSize);
 
-        result.light += totalScatter * result.transmittance * ubo.stepSize;
+        // === Accumulate both ===
+        vec3 totalScattering = singleScatter + msLight;
 
-        accumulatedEnergy += singleScatter * ubo.stepSize;
-        accumulatedEnergy *= exp(-density * ubo.stepSize);
+        result.light += totalScattering * result.transmittance * ubo.stepSize;
 
         result.transmittance *= exp(-density * ubo.stepSize);
 
@@ -229,6 +228,9 @@ FogResult MultipleScattering(vec3 worldPos, vec3 viewDir, float maxDistance)
 
     return result;
 }
+
+
+
 
 
 /* ================= Main ================= */

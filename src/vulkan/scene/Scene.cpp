@@ -25,10 +25,13 @@ namespace cat
 	//--------------------
 	void Scene::Update(float deltaTime)
 	{
+		//-- UPDATE DIRECTIONAL LIGHT
+		UpdateDirectionalLight();
+
+		//-- UPDATE BOUNDS
 		m_MinBounds = glm::vec3(FLT_MAX);
 		m_MaxBounds = glm::vec3(-FLT_MAX);
 
-		// update bounds (account for transforms)
 		for (const auto& model : m_pModels)
 		{
 			auto [modelMin, modelMax] = model->GetBounds();
@@ -138,6 +141,18 @@ namespace cat
 		{
 			delete* it;
 			m_pModels.erase(it, m_pModels.end());
+		}
+	}
+
+	void Scene::UpdateDirectionalLight()
+	{
+		if (m_RotateDirectionalLight)
+		{
+			float angle = glm::radians(0.5f);
+			glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
+			glm::vec4 dir = glm::vec4(m_DirectionalLight.direction, 0.0f);
+			dir = rotationMatrix * dir;
+			m_DirectionalLight.direction = glm::normalize(glm::vec3(dir));
 		}
 	}
 

@@ -49,6 +49,7 @@ namespace cat
 		void RemoveModel(const std::string& path);
 
 		void SetDirectionalLight(const DirectionalLight& light) { m_DirectionalLight = light; }
+		void UpdateDirectionalLight();
 		void AddPointLight(const PointLight& light);
 		void RemovePointLight(const PointLight& light);
 
@@ -61,6 +62,7 @@ namespace cat
 		const DirectionalLight& GetDirectionalLight() const { return m_DirectionalLight; }
 		const std::vector<PointLight>& GetPointLights() const { return m_PointLights; }
 		std::pair<glm::vec3, glm::vec3> GetSceneBounds() const { return { m_MinBounds, m_MaxBounds }; }
+		void ToggleRotateDirectionalLight() { m_RotateDirectionalLight = !m_RotateDirectionalLight; }
 
 	private:
 		// Private members
@@ -70,6 +72,7 @@ namespace cat
 		
 		std::vector<Model*> m_pModels;
 		DirectionalLight m_DirectionalLight{};
+		bool m_RotateDirectionalLight = false;
 		std::vector<PointLight> m_PointLights;
 
 		glm::vec3 m_MinBounds{ FLT_MAX };

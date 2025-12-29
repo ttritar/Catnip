@@ -50,10 +50,12 @@ namespace cat
         if (m_IsRecording)
         {
             StopRecording();
+			std::cout << "Performance recording toggled off." << std::endl;
         }
         else
         {
             StartRecording(maxFrames);
+			std::cout << "Performance recording toggled on." << std::endl;
         }
     }
 

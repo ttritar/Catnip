@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #include "LightingPass.h"
 #include "../Descriptors.h"
 #include "../Pipeline.h"
@@ -27,6 +29,11 @@ namespace cat
 
 		// Getters & Setters
 		const std::vector<std::unique_ptr<Image>>& GetVolumetricImages() const { return m_pVolumetricImages; }
+		void ToggleUseMultiScattering()
+		{
+			m_UseMultiScattering = !m_UseMultiScattering;
+			std::cout << "Using multiscattering: " << m_UseMultiScattering << std::endl;
+		}
 
 	private:
 		// PRIVATE METHODS
@@ -53,16 +60,17 @@ namespace cat
 		ShadowPass& m_ShadowPass;
 		LightingPass& m_LightingPass;
 
+		bool m_UseMultiScattering = false;
 		struct alignas(16) VolumetricsUbo
 		{
 			glm::mat4 invViewProj;
 			glm::mat4 lightViewProj;
 
 			glm::vec3 camPos;
-			float padding1;
+			float _padding1;
 
 			glm::vec3 lightDir;
-			float padding2;
+			float _padding2;
 			glm::vec3 lightColor;
 			float lightIntensity;
 			float volumetricDensity;
@@ -74,7 +82,10 @@ namespace cat
 			float rayDecay;
 			float rayDensity;
 			float rayWeight;
-			int useMultiscattering = 1;
+
+			int useMultiScattering = 0;
+			float multiScatterStrength;
+			float _padding3[3];
 		};
 		std::unique_ptr<UniformBuffer<VolumetricsUbo>> m_pUniformBuffer;
 

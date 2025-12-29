@@ -2,6 +2,8 @@
 #ifndef VOLUMETRIC_HELPERS_GLSL
 #define VOLUMETRIC_HELPERS_GLSL
 
+const float PI = 3.14159265358979323846264338327950288;
+
 vec3 ReconstructWorldPos(
     vec2 uv,
     float depth,

@@ -81,7 +81,7 @@ namespace cat
         }
 
         // Save results
-        void SaveToCSV(const std::string& filename, bool includeSummary = true);
+        void SaveToCSV(const std::string& filename = "performance.csv", bool includeSummary = true);
 
         // Status
         bool IsRecording() const { return m_IsRecording; }
